@@ -7,7 +7,7 @@ from pipeline_views.exceptions import NextLogicBlock
 
 
 def test_version():
-    assert __version__ == "0.1.0"
+    assert __version__ == "0.1.1"
 
 
 def test_BaseAPIView__one_logic_callable(base_api_view):
