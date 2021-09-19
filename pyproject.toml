@@ -1,0 +1,68 @@
+[tool.poetry]
+name = "drf-pipeline-views"
+version = "0.1.0"
+description = "Django REST framework views using the pipeline pattern."
+authors = [
+    "Matti Lamppu <lamppu.matti.akseli@gmail.com>",
+]
+packages = [
+    { include = "pipeline_views" },
+]
+include = ["README.md"]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4"
+Django = "^3.2.6"
+djangorestframework = "^3.12.4"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.13.0"
+pytest-cov = "^2.12.1"
+mypy = "^0.910"
+django-stubs = "^1.9.0"
+djangorestframework-stubs = "^1.4.0"
+pytest-django = "^4.4.0"
+coveralls = "^3.2.0"
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
+skip_gitignore = "True"
+lines_after_imports = 2
+
+[tool.pylint.messages_control]
+disable = "C0330, C0326"
+
+[tool.pylint.format]
+max-line-length = "120"
+
+[tool.mypy]
+python_version = 3.9
+warn_return_any = "True"
+warn_unused_configs = "True"
+plugins = [
+    "mypy_django_plugin.main",
+    "mypy_drf_plugin.main",
+]
+
+[tool.django-stubs]
+django_settings_module = "tests.django.settings"
+
+[tool.coverage.run]
+relative_files = true
+
+[tool.coverage.report]
+omit = [
+    "tests/*",
+    ".venv/*",
+]
+exclude_lines = [
+    "if TYPE_CHECKING:",
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

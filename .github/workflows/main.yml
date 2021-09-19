@@ -1,0 +1,28 @@
+name: Tests
+
+on: ["push"]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    env:
+      DJANGO_SETTINGS_MODULE: tests.django.settings
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - uses: abatilo/actions-poetry@v2.0.0
+        with:
+          poetry-version: 1.1.8
+
+      - run: |
+          poetry install
+          poetry run coverage run -m pytest -vv -s
+
+      - run: poetry run coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
