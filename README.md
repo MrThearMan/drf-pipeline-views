@@ -3,6 +3,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/MrThearMan/drf-pipeline-views/badge.svg?branch=main)](https://coveralls.io/github/MrThearMan/drf-pipeline-views?branch=main)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/MrThearMan/drf-pipeline-views/Tests)](https://github.com/MrThearMan/drf-pipeline-views/actions/workflows/main.yml)
 [![PyPI](https://img.shields.io/pypi/v/drf-pipeline-views)](https://pypi.org/project/drf-pipeline-views)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/drf-pipeline-views)](https://pypi.org/project/drf-pipeline-views)
+[![PyPI - Django Version](https://img.shields.io/pypi/djversions/drf-pipeline-views)](https://pypi.org/project/drf-pipeline-views)
 [![GitHub](https://img.shields.io/github/license/MrThearMan/drf-pipeline-views)](https://github.com/MrThearMan/drf-pipeline-views/blob/main/LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/MrThearMan/drf-pipeline-views)](https://github.com/MrThearMan/drf-pipeline-views/commits/main)
 

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 
 
 # Build paths inside the project like this: BASE_DIR / "subdir".
@@ -14,7 +15,7 @@ SECRET_KEY = "dl1m6rt9^vklc^7wk%drmt)o*-62xm-qp4d#(x-#4cu^%3u_ie"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: list[str] = []
+ALLOWED_HOSTS: List[str] = []
 
 
 # Application definition

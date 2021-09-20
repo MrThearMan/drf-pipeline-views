@@ -1,11 +1,11 @@
-from uuid import uuid4
+try:
+    from django.urls import re_path
+except ImportError:
+    from django.conf.urls import url as re_path
 
-from django.contrib import admin
-from django.urls import path
 from rest_framework import serializers
 
-from pipeline_views.mixins import DeleteMixin, GetMixin, PostMixin, PutMixin
-from pipeline_views.serializers import MockSerializer
+from pipeline_views.mixins import PostMixin
 from pipeline_views.views import BaseAPIView
 
 
@@ -20,10 +20,10 @@ class OutputSerializer(serializers.Serializer):
 
 
 def test_method(name: str, age: int):
-    return {"email": f"Me@email.com", "id": str(uuid4())}
+    return {"email": f"{name.lower()}@email.com", "age": age}
 
 
-class TestView(PostMixin, BaseAPIView):
+class ExampleView(PostMixin, BaseAPIView):
 
     pipelines = {
         "POST": (test_method,),
@@ -31,6 +31,5 @@ class TestView(PostMixin, BaseAPIView):
 
 
 urlpatterns = [
-    path("", TestView.as_view(), name="test_view"),
-    path("admin/", admin.site.urls),
+    re_path(r"^$", ExampleView.as_view(), name="test_view"),
 ]

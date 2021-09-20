@@ -1,5 +1,4 @@
 from inspect import isclass
-from typing import Any, Dict, Iterable, Type
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -7,7 +6,7 @@ from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
-from .types import PipelineDefinition, PipelineLogic, PipelinesDict, ViewContext
+from .typing import Any, Dict, Iterable, PipelineDefinition, PipelineLogic, PipelinesDict, Type, ViewContext
 from .utils import serializer_from_callable
 
 

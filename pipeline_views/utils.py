@@ -4,7 +4,6 @@ from decimal import Decimal
 from functools import wraps
 from inspect import getfullargspec
 from itertools import chain
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union
 
 from django.conf import settings
 from django.utils.translation import override
@@ -26,6 +25,7 @@ from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
 from .serializers import MockSerializer
+from .typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union
 
 
 __all__ = [

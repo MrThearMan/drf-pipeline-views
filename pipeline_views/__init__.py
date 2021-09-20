@@ -14,6 +14,3 @@ __all__ = [
     "MockSerializer",
     "NextLogicBlock",
 ]
-
-
-__version__ = "0.1.1"

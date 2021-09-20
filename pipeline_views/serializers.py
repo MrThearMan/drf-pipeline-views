@@ -1,6 +1,6 @@
-from typing import Any, Dict
-
 from rest_framework.serializers import Serializer
+
+from .typing import Any, Dict
 
 
 __all__ = [

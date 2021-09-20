@@ -2,12 +2,7 @@ import pytest
 from rest_framework.fields import CharField, IntegerField
 from rest_framework.serializers import Serializer
 
-from pipeline_views import __version__
 from pipeline_views.exceptions import NextLogicBlock
-
-
-def test_version():
-    assert __version__ == "0.1.1"
 
 
 def test_BaseAPIView__one_logic_callable(base_api_view):
