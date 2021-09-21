@@ -52,22 +52,24 @@ exclude = [
 python = ">=3.6.1,<4"
 Django = ">=1.10"
 djangorestframework = ">=3.7.0"
+typing-extensions = "^3.10.0"
 
 [tool.poetry.dev-dependencies]
-# For testing
+# For testing and CI
 pytest-cov = "^2.12.1"
 pytest-django = "^4.4.0"
-# For committing and CI
 pre-commit = "^2.13.0"
 coveralls = "^3.2.0"
 tox-gh-actions = "^2.7.0"
 tox = "^3.24.4"
-# For running mypy
+# Documentation
+Sphinx = "^4.2.0"
+sphinx-rtd-theme = "^1.0.0"
+# Code style
+flake8 = "^3.9.2"
 mypy = "^0.910"
 django-stubs = "^1.9.0"
 djangorestframework-stubs = "^1.4.0"
-# Required for python versions 3.6 and 3.7
-typing-extensions = { version = "^3.10.0", optional = true }
 
 [tool.poetry.extras]
 typing-extensions = ["typing-extensions"]
@@ -80,6 +82,12 @@ profile = "black"
 line_length = 120
 skip_gitignore = "True"
 lines_after_imports = 2
+
+[tool.pylint.MASTER]
+ignore-paths = [
+    "tests/*",
+    "docs/*",
+]
 
 [tool.pylint.messages_control]
 disable = "C0330, C0326, C0114, C0115, C0116, R0903, R1721"
@@ -106,9 +114,11 @@ relative_files = true
 omit = [
     "tests/*",
     ".venv/*",
+    "docs/*",
 ]
 exclude_lines = [
     "if TYPE_CHECKING:",
+    "except ImportError:"
 ]
 
 [tool.tox]
