@@ -59,9 +59,9 @@ typing-extensions = "^3.10.0"
 pytest-cov = "^2.12.1"
 pytest-django = "^4.4.0"
 pre-commit = "^2.13.0"
-coveralls = "^3.2.0"
 tox-gh-actions = "^2.7.0"
 tox = "^3.24.4"
+coveralls = "^3.2.0"
 # Documentation
 Sphinx = "^4.2.0"
 sphinx-rtd-theme = "^1.0.0"
@@ -115,6 +115,7 @@ omit = [
     "tests/*",
     ".venv/*",
     "docs/*",
+    ".tox/*"
 ]
 exclude_lines = [
     "if TYPE_CHECKING:",
@@ -158,7 +159,7 @@ deps =
     pytest-cov
     pytest-django
 commands =
-    pytest -vv -s
+    coverage run -m pytest -vv -s
 """
 
 [build-system]
