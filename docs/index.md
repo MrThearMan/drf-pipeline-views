@@ -2,7 +2,6 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/MrThearMan/drf-pipeline-views/badge.svg?branch=main)](https://coveralls.io/github/MrThearMan/drf-pipeline-views?branch=main)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/MrThearMan/drf-pipeline-views/Tests)](https://github.com/MrThearMan/drf-pipeline-views/actions/workflows/main.yml)
-[![Documentation Status](https://readthedocs.org/projects/drf-pipeline-views/badge/?version=latest)](https://drf-pipeline-views.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/drf-pipeline-views)](https://pypi.org/project/drf-pipeline-views)
 [![GitHub](https://img.shields.io/github/license/MrThearMan/drf-pipeline-views)](https://github.com/MrThearMan/drf-pipeline-views/blob/main/LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/MrThearMan/drf-pipeline-views)](https://github.com/MrThearMan/drf-pipeline-views/commits/main)
@@ -18,9 +17,9 @@ pip install drf-pipeline-views
 ```
 ---
 
-**Documentation**: [https://drf-pipeline-views.readthedocs.io/](https://drf-pipeline-views.readthedocs.io/)
+**Documentation**: [https://mrthearman.github.io/drf-pipeline-views/](https://mrthearman.github.io/drf-pipeline-views/)
 
-**Source Doce**: [https://github.com/MrThearMan/drf-pipeline-views](https://github.com/MrThearMan/drf-pipeline-views)
+**Source Code**: [https://github.com/MrThearMan/drf-pipeline-views](https://github.com/MrThearMan/drf-pipeline-views)
 
 ---
 
