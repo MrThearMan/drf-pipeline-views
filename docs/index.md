@@ -24,6 +24,8 @@ pip install drf-pipeline-views
 
 ---
 
+## Preface
+
 Inspired by a talk on [The Clean Architecture in Python](https://archive.org/details/pyvideo_2840___The_Clean_Architecture_in_Python)
 by Brandon Rhodes, **drf-pipeline-views** aims to simplify writing testable API endpoints with
 [Django REST framework](https://www.django-rest-framework.org/) using the
@@ -36,5 +38,3 @@ of the pipeline. Furthermore, IO can be separated into its own step, making the 
 logic simpler and faster to test by not having to mock or do any other special setup around the IO.
 This also means that the IO block, or in fact any other part of the application, can be replaced as long as the
 data flowing through the pipeline remains the same.
-
-Have a look at the quickstart section in the documentation on basic usage.

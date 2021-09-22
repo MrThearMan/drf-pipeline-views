@@ -1,0 +1,10 @@
+site_name: Django REST Framework Pipeline Views
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+theme:
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - python
+    - yaml
