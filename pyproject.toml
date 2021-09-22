@@ -53,6 +53,9 @@ python = ">=3.6.1,<4"
 Django = ">=1.10"
 djangorestframework = ">=3.7.0"
 typing-extensions = "^3.10.0"
+# For read the docs
+Sphinx = {version = "^4.2.0", optional = true}
+sphinx-rtd-theme = {version = "^1.0.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 # For testing and CI
@@ -62,17 +65,20 @@ pre-commit = "^2.13.0"
 tox-gh-actions = "^2.7.0"
 tox = "^3.24.4"
 coveralls = "^3.2.0"
-# Documentation
+# For documentation
 Sphinx = "^4.2.0"
 sphinx-rtd-theme = "^1.0.0"
-# Code style
+# For code style
 flake8 = "^3.9.2"
 mypy = "^0.910"
 django-stubs = "^1.9.0"
 djangorestframework-stubs = "^1.4.0"
 
 [tool.poetry.extras]
-typing-extensions = ["typing-extensions"]
+docs = [
+    "Sphinx",
+    "sphinx-rtd-theme",
+]
 
 [tool.black]
 line-length = 120
