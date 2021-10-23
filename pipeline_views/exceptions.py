@@ -14,3 +14,9 @@ class NextLogicBlock(Exception):
     def __init__(self, **kwargs: Any):
         self.output = kwargs
         super().__init__()
+
+    @classmethod
+    def with_output(cls, output: Any):
+        instance = cls()
+        instance.output = output
+        return instance

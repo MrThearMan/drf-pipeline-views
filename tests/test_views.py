@@ -69,7 +69,7 @@ def test_BaseAPIView__three_logic_callables__two_in_same_step(base_api_view):
     assert response.status_code == 200
 
 
-def test_BaseAPIView__three_logic_callables__next_step_prematurely__no_next_step(base_api_view):
+def test_BaseAPIView__three_logic_callables__NextLogicBlock__no_next_step(base_api_view):
     def callable_method1(testing: int):
         return {"testing": testing * 2}
 
@@ -88,7 +88,7 @@ def test_BaseAPIView__three_logic_callables__next_step_prematurely__no_next_step
     assert response.status_code == 200
 
 
-def test_BaseAPIView__three_logic_callables__next_step_prematurely__next_step_exists(base_api_view):
+def test_BaseAPIView__three_logic_callables__NextLogicBlock__next_step_exists(base_api_view):
     def callable_method1(testing: int):
         raise NextLogicBlock(testing=testing)
 
@@ -107,7 +107,7 @@ def test_BaseAPIView__three_logic_callables__next_step_prematurely__next_step_ex
     assert response.status_code == 200
 
 
-def test_BaseAPIView__three_logic_callables__next_step_prematurely__different_arguments(base_api_view):
+def test_BaseAPIView__three_logic_callables__NextLogicBlock__different_arguments(base_api_view):
     def callable_method1(testing: int):
         raise NextLogicBlock(error=123)
 
@@ -122,6 +122,25 @@ def test_BaseAPIView__three_logic_callables__next_step_prematurely__different_ar
 
     with pytest.raises(TypeError):
         response = base_api_view._process_request(data={"testing": 1212})
+
+
+def test_BaseAPIView__three_logic_callables__NextLogicBlock__with_output(base_api_view):
+    def callable_method1(testing: int):
+        raise NextLogicBlock.with_output(output=["this", "is", "the", "output"])
+
+    def callable_method2(testing: int):
+        return {"testing": testing * 2}
+
+    def callable_method3(testing: int):
+        return {"testing": testing * 2}
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [(callable_method1, callable_method2, callable_method3)]}
+
+    response = base_api_view._process_request(data={"testing": 1212})
+
+    assert response.data == ["this", "is", "the", "output"]
+    assert response.status_code == 200
 
 
 def test_BaseAPIView__logic_missing_for_http_method(base_api_view):
