@@ -285,3 +285,28 @@ def test_BaseAPIView__get_serializer__infer_from_logic_callable(base_api_view):
         "view": base_api_view,
     }
     assert type(serializer).__name__ == "CallableMethod1Serializer"
+
+
+def test_BaseAPIView__get_serializer__output_serializer(base_api_view):
+    class InputSerializer(Serializer):
+        name = CharField()
+        age = IntegerField()
+
+    def callable_method1(name: str, age: int):
+        return {"full_name": f"{name} Doe", "age": age}
+
+    class OutputSerializer(Serializer):
+        full_name = CharField()
+        age = IntegerField()
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [InputSerializer, callable_method1, OutputSerializer]}
+
+    serializer = base_api_view.get_serializer(output=True)
+
+    assert str(serializer.fields) == str({"full_name": CharField(), "age": IntegerField()})
+    assert serializer._context == {
+        "request": base_api_view.request,
+        "format": base_api_view.format_kwarg,
+        "view": base_api_view,
+    }

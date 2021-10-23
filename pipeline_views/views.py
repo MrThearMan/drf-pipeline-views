@@ -64,7 +64,7 @@ class BaseAPIView(APIView):
 
     def get_serializer(self, *args: Any, **kwargs: Any) -> Serializer:
         """Initialize serializer for current request HTTP method."""
-        kwargs["serializer_class"] = self.get_serializer_class()
+        kwargs["serializer_class"] = self.get_serializer_class(output=kwargs.pop("output", False))
         return self._initialize_serializer(*args, **kwargs)
 
     def _initialize_serializer(self, serializer_class: Type[Serializer], *args: Any, **kwargs: Any) -> Serializer:
@@ -72,18 +72,21 @@ class BaseAPIView(APIView):
         kwargs.setdefault("many", getattr(serializer_class, "many", False))
         return serializer_class(*args, **kwargs)
 
-    def get_serializer_class(self) -> Type[Serializer]:
+    def get_serializer_class(self, output: bool = False) -> Type[Serializer]:
         """Get the first step in the current HTTP method's pipeline.
         If it's a Serializer, return it. Otherwise, try to infer a serializer from the
         logic callable's parameters.
         """
         pipeline = self._get_pipeline_for_current_request_method()
-        input_step = next(iter(pipeline))
+        if output:
+            *_, step = pipeline
+        else:
+            step = next(iter(pipeline))
 
-        if isclass(input_step):
-            return input_step
+        if isclass(step):
+            return step
 
-        return serializer_from_callable(input_step)
+        return serializer_from_callable(step)
 
     def get_serializer_context(self) -> ViewContext:
         """Return serializer context, mainly for browerable api."""
