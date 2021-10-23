@@ -1,23 +1,29 @@
 # Quickstart
+
 ##  Basic Usage
 
 Let's create a basic pipeline:
 
 ```python
 def step1(step1_input1, step1_input2):
-    # Process the data...
-    return {"step2_input1": ..., "step2_input2": ...}
-
-def step2(step2_input1, step2_input2):
-    # Maybe do some IO...
+    # Process the data to different form
     return {"step3_input1": ..., "step3_input2": ...}
 
-def step3(step3_input1, step3_input2):
-    # Process the data, but do not pass on anything...
+def step2(**kwargs):
+    # Run validation without touching the data
+    return kwargs
+
+def step3(step3_input1, step3_input2):  # Matches return from step 1
+    # Maybe do some database or API calls here
+    # to isolate it from the rest of the rest of the logic
+    return {"step4_input1": ..., "step4_input2": ..., "step4_input3": ...}
+
+def step4(step4_input1, step4_input2, **kwargs):  # Ignore other inputs
+    # Process the data, but do not return anything -> next step takes no input
     return
 
-def step4():
-    # Build some response...
+def step5():
+    # Build some response
     return {"end_result1": ..., "end_result2": ...}
 ```
 
@@ -52,6 +58,7 @@ class SomeView(GetMixin, BaseAPIView):
             step2,
             step3,
             step4,
+            step5,
         ],
         OutputSerializer,
     ],
@@ -75,6 +82,7 @@ class SomeView(GetMixin, BaseAPIView):
         step2,
         step3,
         step4,
+        step5,
     ],
   }
 ```
@@ -121,9 +129,10 @@ class SomeView(GetMixin, BaseAPIView):
 ```
 
 Logic blocks are useful if you want to skip some logic methods under certain conditions, e.g., to return a cached result.
-This can be accomplished by raising a `NextLogicBlock` exception. The exception can be initialized with
-any number of keyword arguments that will be passed to the next step in the logic, or to the response if it's
-the last step in the logic.
+This can be accomplished by raising a `NextLogicBlock` exception. The exception can be initialized with:
+1. `NextLogicBlock()`, which passes given keyword arguments to the next step in the logic (or to the response if it's
+the last step in the logic) as a dictionary
+2. `NextLogicBlock.with_output(output=...)`, which passes any other output like lists or strings.
 
 ```python
 from pipeline_views import NextLogicBlock
@@ -138,11 +147,41 @@ def block1_step2(step2_input1, step2_input2):
     ...
 
 def block2_step1(step3_input1, step3_input2):
+    if condition:
+        raise NextLogicBlock.with_output(output=...)
     ...
 
 def block2_step2():
     ...
 ```
+
+Logic blocks can be stacked recursively inside each other. In this case, `NextLogicBlock` will return to the parent logic block.
+
+```python
+class SomeView(GetMixin, BaseAPIView):
+
+  pipelines = {
+    "GET": [
+        [
+            block1_step1,
+            [
+                block2_step1,
+                [
+                    block3_step1,
+                    [
+                        ...
+                    ],
+                ],
+            ],
+        ],
+    ],
+  }
+```
+
+> Note that `NextLogicBlock` does not work on the base level of the pipeline! The base level of the pipeline should be treated
+> as mandatory for the endpoint, keeping the justification for input and output serializers in mind.
+> If you need to escape all of you logic, you can simply put it to a single block on the base level and rely on inferred serializers.
+> You might also consider raising exceptions from rest_framework.exceptions (or maybe even your own) to interrupt the path logic completely.
 
 ## Modifying endpoint data
 
