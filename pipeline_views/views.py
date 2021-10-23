@@ -42,15 +42,14 @@ class BaseAPIView(APIView):
         except KeyError as missing_method:
             raise KeyError(f"Pipeline not configured for HTTP method '{self.request.method}'") from missing_method
 
-    @staticmethod
-    def _run_logic(logic: PipelineLogic, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Run a logic step."""
+    def _run_logic(self, logic: PipelineLogic, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Run pipeline logic recursively."""
         if not isinstance(logic, Iterable):
             return logic(**data) or {}
 
         try:
             for step in logic:
-                data = step(**data) or {}
+                data = self._run_logic(logic=step, data=data)
         except NextLogicBlock as premature_return:
             return premature_return.output
 

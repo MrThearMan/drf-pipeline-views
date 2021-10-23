@@ -69,7 +69,7 @@ __all__ = [
 
 MethodType = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
 LogicCallable = Callable[..., Optional[Dict[str, Any]]]
-PipelineLogic = Union[LogicCallable, Iterable[LogicCallable]]
+PipelineLogic = Union[LogicCallable, Iterable["PipelineLogic"]]
 PipelineDefinition = Iterable[Union[PipelineLogic, Type[Serializer]]]
 PipelinesDict = Dict[MethodType, PipelineDefinition]
 

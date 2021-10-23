@@ -69,6 +69,25 @@ def test_BaseAPIView__three_logic_callables__two_in_same_step(base_api_view):
     assert response.status_code == 200
 
 
+def test_BaseAPIView__three_logic_callables__recursive(base_api_view):
+    def callable_method1(testing: int):
+        return {"testing": testing * 2}
+
+    def callable_method2(testing: int):
+        return {"testing": testing * 2}
+
+    def callable_method3(testing: int):
+        return {"testing": testing * 2}
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [(callable_method1, (callable_method2, (callable_method3,)))]}
+
+    response = base_api_view._process_request(data={"testing": 1212})
+
+    assert response.data == {"testing": 9696}
+    assert response.status_code == 200
+
+
 def test_BaseAPIView__three_logic_callables__NextLogicBlock__no_next_step(base_api_view):
     def callable_method1(testing: int):
         return {"testing": testing * 2}
