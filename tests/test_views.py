@@ -351,3 +351,63 @@ def test_BaseAPIView__get_serializer__infer_from_logic_callable__output_serializ
         "format": base_api_view.format_kwarg,
         "view": base_api_view,
     }
+
+
+@pytest.mark.parametrize("key,result", [[1, 20], [2, 40]])
+def test_BaseAPIView__conditional(base_api_view, key: int, result: int):
+    def callable_method1(param: int):
+        return key, {"param": param}
+
+    def callable_method2(param: int):
+        return {"result": param * 2}
+
+    def callable_method3(param: int):
+        return {"result": param * 4}
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [callable_method1, {1: callable_method2, 2: callable_method3}]}
+
+    response = base_api_view._process_request(data={"param": 10})
+
+    assert response.data == {"result": result}
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize("key,result", [[1, 20], [2, 40]])
+def test_BaseAPIView__conditional__inside_logic_block(base_api_view, key: int, result: int):
+    def callable_method1(param: int):
+        return key, {"param": param}
+
+    def callable_method2(param: int):
+        return {"result": param * 2}
+
+    def callable_method3(param: int):
+        return {"result": param * 4}
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [[callable_method1, {1: callable_method2, 2: callable_method3}]]}
+
+    response = base_api_view._process_request(data={"param": 10})
+
+    assert response.data == {"result": result}
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize("key,result", [[0, 20], [1, 40]])
+def test_BaseAPIView__conditional__select_only_one_method_from_next_logic_block(base_api_view, key: int, result: int):
+    def callable_method1(param: int):
+        return key, {"param": param}
+
+    def callable_method2(param: int):
+        return {"param": param * 2}
+
+    def callable_method3(param: int):
+        return {"param": param * 4}
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [callable_method1, [callable_method2, callable_method3]]}
+
+    response = base_api_view._process_request(data={"param": 10})
+
+    assert response.data == {"param": result}
+    assert response.status_code == 200

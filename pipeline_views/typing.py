@@ -64,11 +64,16 @@ __all__ = [
     "Union",
     "Generator",
     "Protocol",
+    "DataDict",
+    "DataConditional",
+    "DataReturn",
 ]
 
-
+DataDict = Dict[str, Any]
+DataConditional = Tuple[Any, DataDict]
+DataReturn = Union[DataDict, DataConditional]
 MethodType = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
-LogicCallable = Callable[..., Optional[Dict[str, Any]]]
+LogicCallable = Callable[..., Optional[DataReturn]]
 PipelineLogic = Union[LogicCallable, Iterable["PipelineLogic"]]
 PipelineDefinition = Iterable[Union[PipelineLogic, Type[Serializer]]]
 PipelinesDict = Dict[MethodType, PipelineDefinition]

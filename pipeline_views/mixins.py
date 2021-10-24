@@ -1,7 +1,7 @@
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from .typing import Any, Dict, Protocol
+from .typing import Any, DataDict, Protocol
 from .utils import translate
 
 
@@ -15,7 +15,7 @@ __all__ = [
 
 
 class HTTPMethod(Protocol):
-    def _process_request(self, data: Dict[str, Any]) -> Response:
+    def _process_request(self, data: DataDict) -> Response:
         """Process request"""
 
 

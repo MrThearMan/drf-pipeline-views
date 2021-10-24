@@ -18,7 +18,7 @@ def step3(step3_input1, step3_input2):  # Matches return from step 1
     # to isolate it from the rest of the rest of the logic
     return {"step4_input1": ..., "step4_input2": ..., "step4_input3": ...}
 
-def step4(step4_input1, step4_input2, **kwargs):  # Ignore other inputs
+def step4(step4_input1, step4_input2, **kwargs):  # Ignore other inputs with kwargs
     # Process the data, but do not return anything -> next step takes no input
     return
 
@@ -50,19 +50,19 @@ from pipeline_views import BaseAPIView, GetMixin
 
 class SomeView(GetMixin, BaseAPIView):
 
-  pipelines = {
-    "GET": [
-        InputSerializer,
-        [
-            step1,
-            step2,
-            step3,
-            step4,
-            step5,
+    pipelines = {
+        "GET": [
+            InputSerializer,
+            [
+                step1,
+                step2,
+                step3,
+                step4,
+                step5,
+            ],
+            OutputSerializer,
         ],
-        OutputSerializer,
-    ],
-  }
+    }
 ```
 
 Using input and output serializers like this forces verification of the incoming and outcoming data,
@@ -76,15 +76,15 @@ Using serializers is totally optional. A pipeline like this will work just as we
 ```python
 class SomeView(GetMixin, BaseAPIView):
 
-  pipelines = {
-    "GET": [
-        step1,
-        step2,
-        step3,
-        step4,
-        step5,
-    ],
-  }
+    pipelines = {
+        "GET": [
+            step1,
+            step2,
+            step3,
+            step4,
+            step5,
+        ],
+    }
 ```
 
 BaseAPIView will try to infer a serializer with the correct serializer fields for
@@ -114,24 +114,27 @@ Pipeline logic can be grouped into blocks:
 ```python
 class SomeView(GetMixin, BaseAPIView):
 
-  pipelines = {
-    "GET": [
-        [
-            block1_step1,
-            block1_step2,
+    pipelines = {
+        "GET": [
+            [
+                block1_step1,
+                block1_step2,
+            ],
+            [
+                block2_step1,
+                block2_step2,
+            ],
         ],
-        [
-            block2_step1,
-            block2_step2,
-        ],
-    ],
-  }
+    }
 ```
 
-Logic blocks are useful if you want to skip some logic methods under certain conditions, e.g., to return a cached result.
-This can be accomplished by raising a `NextLogicBlock` exception. The exception can be initialized with:
+Logic blocks are useful if you want to skip some logic methods under certain conditions,
+e.g., to return a cached result. This can be accomplished by raising a `NextLogicBlock` exception.
+The exception can be initialized with:
+
 1. `NextLogicBlock()`, which passes given keyword arguments to the next step in the logic (or to the response if it's
 the last step in the logic) as a dictionary
+
 2. `NextLogicBlock.with_output(output=...)`, which passes any other output like lists or strings.
 
 ```python
@@ -155,33 +158,92 @@ def block2_step2():
     ...
 ```
 
-Logic blocks can be stacked recursively inside each other. In this case, `NextLogicBlock` will return to the parent logic block.
+Logic blocks can be stacked recursively inside each other. In this case, `NextLogicBlock` will return to the
+parent logic block.
 
 ```python
 class SomeView(GetMixin, BaseAPIView):
 
-  pipelines = {
-    "GET": [
-        [
-            block1_step1,
+    pipelines = {
+        "GET": [
             [
-                block2_step1,
+                block1_step1,
                 [
-                    block3_step1,
+                    block2_step1,
                     [
-                        ...
+                        block3_step1,
+                        [
+                            ...
+                        ],
                     ],
                 ],
             ],
         ],
-    ],
-  }
+    }
 ```
 
-> Note that `NextLogicBlock` does not work on the base level of the pipeline! The base level of the pipeline should be treated
-> as mandatory for the endpoint, keeping the justification for input and output serializers in mind.
-> If you need to escape all of you logic, you can simply put it to a single block on the base level and rely on inferred serializers.
-> You might also consider raising exceptions from rest_framework.exceptions (or maybe even your own) to interrupt the path logic completely.
+> Note that `NextLogicBlock` does not work on the base level of the pipeline! The base level of the
+> pipeline should be treated as mandatory for the endpoint, keeping the justification for input and output serializers
+> in mind. If you need to escape all of you logic, you can simply put it to a single block on the base level
+> and rely on inferred serializers. You might also consider raising exceptions from rest_framework.exceptions
+> (or maybe even your own) to interrupt the path logic completely.
+
+
+## Conditional logic paths
+
+Sometimes you might want to run different logic based on the output from the previous logic method.
+This can be accomplished with conditional logic paths.
+
+```python
+def step1(data):
+    if condition:
+        return "foo", data
+    else:
+        return "bar", data
+
+
+class SomeView(GetMixin, BaseAPIView):
+
+    pipelines = {
+        "GET": [
+            step1,
+            {
+                "foo": step2_1,
+                "bar": step2_2,
+            },
+            ...
+        ],
+    }
+```
+
+Notice that `step1` returned a tuple of the data and key used to select the logic in the next step.
+Data should still be a dict, which matches what ever logic the key selects from the next step.
+Conditional paths also work inside logic blocks.
+
+You could also use conditionals to run only one method from a logic block, since it just uses
+`__getitem__` to select the next logic method.
+
+```python
+def step1(data):
+    if condition:
+        return 0, data
+    else:
+        return 1, data
+
+
+class SomeView(GetMixin, BaseAPIView):
+
+    pipelines = {
+        "GET": [
+            step1,
+            [
+                block1_step1,  # run if condition is truthy
+                block1_step2,  # run if condition is falsy
+            ],
+            ...
+        ],
+    }
+```
 
 ## Modifying endpoint data
 

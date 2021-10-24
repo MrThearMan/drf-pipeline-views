@@ -6,7 +6,17 @@ from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
-from .typing import Any, Dict, Iterable, PipelineDefinition, PipelineLogic, PipelinesDict, Type, ViewContext
+from .typing import (
+    Any,
+    DataDict,
+    DataReturn,
+    Iterable,
+    PipelineDefinition,
+    PipelineLogic,
+    PipelinesDict,
+    Type,
+    ViewContext,
+)
 from .utils import serializer_from_callable
 
 
@@ -21,11 +31,15 @@ class BaseAPIView(APIView):
     pipelines: PipelinesDict = {}
     """Dictionary describing the HTTP method pipelines."""
 
-    def _process_request(self, data: Dict[str, Any]) -> Response:
+    def _process_request(self, data: DataDict) -> Response:
         """Process request in a pipeline-fashion."""
         pipeline = self._get_pipeline_for_current_request_method()
 
         for step in pipeline:
+            if isinstance(data, tuple):
+                key, data = data
+                step = step[key]
+
             if isclass(step):
                 data = self._run_serializer(serializer_class=step, data=data)
             else:
@@ -42,20 +56,23 @@ class BaseAPIView(APIView):
         except KeyError as missing_method:
             raise KeyError(f"Pipeline not configured for HTTP method '{self.request.method}'") from missing_method
 
-    def _run_logic(self, logic: PipelineLogic, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
         """Run pipeline logic recursively."""
         if not isinstance(logic, Iterable):
             return logic(**data) or {}
 
         try:
             for step in logic:
+                if isinstance(data, tuple):
+                    key, data = data
+                    step = step[key]
                 data = self._run_logic(logic=step, data=data)
         except NextLogicBlock as premature_return:
             return premature_return.output
 
         return data
 
-    def _run_serializer(self, serializer_class: Type[Serializer], data: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_serializer(self, serializer_class: Type[Serializer], data: DataDict) -> DataDict:
         """Build and validate a serializer"""
         serializer = self._initialize_serializer(serializer_class=serializer_class, data=data)
         serializer.is_valid(raise_exception=True)
