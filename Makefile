@@ -21,7 +21,7 @@ help:
 	@echo "  submit-docs      Sumbit docs to github pages."
 	@echo "  lock             Resolve dependencies into the poetry lock-file."
 	@echo "  tests            Run tests with pytest-cov."
-	@echo "  test \"<name>\"    Run tests with pytest-cov."
+	@echo "  test \"<name>\"    Run tests maching the given <name>"
 	@echo "  tox              Run tests with tox."
 	@echo "  pre-commit       Run pre-commit hooks on all files."
 	@echo "  black            Run black on all files."
