@@ -287,6 +287,24 @@ def test_BaseAPIView__get_serializer__infer_from_logic_callable(base_api_view):
     assert type(serializer).__name__ == "CallableMethod1Serializer"
 
 
+def test_BaseAPIView__get_serializer__infer_from_logic_callable__inside_logic_block(base_api_view):
+    def callable_method1(name: str, age: int):
+        pass
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [[callable_method1]]}
+
+    serializer = base_api_view.get_serializer()
+
+    assert str(serializer.fields) == str({"name": CharField(), "age": IntegerField()})
+    assert serializer._context == {
+        "request": base_api_view.request,
+        "format": base_api_view.format_kwarg,
+        "view": base_api_view,
+    }
+    assert type(serializer).__name__ == "CallableMethod1Serializer"
+
+
 def test_BaseAPIView__get_serializer__output_serializer(base_api_view):
     class InputSerializer(Serializer):
         name = CharField()
@@ -305,6 +323,29 @@ def test_BaseAPIView__get_serializer__output_serializer(base_api_view):
     serializer = base_api_view.get_serializer(output=True)
 
     assert str(serializer.fields) == str({"full_name": CharField(), "age": IntegerField()})
+    assert serializer._context == {
+        "request": base_api_view.request,
+        "format": base_api_view.format_kwarg,
+        "view": base_api_view,
+    }
+
+
+def test_BaseAPIView__get_serializer__infer_from_logic_callable__output_serializer(base_api_view):
+    def callable_method1(param1: int):
+        return {"param2": param1 * 2}
+
+    def callable_method2(param2: int):
+        return {"param3": param2 * 2}
+
+    def callable_method3(param3: int):
+        return {"testing": param3 * 2}
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [[callable_method1, callable_method2, callable_method3]]}
+
+    serializer = base_api_view.get_serializer(output=True)
+
+    assert str(serializer.fields) == str({"param3": IntegerField()})
     assert serializer._context == {
         "request": base_api_view.request,
         "format": base_api_view.format_kwarg,

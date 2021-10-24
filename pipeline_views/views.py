@@ -77,11 +77,13 @@ class BaseAPIView(APIView):
         If it's a Serializer, return it. Otherwise, try to infer a serializer from the
         logic callable's parameters.
         """
-        pipeline = self._get_pipeline_for_current_request_method()
-        if output:
-            *_, step = pipeline
-        else:
-            step = next(iter(pipeline))
+        step = self._get_pipeline_for_current_request_method()
+
+        while isinstance(step, Iterable):
+            if output:
+                *_, step = step
+            else:
+                step = next(iter(step))
 
         if isclass(step):
             return step
