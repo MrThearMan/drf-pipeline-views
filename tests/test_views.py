@@ -350,6 +350,14 @@ def test_BaseAPIView__get_serializer(base_api_view):
     }
 
 
+def test_BaseAPIView__get_serializer__not_a_serializer(base_api_view):
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [1, 2, 3]}
+
+    with pytest.raises(TypeError, match="Only Serializers and callables are supported in the pipeline."):
+        base_api_view.get_serializer()
+
+
 def test_BaseAPIView__get_serializer__infer_from_logic_callable(base_api_view):
     def callable_method1(name: str, age: int):
         pass

@@ -36,7 +36,7 @@ except ImportError:
     )
 
 from rest_framework.request import Request
-from rest_framework.serializers import Serializer
+from rest_framework.serializers import BaseSerializer
 
 
 if TYPE_CHECKING:
@@ -66,14 +66,16 @@ __all__ = [
     "DataDict",
     "DataConditional",
     "DataReturn",
+    "SerializerType",
 ]
 
 DataDict = Dict[str, Any]
+SerializerType = Type[BaseSerializer]
 DataConditional = Tuple[Any, DataDict]
 DataReturn = Union[DataDict, DataConditional]
 HTTPMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
 LogicCallable = Callable[..., Optional[DataReturn]]
-PipelineLogic = Union[LogicCallable, Type[Serializer], Iterable["PipelineLogic"]]
+PipelineLogic = Union[LogicCallable, SerializerType, Iterable["PipelineLogic"]]
 PipelinesDict = Dict[HTTPMethod, PipelineLogic]
 
 

@@ -1,13 +1,21 @@
-from inspect import isclass
-
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.serializers import Serializer
+from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
-from .typing import Any, Callable, DataDict, DataReturn, Iterable, PipelineLogic, PipelinesDict, Type, ViewContext
-from .utils import serializer_from_callable
+from .typing import (
+    Any,
+    Callable,
+    DataDict,
+    DataReturn,
+    Iterable,
+    PipelineLogic,
+    PipelinesDict,
+    SerializerType,
+    ViewContext,
+)
+from .utils import is_serializer_class, serializer_from_callable
 
 
 __all__ = [
@@ -48,7 +56,7 @@ class BaseAPIView(APIView):
                     key, data = data
                     step = step[key]
 
-                if isinstance(step, type) and issubclass(step, Serializer):
+                if is_serializer_class(step):
                     data = self._run_serializer(serializer_class=step, data=data)
                 elif isinstance(step, (Iterable, Callable)):  # pylint: disable=W1116
                     data = self._run_logic(logic=step, data=data)
@@ -60,24 +68,24 @@ class BaseAPIView(APIView):
 
         return data
 
-    def _run_serializer(self, serializer_class: Type[Serializer], data: DataDict) -> DataDict:
+    def _run_serializer(self, serializer_class: SerializerType, data: DataDict) -> DataDict:
         """Build and validate a serializer"""
         serializer = self._initialize_serializer(serializer_class=serializer_class, data=data)
         serializer.is_valid(raise_exception=True)
         data = serializer.data
         return data
 
-    def get_serializer(self, *args: Any, **kwargs: Any) -> Serializer:
+    def get_serializer(self, *args: Any, **kwargs: Any) -> BaseSerializer:
         """Initialize serializer for current request HTTP method."""
         kwargs["serializer_class"] = self.get_serializer_class(output=kwargs.pop("output", False))
         return self._initialize_serializer(*args, **kwargs)
 
-    def _initialize_serializer(self, serializer_class: Type[Serializer], *args: Any, **kwargs: Any) -> Serializer:
+    def _initialize_serializer(self, serializer_class: SerializerType, *args: Any, **kwargs: Any) -> BaseSerializer:
         kwargs.setdefault("context", self.get_serializer_context())
         kwargs.setdefault("many", getattr(serializer_class, "many", False))
         return serializer_class(*args, **kwargs)
 
-    def get_serializer_class(self, output: bool = False) -> Type[Serializer]:
+    def get_serializer_class(self, output: bool = False) -> SerializerType:
         """Get the first step in the current HTTP method's pipeline.
         If it's a Serializer, return it. Otherwise, try to infer a serializer from the
         logic callable's parameters.
@@ -90,10 +98,12 @@ class BaseAPIView(APIView):
             else:
                 step = next(iter(step))
 
-        if isclass(step):
+        if is_serializer_class(step):
             return step
+        if isinstance(step, Callable):  # pylint: disable=W1116
+            return serializer_from_callable(step)
 
-        return serializer_from_callable(step)
+        raise TypeError("Only Serializers and callables are supported in the pipeline.")
 
     def get_serializer_context(self) -> ViewContext:
         """Return serializer context, mainly for browerable api."""

@@ -22,7 +22,7 @@ from rest_framework.fields import (
     TimeField,
 )
 from rest_framework.request import Request
-from rest_framework.serializers import Serializer
+from rest_framework.serializers import BaseSerializer, Serializer
 
 from .serializers import MockSerializer
 from .typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union
@@ -32,6 +32,7 @@ __all__ = [
     "get_language",
     "translate",
     "parameter_types",
+    "is_serializer_class",
     "serializer_from_callable",
     "inline_serializer",
 ]
@@ -55,6 +56,10 @@ type_to_serializer_field: Dict[Type, Field] = {
     None: CharField,
     type: CharField,
 }
+
+
+def is_serializer_class(obj: Any) -> bool:
+    return isinstance(obj, type) and issubclass(obj, BaseSerializer)
 
 
 def snake_case_to_pascal_case(string: str) -> str:
@@ -159,7 +164,7 @@ def serializer_from_callable(func: Callable[..., Any]) -> Type[MockSerializer]:
 
 def inline_serializer(
     name: str,
-    super_class: Type[Serializer] = Serializer,
+    super_class: Type[BaseSerializer] = Serializer,
     fields: Dict[str, Field] = None,
-) -> Type[Serializer]:
+) -> Type[BaseSerializer]:
     return type(name, (super_class,), fields or {})  # type: ignore
