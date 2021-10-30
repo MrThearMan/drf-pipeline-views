@@ -42,7 +42,7 @@ def test_BaseAPIView__two_logic_callables__same_step(base_api_view):
         return {"testing": testing * 2}
 
     base_api_view.request.method = "GET"
-    base_api_view.pipelines = {"GET": [(callable_method1, callable_method2)]}
+    base_api_view.pipelines = {"GET": [[callable_method1, callable_method2]]}
 
     response = base_api_view._process_request(data={"testing": 1212})
 
@@ -61,7 +61,7 @@ def test_BaseAPIView__three_logic_callables__two_in_same_step(base_api_view):
         return {"testing": testing * 2}
 
     base_api_view.request.method = "GET"
-    base_api_view.pipelines = {"GET": [(callable_method1, callable_method2), callable_method3]}
+    base_api_view.pipelines = {"GET": [[callable_method1, callable_method2], callable_method3]}
 
     response = base_api_view._process_request(data={"testing": 1212})
 
@@ -80,7 +80,7 @@ def test_BaseAPIView__three_logic_callables__recursive(base_api_view):
         return {"testing": testing * 2}
 
     base_api_view.request.method = "GET"
-    base_api_view.pipelines = {"GET": [(callable_method1, (callable_method2, (callable_method3,)))]}
+    base_api_view.pipelines = {"GET": [[callable_method1, [callable_method2, [callable_method3]]]]}
 
     response = base_api_view._process_request(data={"testing": 1212})
 
@@ -88,7 +88,34 @@ def test_BaseAPIView__three_logic_callables__recursive(base_api_view):
     assert response.status_code == 200
 
 
-def test_BaseAPIView__three_logic_callables__NextLogicBlock__no_next_step(base_api_view):
+def test_BaseAPIView__broken_pipeline(base_api_view):
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [1, 2, 3]}
+
+    with pytest.raises(TypeError, match="Only Serializers and callables are supported in the pipeline."):
+        base_api_view._process_request(data={"testing": 1212})
+
+
+def test_BaseAPIView__get_pipeline(base_api_view):
+    def callable_method(testing: int):
+        return {"testing": testing * 2}
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [callable_method]}
+
+    pipeline = base_api_view._get_pipeline_for_current_request_method()
+
+    assert pipeline == base_api_view.pipelines["GET"]
+
+
+def test_BaseAPIView__get_pipeline__no_pipeline_defined(base_api_view):
+    base_api_view.request.method = "GET"
+
+    with pytest.raises(KeyError, match="Pipeline not configured for HTTP method 'GET'"):
+        base_api_view._get_pipeline_for_current_request_method()
+
+
+def test_BaseAPIView__three_logic_callables__NextLogicBlock__base_level(base_api_view):
     def callable_method1(testing: int):
         return {"testing": testing * 2}
 
@@ -99,7 +126,7 @@ def test_BaseAPIView__three_logic_callables__NextLogicBlock__no_next_step(base_a
         return {"testing": testing * 2}
 
     base_api_view.request.method = "GET"
-    base_api_view.pipelines = {"GET": [(callable_method1, callable_method2, callable_method3)]}
+    base_api_view.pipelines = {"GET": [callable_method1, callable_method2, callable_method3]}
 
     response = base_api_view._process_request(data={"testing": 1212})
 
@@ -107,7 +134,26 @@ def test_BaseAPIView__three_logic_callables__NextLogicBlock__no_next_step(base_a
     assert response.status_code == 200
 
 
-def test_BaseAPIView__three_logic_callables__NextLogicBlock__next_step_exists(base_api_view):
+def test_BaseAPIView__three_logic_callables__NextLogicBlock__inside_logic_block(base_api_view):
+    def callable_method1(testing: int):
+        return {"testing": testing * 2}
+
+    def callable_method2(testing: int):
+        raise NextLogicBlock(break_point="error")
+
+    def callable_method3(testing: int):
+        return {"testing": testing * 2}
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [[callable_method1, callable_method2, callable_method3]]}
+
+    response = base_api_view._process_request(data={"testing": 1212})
+
+    assert response.data == {"break_point": "error"}
+    assert response.status_code == 200
+
+
+def test_BaseAPIView__three_logic_callables__NextLogicBlock__next_block_exists(base_api_view):
     def callable_method1(testing: int):
         raise NextLogicBlock(testing=testing)
 
@@ -118,7 +164,7 @@ def test_BaseAPIView__three_logic_callables__NextLogicBlock__next_step_exists(ba
         return {"testing": testing * 2}
 
     base_api_view.request.method = "GET"
-    base_api_view.pipelines = {"GET": [(callable_method1, callable_method2), callable_method3]}
+    base_api_view.pipelines = {"GET": [[callable_method1, callable_method2], callable_method3]}
 
     response = base_api_view._process_request(data={"testing": 1212})
 
@@ -137,7 +183,7 @@ def test_BaseAPIView__three_logic_callables__NextLogicBlock__different_arguments
         return {"testing": testing * 2}
 
     base_api_view.request.method = "GET"
-    base_api_view.pipelines = {"GET": [(callable_method1, callable_method2), callable_method3]}
+    base_api_view.pipelines = {"GET": [[callable_method1, callable_method2], callable_method3]}
 
     with pytest.raises(TypeError):
         response = base_api_view._process_request(data={"testing": 1212})
@@ -154,7 +200,7 @@ def test_BaseAPIView__three_logic_callables__NextLogicBlock__with_output(base_ap
         return {"testing": testing * 2}
 
     base_api_view.request.method = "GET"
-    base_api_view.pipelines = {"GET": [(callable_method1, callable_method2, callable_method3)]}
+    base_api_view.pipelines = {"GET": [[callable_method1, callable_method2, callable_method3]]}
 
     response = base_api_view._process_request(data={"testing": 1212})
 
@@ -208,6 +254,20 @@ def test_BaseAPIView__one_serializer(base_api_view):
     assert response.status_code == 200
 
 
+def test_BaseAPIView__one_serializer__inside_logic_block(base_api_view):
+    class InputSerializer(Serializer):
+        name = CharField()
+        age = IntegerField()
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [[InputSerializer]]}
+
+    response = base_api_view._process_request(data={"name": "John", "age": 26})
+
+    assert response.data == {"name": "John", "age": 26}
+    assert response.status_code == 200
+
+
 def test_BaseAPIView__two_serializers_one_logic_callable(base_api_view):
     class InputSerializer(Serializer):
         name = CharField()
@@ -222,6 +282,27 @@ def test_BaseAPIView__two_serializers_one_logic_callable(base_api_view):
 
     base_api_view.request.method = "GET"
     base_api_view.pipelines = {"GET": [InputSerializer, callable_method1, OutputSerializer]}
+
+    response = base_api_view._process_request(data={"name": "John", "age": 26})
+
+    assert response.data == {"full_name": "John Doe", "age": 26}
+    assert response.status_code == 200
+
+
+def test_BaseAPIView__two_serializers_one_logic_callable__inside_logic_block(base_api_view):
+    class InputSerializer(Serializer):
+        name = CharField()
+        age = IntegerField()
+
+    def callable_method1(name: str, age: int):
+        return {"full_name": f"{name} Doe", "age": age}
+
+    class OutputSerializer(Serializer):
+        full_name = CharField()
+        age = IntegerField()
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [[InputSerializer, callable_method1, OutputSerializer]]}
 
     response = base_api_view._process_request(data={"name": "John", "age": 26})
 

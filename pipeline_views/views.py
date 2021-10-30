@@ -6,17 +6,7 @@ from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
-from .typing import (
-    Any,
-    DataDict,
-    DataReturn,
-    Iterable,
-    PipelineDefinition,
-    PipelineLogic,
-    PipelinesDict,
-    Type,
-    ViewContext,
-)
+from .typing import Any, Callable, DataDict, DataReturn, Iterable, PipelineLogic, PipelinesDict, Type, ViewContext
 from .utils import serializer_from_callable
 
 
@@ -34,22 +24,13 @@ class BaseAPIView(APIView):
     def _process_request(self, data: DataDict) -> Response:
         """Process request in a pipeline-fashion."""
         pipeline = self._get_pipeline_for_current_request_method()
-
-        for step in pipeline:
-            if isinstance(data, tuple):
-                key, data = data
-                step = step[key]
-
-            if isclass(step):
-                data = self._run_serializer(serializer_class=step, data=data)
-            else:
-                data = self._run_logic(logic=step, data=data)
+        data = self._run_logic(logic=pipeline, data=data)
 
         if data:
             return Response(data=data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def _get_pipeline_for_current_request_method(self) -> PipelineDefinition:
+    def _get_pipeline_for_current_request_method(self) -> PipelineLogic:
         """Get pipeline for the current HTTP method."""
         try:
             return self.pipelines[self.request.method]  # type: ignore
@@ -58,7 +39,7 @@ class BaseAPIView(APIView):
 
     def _run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
         """Run pipeline logic recursively."""
-        if not isinstance(logic, Iterable):
+        if isinstance(logic, Callable):  # pylint: disable=W1116
             return logic(**data) or {}
 
         try:
@@ -66,7 +47,14 @@ class BaseAPIView(APIView):
                 if isinstance(data, tuple):
                     key, data = data
                     step = step[key]
-                data = self._run_logic(logic=step, data=data)
+
+                if isinstance(step, type) and issubclass(step, Serializer):
+                    data = self._run_serializer(serializer_class=step, data=data)
+                elif isinstance(step, (Iterable, Callable)):  # pylint: disable=W1116
+                    data = self._run_logic(logic=step, data=data)
+                else:
+                    raise TypeError("Only Serializers and callables are supported in the pipeline.")
+
         except NextLogicBlock as premature_return:
             return premature_return.output
 

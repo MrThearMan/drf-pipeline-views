@@ -53,13 +53,11 @@ class SomeView(GetMixin, BaseAPIView):
     pipelines = {
         "GET": [
             InputSerializer,
-            [
-                step1,
-                step2,
-                step3,
-                step4,
-                step5,
-            ],
+            step1,
+            step2,
+            step3,
+            step4,
+            step5,
             OutputSerializer,
         ],
     }
@@ -109,7 +107,7 @@ This is only used by the Django REST Framework Browsable API to create forms.
 
 ## Logic Blocks
 
-Pipeline logic can be grouped into blocks:
+Pipeline logic, as well as serializers, can be grouped into blocks:
 
 ```python
 class SomeView(GetMixin, BaseAPIView):
@@ -121,6 +119,7 @@ class SomeView(GetMixin, BaseAPIView):
                 block1_step2,
             ],
             [
+                SerializerBlock2,
                 block2_step1,
                 block2_step2,
             ],
@@ -128,7 +127,7 @@ class SomeView(GetMixin, BaseAPIView):
     }
 ```
 
-Logic blocks are useful if you want to skip some logic methods under certain conditions,
+Logic blocks are useful if you want to skip some parts of the logic under certain conditions,
 e.g., to return a cached result. This can be accomplished by raising a `NextLogicBlock` exception.
 The exception can be initialized with:
 
@@ -182,11 +181,8 @@ class SomeView(GetMixin, BaseAPIView):
     }
 ```
 
-> Note that `NextLogicBlock` does not work on the base level of the pipeline! The base level of the
-> pipeline should be treated as mandatory for the endpoint, keeping the justification for input and output serializers
-> in mind. If you need to escape all of you logic, you can simply put it to a single block on the base level
-> and rely on inferred serializers. You might also consider raising exceptions from rest_framework.exceptions
-> (or maybe even your own) to interrupt the path logic completely.
+Although `NextLogicBlock` can be used on the base level of the pipeline, this should generally be avoided,
+keeping the justification for input and output serializers in mind.
 
 
 ## Conditional logic paths

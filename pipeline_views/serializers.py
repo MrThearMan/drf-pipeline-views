@@ -18,7 +18,7 @@ class MockSerializer(Serializer):
         return self.initial_data
 
     def create(self, validated_data: Any) -> Any:
-        """Creted to satisty linters."""
+        """Creted to satisfy linters."""
 
     def update(self, instance: Any, validated_data: Any) -> Any:
-        """Creted to satisty linters."""
+        """Creted to satisfy linters."""

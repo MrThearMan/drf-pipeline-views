@@ -44,10 +44,9 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    "MethodType",
+    "HTTPMethod",
     "LogicCallable",
     "PipelineLogic",
-    "PipelineDefinition",
     "PipelinesDict",
     "ViewContext",
     "TYPE_CHECKING",
@@ -72,11 +71,10 @@ __all__ = [
 DataDict = Dict[str, Any]
 DataConditional = Tuple[Any, DataDict]
 DataReturn = Union[DataDict, DataConditional]
-MethodType = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
+HTTPMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
 LogicCallable = Callable[..., Optional[DataReturn]]
-PipelineLogic = Union[LogicCallable, Iterable["PipelineLogic"]]
-PipelineDefinition = Iterable[Union[PipelineLogic, Type[Serializer]]]
-PipelinesDict = Dict[MethodType, PipelineDefinition]
+PipelineLogic = Union[LogicCallable, Type[Serializer], Iterable["PipelineLogic"]]
+PipelinesDict = Dict[HTTPMethod, PipelineLogic]
 
 
 class ViewContext(TypedDict):
