@@ -25,13 +25,12 @@ from rest_framework.request import Request
 from rest_framework.serializers import BaseSerializer, Serializer
 
 from .serializers import MockSerializer
-from .typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union
+from .typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, TypesDict, Union
 
 
 __all__ = [
     "get_language",
     "translate",
-    "parameter_types",
     "is_serializer_class",
     "serializer_from_callable",
     "inline_serializer",
@@ -111,10 +110,20 @@ def translate(item: Union[Callable[..., Any], Request]) -> Union[Generator[Any, 
     return context_manager(item)
 
 
-def parameter_types(func: Callable[..., Any]) -> Dict[str, Optional[Type]]:
+def _unwrap_types(item: Any) -> Dict:
+    """Recurively unwrap types from the given item based on its __annotations__ dict."""
+    annotations = item.__annotations__
+    for name, annotation in annotations.items():
+        if hasattr(annotation, "__annotations__"):
+            annotations[name] = _unwrap_types(annotation)
+    return annotations
+
+
+def parameter_types(func: Callable[..., Any]) -> TypesDict:
     """Get the types for a callable's parameters."""
     args_spec = getfullargspec(func)
     types = args_spec.annotations
+    types.pop("return", None)
 
     # Get types based on parameter default values
     defaults: Tuple[Any, ...] = args_spec.defaults or tuple()
@@ -141,23 +150,52 @@ def parameter_types(func: Callable[..., Any]) -> Dict[str, Optional[Type]]:
     types.pop(args_spec.varargs or "", None)
     types.pop(args_spec.varkw or "", None)
 
+    for name, type_ in types.items():
+        if hasattr(type_, "__annotations__"):
+            types[name] = _unwrap_types(type_)
+
     return types
 
 
-def serializer_from_callable(func: Callable[..., Any]) -> Type[MockSerializer]:
-    """Create a serializer from the parameter type hints of a callable.
-    Attempt to infer the types from the default arguments if no typing information is available.
-    """
-    types = parameter_types(func)
+def return_types(func: Callable[..., Any]) -> TypesDict:
+    """Get the callables return types"""
+    args_spec = getfullargspec(func)
+    types = args_spec.annotations.get("return")
 
-    fields: Dict[str, Field] = {}
+    if hasattr(types, "__annotations__"):
+        types = _unwrap_types(types)
+
+    return types
+
+
+def get_fields(types: TypesDict) -> Dict[str, Field]:
+    """Convert types to serializer fields. TypedDicts and other classes with __annotations__ dicts
+    are recursively converted to serializers based on their types.
+    """
+    fields = {}
     for name, type_ in types.items():
+        if isinstance(type_, dict):
+            fields[name] = inline_serializer(name, fields=get_fields(type_))()
+            continue
+
         field = type_to_serializer_field.get(type_, CharField)
         if issubclass(field, DecimalField):
             fields[name] = field(max_digits=13, decimal_places=3)
             continue
+
         fields[name] = field()
 
+    return fields
+
+
+def serializer_from_callable(func: Callable[..., Any], output: bool = False) -> Type[MockSerializer]:
+    """Create a serializer from the parameter type hints of a callable.
+    Attempt to infer the types from the default arguments if no typing information is available.
+    If output is true, infer from callable return type.
+    In this case, return type should be a TypedDict so that field conversion works.
+    """
+    types = return_types(func) if output else parameter_types(func)
+    fields: Dict[str, Field] = get_fields(types)
     serializer_name = snake_case_to_pascal_case(f"{func.__name__}_serializer")
     return inline_serializer(serializer_name, super_class=MockSerializer, fields=fields)
 

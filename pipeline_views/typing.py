@@ -67,6 +67,7 @@ __all__ = [
     "DataConditional",
     "DataReturn",
     "SerializerType",
+    "TypesDict",
 ]
 
 DataDict = Dict[str, Any]
@@ -77,6 +78,7 @@ HTTPMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
 LogicCallable = Callable[..., Optional[DataReturn]]
 PipelineLogic = Union[LogicCallable, SerializerType, Iterable["PipelineLogic"]]
 PipelinesDict = Dict[HTTPMethod, PipelineLogic]
+TypesDict = Dict[str, Union[Optional[Type], "TypesDict"]]
 
 
 class ViewContext(TypedDict):

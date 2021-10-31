@@ -101,7 +101,7 @@ class BaseAPIView(APIView):
         if is_serializer_class(step):
             return step
         if isinstance(step, Callable):  # pylint: disable=W1116
-            return serializer_from_callable(step)
+            return serializer_from_callable(step, output=output)
 
         raise TypeError("Only Serializers and callables are supported in the pipeline.")
 
