@@ -48,6 +48,9 @@ exclude = [
     "tests",
 ]
 
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/MrThearMan/drf-pipeline-views/issues"
+
 [tool.poetry.dependencies]
 python = ">=3.6.1,<4"
 Django = ">=1.10"
@@ -83,13 +86,18 @@ lines_after_imports = 2
 ignore-paths = [
     "tests/*",
     "docs/*",
+    ".venv/*",
+    ".tox/*",
 ]
 
 [tool.pylint.messages_control]
-disable = "C0330, C0326, C0114, C0115, C0116, R0903, R1721"
+disable = "C0330, C0326, C0114, C0115, C0116, R0903, R0913, R1721"
 
 [tool.pylint.format]
 max-line-length = "120"
+
+[tool.pylint.miscellaneous]
+notes = "FIXME,XXX,BUG"
 
 [tool.mypy]
 python_version = 3.9
