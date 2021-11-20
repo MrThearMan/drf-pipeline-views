@@ -22,34 +22,38 @@ class HTTPMethod(Protocol):
 class GetMixin:
     @translate
     def get(self: HTTPMethod, request: Request, *args: Any, **kwargs: Any) -> Response:  # pylint: disable=W0613
-        kwargs.update({k: v for k, v in request.query_params.items()})
+        params = {k: v for k, v in request.query_params.items() if k not in {"lang", "format"}}
+        kwargs.update(params)
         return self._process_request(data=kwargs)
 
 
 class PostMixin:
     @translate
     def post(self: HTTPMethod, request: Request, *args: Any, **kwargs: Any) -> Response:  # pylint: disable=W0613
-        kwargs.update({k: v for k, v in request.data.items()})
-        kwargs.pop("csrfmiddlewaretoken", None)
+        params = {k: v for k, v in request.data.items() if k not in {"csrfmiddlewaretoken", "lang", "format"}}
+        kwargs.update(params)
         return self._process_request(data=kwargs)
 
 
 class PutMixin:
     @translate
     def put(self: HTTPMethod, request: Request, *args: Any, **kwargs: Any) -> Response:  # pylint: disable=W0613
-        kwargs.update({k: v for k, v in request.data.items()})
+        params = {k: v for k, v in request.data.items() if k not in {"lang", "format"}}
+        kwargs.update(params)
         return self._process_request(data=kwargs)
 
 
 class PatchMixin:
     @translate
     def patch(self: HTTPMethod, request: Request, *args: Any, **kwargs: Any) -> Response:  # pylint: disable=W0613
-        kwargs.update({k: v for k, v in request.data.items()})
+        params = {k: v for k, v in request.data.items() if k not in {"lang", "format"}}
+        kwargs.update(params)
         return self._process_request(data=kwargs)
 
 
 class DeleteMixin:
     @translate
     def delete(self: HTTPMethod, request: Request, *args: Any, **kwargs: Any) -> Response:  # pylint: disable=W0613
-        kwargs.update({k: v for k, v in request.data.items()})
+        params = {k: v for k, v in request.data.items() if k not in {"lang", "format"}}
+        kwargs.update(params)
         return self._process_request(data=kwargs)

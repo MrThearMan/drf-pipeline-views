@@ -25,7 +25,7 @@ from rest_framework.request import Request
 from rest_framework.serializers import BaseSerializer, Serializer
 
 from .serializers import MockSerializer
-from .typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, TypesDict, Union
+from .typing import Any, Callable, Dict, Generator, List, Optional, T, Tuple, Type, TypesDict, Union
 
 
 __all__ = [
@@ -78,7 +78,7 @@ def get_language(request: Request) -> str:
     return "en" if "en" in available_languages else available_languages[0]
 
 
-def translate(item: Union[Callable[..., Any], Request]) -> Union[Generator[Any, Any, None], Callable[..., Any]]:
+def translate(item: Union[Callable[..., T], Request]) -> Union[Generator[Any, Any, None], Callable[..., T]]:
     """Override current language with one from language header or 'lang' parameter.
     Can be used as a context manager or a decorator. If a function is decorated,
     one of the parameters for the function must be a rest_framework.Request object.

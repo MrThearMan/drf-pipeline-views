@@ -13,6 +13,7 @@ try:
         Tuple,
         Type,
         TypedDict,
+        TypeVar,
         Union,
     )
 except ImportError:
@@ -26,6 +27,7 @@ except ImportError:
         Optional,
         Union,
         Generator,
+        TypeVar,
     )
     from typing_extensions import (
         TYPE_CHECKING,
@@ -68,8 +70,11 @@ __all__ = [
     "DataReturn",
     "SerializerType",
     "TypesDict",
+    "T",
 ]
 
+
+T = TypeVar("T")  # pylint: disable=C0103
 DataDict = Dict[str, Any]
 SerializerType = Type[BaseSerializer]
 DataConditional = Tuple[Any, DataDict]
