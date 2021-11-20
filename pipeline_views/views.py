@@ -4,17 +4,7 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
-from .typing import (
-    Any,
-    Callable,
-    DataDict,
-    DataReturn,
-    Iterable,
-    PipelineLogic,
-    PipelinesDict,
-    SerializerType,
-    ViewContext,
-)
+from .typing import Any, DataDict, DataReturn, Iterable, PipelineLogic, PipelinesDict, SerializerType, ViewContext
 from .utils import is_serializer_class, serializer_from_callable
 
 
@@ -32,7 +22,7 @@ class BaseAPIView(APIView):
     def _process_request(self, data: DataDict) -> Response:
         """Process request in a pipeline-fashion."""
         pipeline = self._get_pipeline_for_current_request_method()
-        data = self._run_logic(logic=pipeline, data=data)
+        data = self._run_logic(logic=pipeline, data=data)  # type: ignore
 
         if data:
             return Response(data=data, status=status.HTTP_200_OK)
@@ -47,19 +37,19 @@ class BaseAPIView(APIView):
 
     def _run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
         """Run pipeline logic recursively."""
-        if isinstance(logic, Callable):  # pylint: disable=W1116
-            return logic(**data) or {}
+        if callable(logic):
+            return logic(**data) or {}  # type: ignore
 
         try:
-            for step in logic:
+            for step in logic:  # type: ignore
                 if isinstance(data, tuple):
                     key, data = data
                     step = step[key]
 
                 if is_serializer_class(step):
                     data = self._run_serializer(serializer_class=step, data=data)
-                elif isinstance(step, (Iterable, Callable)):  # pylint: disable=W1116
-                    data = self._run_logic(logic=step, data=data)
+                elif isinstance(step, Iterable) or callable(step):  # pylint: disable=W1116
+                    data = self._run_logic(logic=step, data=data)  # type: ignore
                 else:
                     raise TypeError("Only Serializers and callables are supported in the pipeline.")
 
@@ -92,15 +82,15 @@ class BaseAPIView(APIView):
         """
         step = self._get_pipeline_for_current_request_method()
 
-        while isinstance(step, Iterable):
+        while isinstance(step, Iterable):  # pylint: disable=W1116
             if output:
                 *_, step = step
             else:
                 step = next(iter(step))
 
         if is_serializer_class(step):
-            return step
-        if isinstance(step, Callable):  # pylint: disable=W1116
+            return step  # type: ignore
+        if callable(step):
             return serializer_from_callable(step, output=output)
 
         raise TypeError("Only Serializers and callables are supported in the pipeline.")

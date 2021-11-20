@@ -29,7 +29,7 @@ except ImportError:
         Generator,
         TypeVar,
     )
-    from typing_extensions import (
+    from typing_extensions import (  # type: ignore
         TYPE_CHECKING,
         Literal,
         Type,
@@ -81,9 +81,9 @@ DataConditional = Tuple[Any, DataDict]
 DataReturn = Union[DataDict, DataConditional]
 HTTPMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
 LogicCallable = Callable[..., Optional[DataReturn]]
-PipelineLogic = Union[LogicCallable, SerializerType, Iterable["PipelineLogic"]]
-PipelinesDict = Dict[HTTPMethod, PipelineLogic]
-TypesDict = Dict[str, Union[Optional[Type], "TypesDict"]]
+PipelineLogic = Union[LogicCallable, SerializerType, Iterable["PipelineLogic"]]  # type: ignore
+PipelinesDict = Dict[HTTPMethod, PipelineLogic]  # type: ignore
+TypesDict = Dict[str, Union[Optional[Type], "TypesDict"]]  # type: ignore
 
 
 class ViewContext(TypedDict):

@@ -42,7 +42,7 @@ __all__ = [
 available_languages: List[str] = [key for (key, value) in settings.LANGUAGES]
 
 
-type_to_serializer_field: Dict[Type, Field] = {
+type_to_serializer_field: Dict[Optional[Type], Type[Field]] = {
     str: CharField,
     int: IntegerField,
     float: FloatField,
@@ -100,7 +100,7 @@ def translate(item: Union[Callable[..., T], Request]) -> Union[Generator[Any, An
                 raise ValueError("No Request-object in function parameters.")
 
             with override(get_language(request)):
-                return item(*args, **kwargs)
+                return item(*args, **kwargs)  # type: ignore
 
         return decorator
 
@@ -112,9 +112,9 @@ def translate(item: Union[Callable[..., T], Request]) -> Union[Generator[Any, An
     return context_manager(item)
 
 
-def _unwrap_types(item: Any) -> Dict:
+def _unwrap_types(item: Any) -> TypesDict:
     """Recurively unwrap types from the given item based on its __annotations__ dict."""
-    annotations = item.__annotations__
+    annotations: TypesDict = item.__annotations__
     for name, annotation in annotations.items():
         if hasattr(annotation, "__annotations__"):
             annotations[name] = _unwrap_types(annotation)
@@ -162,7 +162,7 @@ def parameter_types(func: Callable[..., Any]) -> TypesDict:
 def return_types(func: Callable[..., Any]) -> TypesDict:
     """Get the callables return types"""
     args_spec = getfullargspec(func)
-    types = args_spec.annotations.get("return")
+    types: TypesDict = args_spec.annotations.get("return")  # type: ignore
 
     if hasattr(types, "__annotations__"):
         types = _unwrap_types(types)
@@ -174,7 +174,7 @@ def get_fields(types: TypesDict) -> Dict[str, Field]:
     """Convert types to serializer fields. TypedDicts and other classes with __annotations__ dicts
     are recursively converted to serializers based on their types.
     """
-    fields = {}
+    fields: Dict[str, Field] = {}
     for name, type_ in types.items():
         if isinstance(type_, dict):
             fields[name] = inline_serializer(name, fields=get_fields(type_))()
@@ -199,7 +199,7 @@ def serializer_from_callable(func: Callable[..., Any], output: bool = False) -> 
     types = return_types(func) if output else parameter_types(func)
     fields: Dict[str, Field] = get_fields(types)
     serializer_name = snake_case_to_pascal_case(f"{func.__name__}_serializer")
-    return inline_serializer(serializer_name, super_class=MockSerializer, fields=fields)
+    return inline_serializer(serializer_name, super_class=MockSerializer, fields=fields)  # type: ignore
 
 
 def inline_serializer(
@@ -210,7 +210,7 @@ def inline_serializer(
     return type(name, (super_class,), fields or {})  # type: ignore
 
 
-def cache_pipeline_logic(cache_key: str, timeout: int) -> Callable[..., T]:
+def cache_pipeline_logic(cache_key: str, timeout: int) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """Cache the result of a pipeline logic function. Calls with different arguments will be saved under
     different keys, using the given key as a prefix and joining it with a hash of the arguments.
 
