@@ -6,6 +6,7 @@ from inspect import getfullargspec
 from itertools import chain
 
 from django.conf import settings
+from django.core.cache import cache
 from django.utils.translation import override
 from rest_framework.fields import (
     BooleanField,
@@ -34,6 +35,7 @@ __all__ = [
     "is_serializer_class",
     "serializer_from_callable",
     "inline_serializer",
+    "cache_pipeline_logic",
 ]
 
 
@@ -206,3 +208,27 @@ def inline_serializer(
     fields: Dict[str, Field] = None,
 ) -> Type[BaseSerializer]:
     return type(name, (super_class,), fields or {})  # type: ignore
+
+
+def cache_pipeline_logic(cache_key: str, timeout: int) -> Callable[..., T]:
+    """Cache the result of a pipeline logic function. Calls with different arguments will be saved under
+    different keys, using the given key as a prefix and joining it with a hash of the arguments.
+
+    :param cache_key: Key to save the result under.
+    :param timeout: How long to cache the data in seconds.
+    """
+
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> Any:
+            nonlocal cache_key
+            key = cache_key + str(hash(args + tuple(kwargs.values())))
+            data = cache.get(key, None)
+            if data is None:
+                data = func(*args, **kwargs)
+                cache.set(key, data, timeout)
+            return data
+
+        return wrapper
+
+    return decorator

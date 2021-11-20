@@ -1,3 +1,5 @@
+from time import sleep
+
 import pytest
 from django.http import HttpRequest
 from django.utils.translation import get_language as which_language
@@ -7,6 +9,7 @@ from rest_framework.serializers import Serializer
 
 from pipeline_views.serializers import MockSerializer
 from pipeline_views.utils import (
+    cache_pipeline_logic,
     get_language,
     inline_serializer,
     parameter_types,
@@ -191,3 +194,40 @@ def test_snake_case_to_pascal_case():
 
 def test_snake_case_to_pascal_case__extra_underscore():
     assert snake_case_to_pascal_case("logic_method_") == "LogicMethod"
+
+
+def test_cache_pipeline_logic():
+    count = 0
+
+    def couter():
+        nonlocal count
+        count += 1
+
+    @cache_pipeline_logic(cache_key="foo", timeout=2)
+    def test():
+        couter()
+        return "x"
+
+    test()
+    test()
+
+    assert count == 1, "Cache should have bypassed the second call to counter"
+
+
+def test_cache_pipeline_logic__cache_expired():
+    count = 0
+
+    def couter():
+        nonlocal count
+        count += 1
+
+    @cache_pipeline_logic(cache_key="bar", timeout=1)
+    def test():
+        couter()
+        return "y"
+
+    test()
+    sleep(1.1)
+    test()
+
+    assert count == 2, "Cache should have expired, and the second call made"
