@@ -78,9 +78,9 @@ T = TypeVar("T")  # pylint: disable=C0103
 DataDict = Dict[str, Any]
 SerializerType = Type[BaseSerializer]
 DataConditional = Tuple[Any, DataDict]
-DataReturn = Union[DataDict, DataConditional]
+DataReturn = Union[DataDict, DataConditional, None]
 HTTPMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
-LogicCallable = Callable[..., Optional[DataReturn]]
+LogicCallable = Callable[..., DataReturn]
 PipelineLogic = Union[LogicCallable, SerializerType, Iterable["PipelineLogic"]]  # type: ignore
 PipelinesDict = Dict[HTTPMethod, PipelineLogic]  # type: ignore
 TypesDict = Dict[str, Union[Optional[Type], "TypesDict"]]  # type: ignore

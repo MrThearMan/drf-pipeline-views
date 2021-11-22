@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
 from .typing import Any, DataDict, DataReturn, Iterable, PipelineLogic, PipelinesDict, SerializerType, ViewContext
-from .utils import is_serializer_class, serializer_from_callable
+from .utils import is_serializer_class, sentinel, serializer_from_callable
 
 
 __all__ = [
@@ -38,7 +38,7 @@ class BaseAPIView(APIView):
     def _run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
         """Run pipeline logic recursively."""
         if callable(logic):
-            return logic(**data) or {}  # type: ignore
+            return logic(**data)
 
         try:
             for step in logic:  # type: ignore
@@ -49,7 +49,7 @@ class BaseAPIView(APIView):
                 if is_serializer_class(step):
                     data = self._run_serializer(serializer_class=step, data=data)
                 elif isinstance(step, Iterable) or callable(step):  # pylint: disable=W1116
-                    data = self._run_logic(logic=step, data=data)  # type: ignore
+                    data = self._run_logic(logic=step, data=data if data is not None else {})  # type: ignore
                 else:
                     raise TypeError("Only Serializers and callables are supported in the pipeline.")
 
@@ -73,6 +73,8 @@ class BaseAPIView(APIView):
     def _initialize_serializer(self, serializer_class: SerializerType, *args: Any, **kwargs: Any) -> BaseSerializer:
         kwargs.setdefault("context", self.get_serializer_context())
         kwargs.setdefault("many", getattr(serializer_class, "many", False))
+        if kwargs.get("data", sentinel) is None:
+            kwargs["data"] = [] if kwargs["many"] else {}
         return serializer_class(*args, **kwargs)
 
     def get_serializer_class(self, output: bool = False) -> SerializerType:

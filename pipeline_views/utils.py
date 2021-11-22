@@ -36,7 +36,12 @@ __all__ = [
     "serializer_from_callable",
     "inline_serializer",
     "cache_pipeline_logic",
+    "sentinel",
 ]
+
+
+class sentinel:  # pylint: disable=C0103
+    """Sentinel value."""
 
 
 available_languages: List[str] = [key for (key, value) in settings.LANGUAGES]

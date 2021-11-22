@@ -255,6 +255,20 @@ def test_BaseAPIView__one_serializer(base_api_view):
     assert response.status_code == 200
 
 
+def test_BaseAPIView__one_serializer__data_is_none(base_api_view):
+    class InputSerializer(Serializer):
+        name = CharField(required=False)
+        age = IntegerField(required=False)
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [InputSerializer]}
+
+    response = base_api_view._process_request(data=None)
+
+    assert response.data is None
+    assert response.status_code == 204
+
+
 def test_BaseAPIView__one_serializer__inside_logic_block(base_api_view):
     class InputSerializer(Serializer):
         name = CharField()
