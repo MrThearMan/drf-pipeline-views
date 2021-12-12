@@ -10,6 +10,7 @@ try:
         Literal,
         Optional,
         Protocol,
+        Set,
         Tuple,
         Type,
         TypedDict,
@@ -28,6 +29,7 @@ except ImportError:
         Union,
         Generator,
         TypeVar,
+        Set,
     )
     from typing_extensions import (  # type: ignore
         TYPE_CHECKING,
@@ -71,6 +73,7 @@ __all__ = [
     "SerializerType",
     "TypesDict",
     "T",
+    "Set",
 ]
 
 

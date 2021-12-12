@@ -8,6 +8,7 @@ from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
 from pipeline_views.serializers import MockSerializer
+from pipeline_views.typing import List, TypedDict
 from pipeline_views.utils import (
     cache_pipeline_logic,
     get_language,
@@ -104,6 +105,28 @@ def test_serializer_from_callable():
     )
     assert str(serializer_from_callable(function_76)().fields) == str({"x": fields.CharField()})
     assert str(serializer_from_callable(function_77)().fields) == str({"x": fields.CharField()})
+
+
+def test_serializer_from_callable__output():
+    class Foo(TypedDict):
+        foo: str
+        bar: int
+
+    def func1(x: str) -> Foo:
+        pass
+
+    def func2(x: str) -> List[Foo]:
+        pass
+
+    serializer1 = serializer_from_callable(func1, output=True)
+    assert str(serializer1(many=serializer1.many).fields) == str(
+        {"foo": fields.CharField(), "bar": fields.IntegerField()}
+    )
+
+    serializer2 = serializer_from_callable(func2, output=True)
+    assert str(serializer2(many=serializer2.many).child.fields) == str(
+        {"foo": fields.CharField(), "bar": fields.IntegerField()}
+    )
 
 
 def test_get_language__from_language_code(drf_request):

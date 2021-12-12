@@ -38,7 +38,7 @@ class BaseAPIView(APIView):
     def _run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
         """Run pipeline logic recursively."""
         if callable(logic):
-            return logic(**data)
+            return logic(**data)  # type: ignore
 
         try:
             for step in logic:  # type: ignore

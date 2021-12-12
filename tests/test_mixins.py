@@ -11,6 +11,7 @@ def test_get_mixin(drf_request):
         pipelines = {"GET": [callable_method]}
 
     drf_request._request.GET["testing"] = 1212
+    drf_request._request.GET["format"] = "foo"
     drf_request.method = "GET"
 
     view = BasicView()
@@ -31,7 +32,7 @@ def test_post_mixin(drf_request):
 
         pipelines = {"POST": [callable_method]}
 
-    drf_request._full_data = {"testing": 1212}
+    drf_request._full_data = {"testing": 1212, "csrfmiddlewaretoken": "foo"}
     drf_request.method = "POST"
 
     view = BasicView()
@@ -52,7 +53,7 @@ def test_patch_mixin(drf_request):
 
         pipelines = {"PATCH": [callable_method]}
 
-    drf_request._full_data = {"testing": 1212}
+    drf_request._full_data = {"testing": 1212, "format": "foo"}
     drf_request.method = "PATCH"
 
     view = BasicView()
@@ -73,7 +74,7 @@ def test_put_mixin(drf_request):
 
         pipelines = {"PUT": [callable_method]}
 
-    drf_request._full_data = {"testing": 1212}
+    drf_request._full_data = {"testing": 1212, "format": "foo"}
     drf_request.method = "PUT"
 
     view = BasicView()
@@ -94,7 +95,7 @@ def test_delete_mixin(drf_request):
 
         pipelines = {"DELETE": [callable_method]}
 
-    drf_request._full_data = {"testing": 1212}
+    drf_request._full_data = {"testing": 1212, "format": "foo"}
     drf_request.method = "DELETE"
 
     view = BasicView()

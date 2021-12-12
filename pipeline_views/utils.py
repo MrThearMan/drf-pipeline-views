@@ -164,15 +164,17 @@ def parameter_types(func: Callable[..., Any]) -> TypesDict:
     return types
 
 
-def return_types(func: Callable[..., Any]) -> TypesDict:
+def return_types(func: Callable[..., Any]) -> Union[TypesDict, List[TypesDict]]:
     """Get the callables return types"""
     args_spec = getfullargspec(func)
-    types: TypesDict = args_spec.annotations.get("return")  # type: ignore
+    types: Union[TypesDict, List[TypesDict]] = args_spec.annotations.get("return")  # type: ignore
+    is_list = hasattr(types, "__args__")
+    types = getattr(types, "__args__", [types])[0]
 
     if hasattr(types, "__annotations__"):
         types = _unwrap_types(types)
 
-    return types
+    return [types] if is_list else types  # type: ignore
 
 
 def get_fields(types: TypesDict) -> Dict[str, Field]:
@@ -202,9 +204,12 @@ def serializer_from_callable(func: Callable[..., Any], output: bool = False) -> 
     In this case, return type should be a TypedDict so that field conversion works.
     """
     types = return_types(func) if output else parameter_types(func)
-    fields: Dict[str, Field] = get_fields(types)
+    is_list = isinstance(types, list)
+    fields: Dict[str, Field] = get_fields(types[0]) if is_list else get_fields(types)  # type: ignore
     serializer_name = snake_case_to_pascal_case(f"{func.__name__}_serializer")
-    return inline_serializer(serializer_name, super_class=MockSerializer, fields=fields)  # type: ignore
+    serializer = inline_serializer(serializer_name, super_class=MockSerializer, fields=fields)
+    serializer.many = is_list
+    return serializer  # type: ignore
 
 
 def inline_serializer(
