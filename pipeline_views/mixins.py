@@ -4,7 +4,7 @@ from django.utils.translation import get_language
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from .typing import Any, DataDict, Protocol, Set
+from .typing import Any, DataDict, Optional, Protocol, Set
 from .utils import translate
 
 
@@ -24,7 +24,7 @@ class HTTPMethod(Protocol):
     ignored_patch_params: Set[str]
     ignored_delete_params: Set[str]
 
-    async def process_request(self, data: DataDict, lang: str) -> Response:
+    async def process_request(self, data: DataDict, lang: Optional[str] = None) -> Response:
         """Process request"""
 
 

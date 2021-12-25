@@ -10,7 +10,7 @@
 
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/drf-pipeline-views)](https://pypi.org/project/drf-pipeline-views)
 [![PyPI - Django Version](https://img.shields.io/pypi/djversions/drf-pipeline-views)](https://pypi.org/project/drf-pipeline-views)
-[![Custom - Django REST Framework Version](https://img.shields.io/badge/drf%20versions-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://pypi.org/project/drf-pipeline-views)
+[![Custom - Django REST Framework Version](https://img.shields.io/badge/drf%20versions-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](https://pypi.org/project/drf-pipeline-views)
 
 ```shell
 pip install drf-pipeline-views

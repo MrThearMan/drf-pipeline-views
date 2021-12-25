@@ -33,7 +33,7 @@ help:
 dev-setup:
 	@echo "If this fails, you may need to add Poetry's install directory to PATH and re-run this script."
 	@timeout 3
-	@curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
+	@curl -sSL https://install.python-poetry.org | python -
 	@poetry install
 	@poetry run pre-commit install
 

@@ -253,8 +253,8 @@ def run_in_thread(task: Callable[..., T]) -> Callable[..., T]:
     """
 
     @wraps(task)
-    def wrapper(*args, **kwargs) -> Callable[..., T]:
-        def func() -> Callable[..., T]:
+    def wrapper(*args, **kwargs) -> T:
+        def func() -> T:
             return task(*args, **kwargs)
 
         with ThreadPoolExecutor() as executor:
