@@ -25,11 +25,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Framework :: Django :: 1.10",
     "Framework :: Django :: 1.11",
     "Framework :: Django :: 2.0",
@@ -53,7 +48,7 @@ exclude = [
 "Bug Tracker" = "https://github.com/MrThearMan/drf-pipeline-views/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.6.1,<4"
+python = ">=3.7,<4"
 Django = ">=1.10"
 djangorestframework = ">=3.7.0"
 typing-extensions = "^3.10.0"
@@ -101,7 +96,7 @@ max-line-length = "120"
 notes = "FIXME,XXX,BUG"
 
 [tool.mypy]
-python_version = 3.9
+python_version = 3.10
 warn_return_any = "True"
 warn_unused_configs = "True"
 plugins = [
@@ -130,12 +125,11 @@ exclude_lines = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{36, 37, 38, 39}-drf{307, 308, 309, 310, 311, 312}, py310-drf312
+envlist = py{37, 38, 39}-drf{307, 308, 309, 310, 311, 312}, py310-drf312
 isolated_build = true
 
 [gh-actions]
 python =
-    3.6: py36
     3.7: py37
     3.8: py38
     3.9: py39
@@ -148,7 +142,7 @@ setenv =
     PYTHONPATH = {toxinidir}
     DJANGO_SETTINGS_MODULE = tests.django.settings
 deps =
-    py36,py37: typing-extensions
+    py37: typing-extensions
 
     drf307,drf308: Django>=1.10,<2.0
     drf309,drf310: Django>=2.0,<2.1
