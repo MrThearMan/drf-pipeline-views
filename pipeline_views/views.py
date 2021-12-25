@@ -1,10 +1,25 @@
+import asyncio
+from collections.abc import Coroutine
+
+from django.utils.translation import get_language, override
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
-from .typing import Any, DataDict, DataReturn, Iterable, PipelineLogic, PipelinesDict, SerializerType, ViewContext
+from .typing import (
+    Any,
+    DataDict,
+    DataReturn,
+    Iterable,
+    Optional,
+    PipelineLogic,
+    PipelinesDict,
+    SerializerType,
+    Tuple,
+    ViewContext,
+)
 from .utils import is_serializer_class, sentinel, serializer_from_callable
 
 
@@ -19,37 +34,63 @@ class BaseAPIView(APIView):
     pipelines: PipelinesDict = {}
     """Dictionary describing the HTTP method pipelines."""
 
-    def _process_request(self, data: DataDict) -> Response:
+    async def process_request(self, data: DataDict, lang: str = None) -> Response:
         """Process request in a pipeline-fashion."""
-        pipeline = self._get_pipeline_for_current_request_method()
-        data = self._run_logic(logic=pipeline, data=data)  # type: ignore
+        if lang is None:
+            lang = get_language()
+
+        with override(lang):
+            pipeline = self.get_pipeline_for_current_request_method()
+            data = await self.run_logic(logic=pipeline, data=data)  # type: ignore
 
         if data:
             return Response(data=data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def _get_pipeline_for_current_request_method(self) -> PipelineLogic:
+    def get_pipeline_for_current_request_method(self) -> PipelineLogic:
         """Get pipeline for the current HTTP method."""
         try:
             return self.pipelines[self.request.method]  # type: ignore
         except KeyError as missing_method:
             raise KeyError(f"Pipeline not configured for HTTP method '{self.request.method}'") from missing_method
 
-    def _run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
+    async def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
         """Run pipeline logic recursively."""
         if callable(logic):
-            return logic(**data)  # type: ignore
+            result = logic(**data)
+            if isinstance(result, Coroutine):
+                result = await result
+            return result  # type: ignore
 
         try:
             for step in logic:  # type: ignore
                 if isinstance(data, tuple):
                     key, data = data
-                    step = step[key]
+                    try:
+                        step = step[key]
+                    except (KeyError, TypeError) as error:
+                        raise TypeError(f"Next logic step doesn't have a conditional logic path '{key}'.") from error
 
                 if is_serializer_class(step):
-                    data = self._run_serializer(serializer_class=step, data=data)
-                elif isinstance(step, Iterable) or callable(step):  # pylint: disable=W1116
-                    data = self._run_logic(logic=step, data=data if data is not None else {})  # type: ignore
+                    data = self.run_serializer(serializer_class=step, data=data)
+                elif isinstance(step, tuple):
+                    old_kwargs: Optional[DataDict] = None
+                    try:
+                        step.index(...)
+                        step = tuple(task for task in step if task is not ...)
+                        old_kwargs = data
+                    except ValueError:
+                        pass
+
+                    results: Tuple[DataDict, ...] = await asyncio.gather(*[task(**data) for task in step])
+                    data = {key: value for result in results for key, value in result.items()}
+
+                    if old_kwargs is not None:
+                        old_kwargs.update(data)
+                        data = old_kwargs
+
+                elif isinstance(step, list) or callable(step):
+                    data = await self.run_logic(logic=step, data=data if data is not None else {})  # type: ignore
                 else:
                     raise TypeError("Only Serializers and callables are supported in the pipeline.")
 
@@ -58,9 +99,9 @@ class BaseAPIView(APIView):
 
         return data
 
-    def _run_serializer(self, serializer_class: SerializerType, data: DataDict) -> DataDict:
+    def run_serializer(self, serializer_class: SerializerType, data: DataDict) -> DataDict:
         """Build and validate a serializer"""
-        serializer = self._initialize_serializer(serializer_class=serializer_class, data=data)
+        serializer = self.initialize_serializer(serializer_class=serializer_class, data=data)
         serializer.is_valid(raise_exception=True)
         data = serializer.data
         return data
@@ -68,9 +109,9 @@ class BaseAPIView(APIView):
     def get_serializer(self, *args: Any, **kwargs: Any) -> BaseSerializer:
         """Initialize serializer for current request HTTP method."""
         kwargs["serializer_class"] = self.get_serializer_class(output=kwargs.pop("output", False))
-        return self._initialize_serializer(*args, **kwargs)
+        return self.initialize_serializer(*args, **kwargs)
 
-    def _initialize_serializer(self, serializer_class: SerializerType, *args: Any, **kwargs: Any) -> BaseSerializer:
+    def initialize_serializer(self, serializer_class: SerializerType, *args: Any, **kwargs: Any) -> BaseSerializer:
         kwargs.setdefault("context", self.get_serializer_context())
         kwargs.setdefault("many", getattr(serializer_class, "many", False))
         if kwargs.get("data", sentinel) is None:
@@ -82,7 +123,7 @@ class BaseAPIView(APIView):
         If it's a Serializer, return it. Otherwise, try to infer a serializer from the
         logic callable's parameters.
         """
-        step = self._get_pipeline_for_current_request_method()
+        step = self.get_pipeline_for_current_request_method()
 
         while isinstance(step, Iterable):  # pylint: disable=W1116
             if output:

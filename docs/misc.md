@@ -3,7 +3,7 @@
 ## Modifying endpoint data
 
 If you wish to add data to a request, you can do that on the endpoint level by overriding
-`_process_request`, or on the endpoint HTTP method level by overriding the spesific method, like `get`.
+`process_request`, or on the endpoint HTTP method level by overriding the spesific method, like `get`.
 
 ```python
 from rest_framework.exceptions import NotAuthenticated
@@ -12,7 +12,6 @@ from pipeline_views import BaseAPIView, GetMixin
 
 
 class BasicView(GetMixin, BaseAPIView):
-
     pipelines = {"GET": ...}
 
     def get(self, request, *args, **kwargs):
@@ -20,12 +19,12 @@ class BasicView(GetMixin, BaseAPIView):
         kwargs["lang"] = request.LANGUAGE_CODE
         return super().get(request, *args, **kwargs)
 
-    def _process_request(self, data):
+    async def process_request(self, data, lang=None):
         # Add authorization token to every http method
-        data["token"] = self._token_from_headers()
-        return super()._process_request(data)
+        data["token"] = self.token_from_headers()
+        return await super().process_request(data, lang)
 
-    def _token_from_headers(self):
+    def token_from_headers(self):
         auth_header = get_authorization_header(self.request)
         if not auth_header:
             raise NotAuthenticated("You must be logged in for this endpoint.")
