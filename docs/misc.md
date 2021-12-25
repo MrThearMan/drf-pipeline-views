@@ -41,6 +41,14 @@ Failing that, the tranlation falls back to English (i.e. no translation), or to 
 setting if English is not an option.
 
 
+## Run in a thread
+
+Some tasks, like interactions with the Django ORM, cannot be done in an async context. This can be solved by using
+the sync_to_async adapter included in django, or by running the task in a thread. `drf-pipeline-views` includes
+a utility that can be used to wrap a function call so that it will run in a thread,
+and thus enable these tasks in async contexts.
+
+
 ## Ignoring input parameters
 
 If some endpoint input parameter is not required in the pipeline logic, it can be ignored

@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -37,6 +38,7 @@ __all__ = [
     "inline_serializer",
     "cache_pipeline_logic",
     "sentinel",
+    "run_in_thread",
 ]
 
 
@@ -242,3 +244,21 @@ def cache_pipeline_logic(cache_key: str, timeout: int) -> Callable[[Callable[...
         return wrapper
 
     return decorator
+
+
+def run_in_thread(task: Callable[..., T]) -> Callable[..., T]:
+    """Decorator to run given callable in a thread.
+    Useful for running functions that require a database or otherwise
+    cannot run in async mode.
+    """
+
+    @wraps(task)
+    def wrapper(*args, **kwargs) -> Callable[..., T]:
+        def func() -> Callable[..., T]:
+            return task(*args, **kwargs)
+
+        with ThreadPoolExecutor() as executor:
+            future = executor.submit(func)
+            return future.result()
+
+    return wrapper

@@ -26,7 +26,7 @@ help:
 	@echo "  pre-commit       Run pre-commit hooks on all files."
 	@echo "  black            Run black on all files."
 	@echo "  isort            Run isort on all files."
-	@echo "  pylink           Run pylint on all files under pipeline_views/"
+	@echo "  pylint           Run pylint on all files under pipeline_views/"
 	@echo "  flake8           Run flake8 on all files under pipeline_views/"
 	@echo "  mypy             Run mypy on all files under pipeline_views/"
 

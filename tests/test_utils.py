@@ -14,6 +14,7 @@ from pipeline_views.utils import (
     get_language,
     inline_serializer,
     parameter_types,
+    run_in_thread,
     serializer_from_callable,
     snake_case_to_pascal_case,
     translate,
@@ -254,3 +255,12 @@ def test_cache_pipeline_logic__cache_expired():
     test()
 
     assert count == 2, "Cache should have expired, and the second call made"
+
+
+def test_run_in_a_thread():
+    @run_in_thread
+    def callable_1():
+        return {"testing", 123}
+
+    result = callable_1()
+    assert result == {"testing", 123}
