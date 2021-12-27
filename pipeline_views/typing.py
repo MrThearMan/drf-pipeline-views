@@ -1,9 +1,10 @@
 try:
-    from typing import (
+    from typing import (  # type: ignore
         TYPE_CHECKING,
         Any,
         Callable,
         Dict,
+        ForwardRef,
         Generator,
         Iterable,
         List,
@@ -16,9 +17,10 @@ try:
         TypedDict,
         TypeVar,
         Union,
+        _eval_type,
     )
 except ImportError:
-    from typing import (
+    from typing import (  # type: ignore
         Any,
         Callable,
         Dict,
@@ -30,6 +32,8 @@ except ImportError:
         Generator,
         TypeVar,
         Set,
+        ForwardRef,
+        _eval_type,
     )
     from typing_extensions import (  # type: ignore
         TYPE_CHECKING,
@@ -74,10 +78,13 @@ __all__ = [
     "TypesDict",
     "T",
     "Set",
+    "ForwardRef",
+    "eval_type",
 ]
 
 
 T = TypeVar("T")  # pylint: disable=C0103
+eval_type = _eval_type
 DataDict = Dict[str, Any]
 SerializerType = Type[BaseSerializer]
 DataConditional = Tuple[Any, DataDict]

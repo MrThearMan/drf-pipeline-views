@@ -1,3 +1,5 @@
+import sys
+from functools import wraps
 from time import sleep
 
 import pytest
@@ -14,6 +16,7 @@ from pipeline_views.utils import (
     get_language,
     inline_serializer,
     parameter_types,
+    return_types,
     run_in_thread,
     serializer_from_callable,
     snake_case_to_pascal_case,
@@ -21,6 +24,16 @@ from pipeline_views.utils import (
 )
 
 from .arg_spec_functions import *
+
+
+class Foo(TypedDict):
+    name: str
+    age: int
+
+
+class Bar(TypedDict):
+    foo: Foo
+    bar: "Foo"
 
 
 def test_parameter_types():
@@ -88,6 +101,98 @@ def test_parameter_types():
     assert parameter_types(function_62) == {"name": int, "age": float}
     assert parameter_types(function_63) == {"name": None, "age": int}
     assert parameter_types(function_64) == {"name": int, "age": int}
+
+
+def test_parameter_types__typed_dict():
+    def function(foo: "Foo"):
+        pass
+
+    assert parameter_types(function) == {"foo": {"name": str, "age": int}}
+
+
+def test_parameter_types__typed_dict__decorated():
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return {}
+
+        return wrapper
+
+    @decorator
+    def function(foo: "Foo"):
+        pass
+
+    assert parameter_types(function) == {"foo": {"name": str, "age": int}}
+
+
+def test_parameter_types__output__typed_dict():
+    def function() -> "Foo":
+        pass
+
+    assert return_types(function) == {"name": str, "age": int}
+
+
+def test_parameter_types__output__typed_dict__decorated():
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return {}
+
+        return wrapper
+
+    @decorator
+    def function() -> "Foo":
+        pass
+
+    assert return_types(function) == {"name": str, "age": int}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Recursice literal evaluation required Python 3.9 or higher")
+def test_parameter_types__typed_dict__recursive():
+    def function(foo: "Bar"):
+        pass
+
+    assert parameter_types(function) == {"foo": {"foo": {"name": str, "age": int}, "bar": {"name": str, "age": int}}}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Recursice literal evaluation required Python 3.9 or higher")
+def test_parameter_types__typed_dict__decorated__recursive():
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return {}
+
+        return wrapper
+
+    @decorator
+    def function(foo: "Bar"):
+        pass
+
+    assert parameter_types(function) == {"foo": {"foo": {"name": str, "age": int}, "bar": {"name": str, "age": int}}}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Recursice literal evaluation required Python 3.9 or higher")
+def test_parameter_types__output__typed_dict__recursive():
+    def function() -> "Bar":
+        pass
+
+    assert return_types(function) == {"foo": {"name": str, "age": int}, "bar": {"name": str, "age": int}}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Recursice literal evaluation required Python 3.9 or higher")
+def test_parameter_types__output__typed_dict__decorated__recursive():
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return {}
+
+        return wrapper
+
+    @decorator
+    def function() -> "Bar":
+        pass
+
+    assert return_types(function) == {"foo": {"name": str, "age": int}, "bar": {"name": str, "age": int}}
 
 
 def test_serializer_from_callable():

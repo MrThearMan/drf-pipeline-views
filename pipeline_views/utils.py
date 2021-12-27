@@ -27,7 +27,21 @@ from rest_framework.request import Request
 from rest_framework.serializers import BaseSerializer, Serializer
 
 from .serializers import MockSerializer
-from .typing import Any, Callable, Dict, Generator, List, Optional, T, Tuple, Type, TypesDict, Union
+from .typing import (
+    Any,
+    Callable,
+    Dict,
+    ForwardRef,
+    Generator,
+    List,
+    Optional,
+    T,
+    Tuple,
+    Type,
+    TypesDict,
+    Union,
+    eval_type,
+)
 
 
 __all__ = [
@@ -119,36 +133,59 @@ def translate(item: Union[Callable[..., T], Request]) -> Union[Generator[Any, An
     return context_manager(item)
 
 
-def _unwrap_types(item: Any) -> TypesDict:
+def _unwrap_function(func):
+    """Unwrap decorated functions to allow fetching types from them."""
+    while hasattr(func, "__wrapped__"):
+        func = func.__wrapped__
+    return func
+
+
+def _forward_refs_to_types(item: Any, type_: Union[Type, str]) -> Type:
+    """Convert strings and forward references to types."""
+    if isinstance(type_, str):
+        type_: ForwardRef = ForwardRef(type_)  # type: ignore
+    if isinstance(type_, ForwardRef):
+        item = _unwrap_function(item)
+        globalns = getattr(item, "__globals__", {})
+        type_: Type = eval_type(type_, globalns, globalns)  # type: ignore
+    return type_  # type: ignore
+
+
+def _unwrap_types(func: Any, item: Union[Type, str]) -> Union[TypesDict, Type]:
     """Recurively unwrap types from the given item based on its __annotations__ dict."""
-    annotations: TypesDict = item.__annotations__
+    func = _unwrap_function(func)
+    type_: Type = _forward_refs_to_types(func, item)
+    if not hasattr(type_, "__annotations__"):
+        return type_
+
+    annotations: TypesDict = type_.__annotations__
     for name, annotation in annotations.items():
-        if hasattr(annotation, "__annotations__"):
-            annotations[name] = _unwrap_types(annotation)
+        annotations[name] = _unwrap_types(type_, annotation)  # type: ignore
     return annotations
 
 
 def parameter_types(func: Callable[..., Any]) -> TypesDict:
     """Get the types for a callable's parameters."""
+    func = _unwrap_function(func)
     args_spec = getfullargspec(func)
     types = args_spec.annotations
     types.pop("return", None)
 
-    # Get types based on parameter default values
+    # Get types based on argument default values
     defaults: Tuple[Any, ...] = args_spec.defaults or tuple()
     for name, value in zip(reversed(args_spec.args), reversed(defaults)):
         if name in types:
             continue
         types[name] = type(value)
 
-    # Get types based on keyword only parameter default values
+    # Get types based on keyword-only argument default values
     defaults_kwonly: Dict[str, Any] = args_spec.kwonlydefaults or {}
     for name, value in defaults_kwonly.items():
         if name in types:
             continue
         types[name] = type(value)
 
-    # Add None for all parameters and keyword only parameters
+    # Add None for all positional arguments and keyword-only arguments
     # for which a type was not found or could not be inferred
     for name in args_spec.args + args_spec.kwonlyargs:
         if name in types:
@@ -160,23 +197,20 @@ def parameter_types(func: Callable[..., Any]) -> TypesDict:
     types.pop(args_spec.varkw or "", None)
 
     for name, type_ in types.items():
-        if hasattr(type_, "__annotations__"):
-            types[name] = _unwrap_types(type_)
+        types[name] = _unwrap_types(func, type_)
 
     return types
 
 
 def return_types(func: Callable[..., Any]) -> Union[TypesDict, List[TypesDict]]:
     """Get the callables return types"""
+    func = _unwrap_function(func)  # type: ignore
     args_spec = getfullargspec(func)
-    types: Union[TypesDict, List[TypesDict]] = args_spec.annotations.get("return")  # type: ignore
-    is_list = hasattr(types, "__args__")
-    types = getattr(types, "__args__", [types])[0]
-
-    if hasattr(types, "__annotations__"):
-        types = _unwrap_types(types)
-
-    return [types] if is_list else types  # type: ignore
+    return_type: Union[Type, List[Type]] = args_spec.annotations.get("return")  # type: ignore
+    is_list = hasattr(return_type, "__args__")
+    type_: Type = getattr(return_type, "__args__", [return_type])[0]  # type: ignore
+    types: TypesDict = _unwrap_types(func, type_)  # type: ignore
+    return [types] if is_list else types
 
 
 def get_fields(types: TypesDict) -> Dict[str, Field]:
