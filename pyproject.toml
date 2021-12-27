@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "drf-pipeline-views"
-version = "0.2.1"
+version = "0.2.2"
 description = "Django REST framework views using the pipeline pattern."
 authors = [
     "Matti Lamppu <lamppu.matti.akseli@gmail.com>",
@@ -56,21 +56,19 @@ exclude = [
 python = ">=3.7,<4"
 Django = ">=1.10"
 djangorestframework = ">=3.7.0"
-typing-extensions = "^3.10.0"
+typing-extensions = "^4.0.1"
 
 [tool.poetry.dev-dependencies]
-# For testing and CI
-pytest-cov = "^2.12.1"
+pytest-cov = "^3.0.0"
 pytest-django = "^4.4.0"
+tomli = "^2.0.0"
 pre-commit = "^2.13.0"
 tox-gh-actions = "^2.7.0"
 tox = "^3.24.4"
 coveralls = "^3.2.0"
-# For documentation
 mkdocs = "^1.2.2"
-# For code style
-flake8 = "^3.9.2"
-mypy = "^0.910"
+flake8 = "^4.0.1"
+mypy = "^0.930"
 django-stubs = "^1.9.0"
 djangorestframework-stubs = "^1.4.0"
 
