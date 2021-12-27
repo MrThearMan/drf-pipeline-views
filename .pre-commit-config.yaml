@@ -43,18 +43,6 @@ repos:
     hooks:
     -   id: pylint
         exclude: ^tests/
-        args: [
-            "--max-line-length=120",
-            "--disable=
-                C0330,
-                C0326,
-                C0114,
-                C0115,
-                C0116,
-                R0903,
-                R1721
-                "
-            ]
         additional_dependencies:
         -   Django
         -   djangorestframework

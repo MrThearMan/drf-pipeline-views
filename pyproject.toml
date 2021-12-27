@@ -68,6 +68,7 @@ tox = "^3.24.4"
 coveralls = "^3.2.0"
 mkdocs = "^1.2.2"
 flake8 = "^4.0.1"
+pylint = "^2.12.2"
 mypy = "^0.930"
 django-stubs = "^1.9.0"
 djangorestframework-stubs = "^1.4.0"
@@ -90,7 +91,7 @@ ignore-paths = [
 ]
 
 [tool.pylint.messages_control]
-disable = "C0330, C0326, C0114, C0115, C0116, R0903, R0913, R1721"
+disable = "C0330, C0326, C0114, C0115, C0116, R0801, R0903, R0913, R1721"
 
 [tool.pylint.format]
 max-line-length = "120"
