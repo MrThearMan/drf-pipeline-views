@@ -37,8 +37,7 @@ The HTTP method mixins use a `@translate` decorator to enable translations based
 client is asking for. Use the `LANGUAGES` setting in django to define supported languages.
 Used language is determined from 1. a `lang` query parameter, or 2. `request.LANGUAGE_CODE` fetched from Accept-Language header
 (requires [LocaleMiddleware](https://docs.djangoproject.com/en/3.1/ref/middleware/#django.middleware.locale.LocaleMiddleware)).
-Failing that, the tranlation falls back to English (i.e. no translation), or to the first language in the `LANGUAGES`
-setting if English is not an option.
+Failing that, the tranlation falls back to the currently active language.
 
 
 ## Run in a thread
@@ -47,6 +46,10 @@ Some tasks, like interactions with the Django ORM, cannot be done in an async co
 the sync_to_async adapter included in django, or by running the task in a thread. `drf-pipeline-views` includes
 a utility that can be used to wrap a function call so that it will run in a thread,
 and thus enable these tasks in async contexts.
+
+## Cache Pipeline Logic
+
+A handy utility that can be used to cache pipeline logic to the django cache backend.
 
 
 ## Ignoring input parameters

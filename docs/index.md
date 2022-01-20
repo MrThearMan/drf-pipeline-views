@@ -15,6 +15,7 @@
 ```shell
 pip install drf-pipeline-views
 ```
+
 ---
 
 **Documentation**: [https://mrthearman.github.io/drf-pipeline-views/](https://mrthearman.github.io/drf-pipeline-views/)

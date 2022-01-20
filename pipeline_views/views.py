@@ -8,6 +8,7 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
+from .inference import serializer_from_callable
 from .typing import (
     Any,
     DataDict,
@@ -20,7 +21,7 @@ from .typing import (
     Tuple,
     ViewContext,
 )
-from .utils import is_serializer_class, sentinel, serializer_from_callable
+from .utils import is_serializer_class, sentinel
 
 
 __all__ = [
@@ -64,6 +65,8 @@ class BaseAPIView(APIView):
 
         try:
             for step in logic:  # type: ignore
+
+                # Conditional logic path
                 if isinstance(data, tuple):
                     key, data = data
                     try:
@@ -71,8 +74,11 @@ class BaseAPIView(APIView):
                     except (KeyError, TypeError) as error:
                         raise TypeError(f"Next logic step doesn't have a conditional logic path '{key}'.") from error
 
+                # Serializer
                 if is_serializer_class(step):
                     data = self.run_serializer(serializer_class=step, data=data)
+
+                # Async group
                 elif isinstance(step, tuple):
                     old_kwargs: Optional[DataDict] = None
                     try:
@@ -89,8 +95,10 @@ class BaseAPIView(APIView):
                         old_kwargs.update(data)
                         data = old_kwargs
 
+                # Logic block or callable
                 elif isinstance(step, list) or callable(step):
                     data = await self.run_logic(logic=step, data=data if data is not None else {})  # type: ignore
+
                 else:
                     raise TypeError("Only Serializers and callables are supported in the pipeline.")
 

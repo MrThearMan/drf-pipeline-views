@@ -3,6 +3,7 @@ try:
         TYPE_CHECKING,
         Any,
         Callable,
+        Coroutine,
         Dict,
         ForwardRef,
         Generator,
@@ -33,6 +34,7 @@ except ImportError:
         TypeVar,
         Set,
         ForwardRef,
+        Coroutine,
         _eval_type,
     )
     from typing_extensions import (  # type: ignore
@@ -80,6 +82,9 @@ __all__ = [
     "Set",
     "ForwardRef",
     "eval_type",
+    "CallableAny",
+    "Coroutine",
+    "CoroutineCallable",
 ]
 
 
@@ -94,6 +99,8 @@ LogicCallable = Callable[..., DataReturn]
 PipelineLogic = Union[LogicCallable, SerializerType, Iterable["PipelineLogic"]]  # type: ignore
 PipelinesDict = Dict[HTTPMethod, PipelineLogic]  # type: ignore
 TypesDict = Dict[str, Union[Optional[Type], "TypesDict"]]  # type: ignore
+CoroutineCallable = Callable[..., Coroutine[Any, Any, T]]
+CallableAny = Callable[..., T]
 
 
 class ViewContext(TypedDict):
