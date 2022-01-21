@@ -29,10 +29,6 @@ help:
 	@echo "  flake8           Run flake8 on all files."
 	@echo "  mypy             Run mypy on all files."
 
-
-test:
-	@poetry run pytest -s -vv -k $(call args, "")
-
 dev:
 	@poetry run python manage.py runserver 127.0.0.1:8080
 
@@ -46,7 +42,10 @@ submit-docs:
 	@poetry run mkdocs gh-deploy
 
 tests:
-	@poetry run pytest -vv -s --cov=pipeline_views tests/
+	@poetry run coverage run -m pytest -vv -s --log-cli-level=INFO
+
+test:
+	@poetry run pytest -s -vv -k $(call args, "")
 
 tox:
 	@poetry run tox
