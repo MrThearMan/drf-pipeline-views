@@ -1,46 +1,30 @@
 # Async Logic Callables
 
 Pipeline logic callables can also be coroutines.
+The best part about coroutines is that they can be run in parallel.
+You can configure this in the pipeline easily with a tuple.
 
-```python
-from pipeline_views import BaseAPIView, GetMixin
 
-
-async def async_step1():
+```python title="services.py"
+async def async_step1(...):
     ...
 
 
-class SomeView(GetMixin, BaseAPIView):
+async def async_step2_1(...):
+    ...
 
-    pipelines = {
-        "GET": [
-            async_step1,
-        ],
-    }
+
+async def async_step2_2(...):
+    ...
+
+
+async def async_step3(...):
+    ...
 ```
 
-The best part about coroutines is that they can be run in parallel. You can configure this in
-the pipeline easily with a tuple.
-
-
-```python
+```python title="views.py" hl_lines="10 11 12 13"
 from pipeline_views import BaseAPIView, GetMixin
-
-
-async def async_step1():
-    ...
-
-
-async def async_step2_1():
-    ...
-
-
-async def async_step2_2():
-    ...
-
-
-async def async_step3():
-    ...
+from .services import async_step1, async_step2_1, async_step2_2, async_step3
 
 
 class SomeView(GetMixin, BaseAPIView):
@@ -64,7 +48,10 @@ coroutines. `async_step2_1` and `async_step2_2` will both receive all the argume
 Return values from the callable before the parallel excecution can be passed to the next step after the
 parallel execution by setting "..." (ellipses) in the tuple.
 
-```python
+```python title="views.py" hl_lines="13"
+from pipeline_views import BaseAPIView, GetMixin
+from .services import async_step1, async_step2_1, async_step2_2, async_step3
+
 
 class SomeView(GetMixin, BaseAPIView):
 

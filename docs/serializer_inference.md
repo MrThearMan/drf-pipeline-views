@@ -2,7 +2,7 @@
 
 ### Input serializer
 
-Using serializers is totally optional. A pipeline like this will work just as well:
+A pipeline can also be constructed without Serializers.
 
 ```python
 class SomeView(GetMixin, BaseAPIView):
@@ -41,7 +41,7 @@ This is only used by the Django REST Framework Browsable API to create forms.
 ### Output serializer
 
 Serializer inference can be extended to create output serializers a well.
-In this case, the last callable would be used (step5 in this case), and the
+In this case, the last callable would be used (`step5` in this case), and the
 inference would be done based on it's output type.
 
 For this, `BaseAPIView.get_serializer(...)` needs `output=True` in it's kwargs.

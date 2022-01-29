@@ -2,7 +2,7 @@
 
 Pipeline logic, as well as serializers, can be grouped into blocks:
 
-```python
+```python hl_lines="5 6 7 8"
 class SomeView(GetMixin, BaseAPIView):
 
     pipelines = {
@@ -29,7 +29,7 @@ the last step in the logic) as a dictionary
 
 2. `NextLogicBlock.with_output(output=...)`, which passes any other output like lists or strings.
 
-```python
+```python hl_lines="5 6 13 14"
 from pipeline_views import NextLogicBlock
 
 

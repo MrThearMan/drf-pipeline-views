@@ -57,13 +57,16 @@ A handy utility that can be used to cache pipeline logic to the django cache bac
 If some endpoint input parameter is not required in the pipeline logic, it can be ignored
 from the input data by placing it in a set on the endpoint level:
 
-```python
+```python hl_lines="5 6 8 9"
 from pipeline_views import BaseAPIView, GetMixin, PostMixin
 
 
 class BasicView(GetMixin, PostMixin, BaseAPIView):
-    ignored_get_params = {...}  # Redefine ignored values
-    ignored_post_params = PostMixin.ignored_post_params | {...}  # Extend the ignored values
+    # Redefine ignored values
+    ignored_get_params = {...}
+
+    # Extend the ignored values
+    ignored_post_params = PostMixin.ignored_post_params | {...}
 
     pipelines = {
         "GET": ...,

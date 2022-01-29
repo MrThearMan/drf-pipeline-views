@@ -3,7 +3,7 @@
 Sometimes you might want to run different logic based on the output from the previous logic method.
 This can be accomplished with conditional logic paths.
 
-```python
+```python hl_lines="13 14 15 16"
 def step1(data):
     if condition:
         return "foo", data
@@ -32,7 +32,7 @@ Conditional paths also work inside logic blocks.
 You could also use conditionals to run only one method from a logic block, since it just uses
 `__getitem__` to select the next logic method.
 
-```python
+```python hl_lines="13 14 15 16"
 def step1(data):
     if condition:
         return 0, data

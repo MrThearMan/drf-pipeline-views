@@ -1,11 +1,52 @@
-blockquote {
-    background: #eee;
-    border: 1px solid #ddd;
-    border-left: 4px solid #2980b9;
-    margin-left: 0 !important;
-    padding: 16px 12px 0 24px;
+:root {
+    --md-primary-fg-color: #A94826;
+    --md-accent-fg-color: #CC7832;
 }
 
-blockquote code {
-    line-height: normal;
+[data-md-color-scheme=slate] {
+    --md-hue: 33;
+
+    --md-default-fg-color: hsla(var(--md-hue), 5%, 75%, 1);
+    --md-default-fg-color--light: hsla(var(--md-hue), 5%, 75%, 0.50);
+    --md-default-fg-color--lighter: hsla(var(--md-hue), 5%, 75%, 0.50);
+    --md-default-fg-color--lightest: hsla(var(--md-hue), 5%, 75%, 0.50);
+
+    --md-default-bg-color: hsla(var(--md-hue), 5%, 15%, 1);
+    --md-default-bg-color--light: hsla(var(--md-hue), 5%, 15%, 0.50);
+    --md-default-bg-color--lighter: hsla(var(--md-hue), 5%, 15%, 0.50);
+    --md-default-bg-color--lightest: hsla(var(--md-hue), 5%, 15%, 0.50);
+
+    --md-code-fg-color: var(--md-default-fg-color);
+    --md-code-bg-color: hsla(var(--md-hue), 5%, 19%, 1);
+    --md-code-hl-color: hsla(var(--md-hue), 5%, 23%, 1);
+    --md-code-hl-name-color: var(--md-code-fg-color);
+    --md-code-hl-function-color: var(--md-code-fg-color);
+    --md-code-hl-keyword-color: #CC7832;
+    --md-code-hl-number-color: #6897BB;
+    --md-code-hl-constant-color: #8E548C;
+    --md-code-hl-string-color: #688658;
+    --md-code-hl-special-color: #E8BF6A;
+    --md-code-hl-operator-color: var(--md-default-fg-color--light);
+    --md-code-hl-punctuation-color: var(--md-default-fg-color--light);
+    --md-code-hl-comment-color: var(--md-default-fg-color--light);
+    --md-code-hl-generic-color: var(--md-default-fg-color--light);
+    --md-code-hl-variable-color: var(--md-default-fg-color--light);
+
+    --md-typeset-color: var(--md-default-fg-color);
+    --md-typeset-a-color: var(--md-primary-fg-color);
+    --md-typeset-mark-color: rgba(66, 135, 255, .3);
+    --md-typeset-kbd-color: hsla(var(--md-hue), 15%, 94%, 0.12);
+    --md-typeset-kbd-accent-color: hsla(var(--md-hue), 15%, 94%, 0.2);
+    --md-typeset-kbd-border-color: hsla(var(--md-hue), 15%, 14%, 1);
+    --md-typeset-table-color: hsla(var(--md-hue), 75%, 95%, 0.12);
+
+    --md-admonition-bg-color: hsla(var(--md-hue), 0%, 100%, 0.025);
+
+    --md-footer-bg-color: hsla(var(--md-hue), 15%, 12%, 0.87);
+    --md-footer-bg-color--dark: hsla(var(--md-hue), 15%, 10%, 1);
+}
+
+blockquote {
+    margin: 0;
+    padding: 1px;
 }
