@@ -1,4 +1,5 @@
 site_name: Django REST Framework Pipeline Views
+
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
@@ -7,15 +8,20 @@ nav:
   - Conditional Logic Paths: conditional_logic_paths.md
   - Async Logic Callables: async.md
   - Miscellaneous: misc.md
+
 theme:
-  name: readthedocs
-  highlightjs: true
-  hljs_languages:
-    - python
-    - yaml
-    - console
+  name: material
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
 
 markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
   - pymdownx.superfences
 
 extra_css:

@@ -71,10 +71,12 @@ isort = "^5.10.1"
 flake8 = "^4.0.1"
 pylint = "^2.12.2"
 mypy = "^0.931"
-mkdocs = "^1.2.3"
-pymdown-extensions = "^9.1"
 django-stubs = "^1.9.0"
 djangorestframework-stubs = "^1.4.0"
+mkdocs = "^1.2.3"
+pymdown-extensions = "^9.1"
+mkdocs-material = "^8.1.8"
+Pygments = "^2.11.2"
 
 [tool.poetry.extras]
 typing = ["typing-extensions"]
