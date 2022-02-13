@@ -10,13 +10,17 @@ from pipeline_views.views import BaseAPIView
 
 
 class InputSerializer(serializers.Serializer):
+    """Example Input"""
+
     name = serializers.CharField()
     age = serializers.IntegerField()
 
 
 class OutputSerializer(serializers.Serializer):
+    """Example Output"""
+
     email = serializers.EmailField()
-    id = serializers.UUIDField()
+    age = serializers.IntegerField()
 
 
 def test_method(name: str, age: int):
@@ -24,9 +28,14 @@ def test_method(name: str, age: int):
 
 
 class ExampleView(PostMixin, BaseAPIView):
+    """Example View"""
 
     pipelines = {
-        "POST": (test_method,),
+        "POST": [
+            InputSerializer,
+            test_method,
+            OutputSerializer,
+        ],
     }
 
 

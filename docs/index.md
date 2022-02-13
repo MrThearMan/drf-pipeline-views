@@ -71,7 +71,7 @@ class SomeView(GetMixin, BaseAPIView):
 [issues-badge]: https://img.shields.io/github/issues-raw/MrThearMan/drf-pipeline-views
 [version-badge]: https://img.shields.io/pypi/pyversions/drf-pipeline-views
 [django-badge]: https://img.shields.io/pypi/djversions/drf-pipeline-views
-[drf-badge]: https://img.shields.io/badge/drf%20versions-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue
+[drf-badge]: https://img.shields.io/badge/drf%20versions-3.12%20%7C%203.13-blue
 
 [coverage]: https://coveralls.io/github/MrThearMan/drf-pipeline-views?branch=main
 [status]: https://github.com/MrThearMan/drf-pipeline-views/actions/workflows/main.yml

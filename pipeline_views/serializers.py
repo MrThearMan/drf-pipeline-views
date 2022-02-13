@@ -1,14 +1,19 @@
-from rest_framework.serializers import Serializer
+from rest_framework.serializers import CharField, Serializer
 
 from .typing import Any, Dict
 
 
 __all__ = [
     "MockSerializer",
+    "DetailSerializer",
 ]
 
 
-class MockSerializer(Serializer):
+class DetailSerializer(Serializer):  # pylint: disable=W0223
+    detail = CharField()
+
+
+class MockSerializer(Serializer):  # pylint: disable=W0223
     """Serializer that simply passes initial data to output."""
 
     def to_internal_value(self, data: Any) -> Dict[str, Any]:
@@ -16,9 +21,3 @@ class MockSerializer(Serializer):
 
     def to_representation(self, instance: Any) -> Dict[str, Any]:
         return self.initial_data  # type: ignore
-
-    def create(self, validated_data: Any) -> Any:
-        """Creted to satisfy linters."""
-
-    def update(self, instance: Any, validated_data: Any) -> Any:
-        """Creted to satisfy linters."""
