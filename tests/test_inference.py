@@ -23,11 +23,6 @@ class Foo(TypedDict):
     age: int
 
 
-class Bar(TypedDict):
-    foo: Foo
-    bar: "Foo"
-
-
 def test_parameter_types():
     assert _parameter_types(function_01) == {"name": None, "age": None}
     assert _parameter_types(function_02) == {"name": int, "age": None}
@@ -137,54 +132,6 @@ def test_parameter_types__output__typed_dict__decorated():
         pass
 
     assert _return_types(function) == {"name": str, "age": int}
-
-
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Recursice literal evaluation requires Python 3.9 or higher")
-def test_parameter_types__typed_dict__recursive():
-    def function(foo: "Bar"):
-        pass
-
-    assert _parameter_types(function) == {"foo": {"foo": {"name": str, "age": int}, "bar": {"name": str, "age": int}}}
-
-
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Recursice literal evaluation requires Python 3.9 or higher")
-def test_parameter_types__typed_dict__decorated__recursive():
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return {}
-
-        return wrapper
-
-    @decorator
-    def function(foo: "Bar"):
-        pass
-
-    assert _parameter_types(function) == {"foo": {"foo": {"name": str, "age": int}, "bar": {"name": str, "age": int}}}
-
-
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Recursice literal evaluation requires Python 3.9 or higher")
-def test_parameter_types__output__typed_dict__recursive():
-    def function() -> "Bar":
-        pass
-
-    assert _return_types(function) == {"foo": {"name": str, "age": int}, "bar": {"name": str, "age": int}}
-
-
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="Recursice literal evaluation requires Python 3.9 or higher")
-def test_parameter_types__output__typed_dict__decorated__recursive():
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return {}
-
-        return wrapper
-
-    @decorator
-    def function() -> "Bar":
-        pass
-
-    assert _return_types(function) == {"foo": {"name": str, "age": int}, "bar": {"name": str, "age": int}}
 
 
 def test_serializer_from_callable():
