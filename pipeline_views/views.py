@@ -119,7 +119,8 @@ class BaseAPIView(APIView):
         kwargs["serializer_class"] = self.get_serializer_class(output=kwargs.pop("output", False))
         return self.initialize_serializer(*args, **kwargs)
 
-    def initialize_serializer(self, serializer_class: SerializerType, *args: Any, **kwargs: Any) -> BaseSerializer:
+    def initialize_serializer(self, *args: Any, **kwargs: Any) -> BaseSerializer:
+        serializer_class: SerializerType = kwargs.pop("serializer_class")
         kwargs.setdefault("context", self.get_serializer_context())
         kwargs.setdefault("many", getattr(serializer_class, "many", False))
         if kwargs.get("data", sentinel) is None:
