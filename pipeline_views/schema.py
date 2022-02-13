@@ -10,6 +10,8 @@ __all__ = [
     "PipelineSchemaMixin",
 ]
 
+from pipeline_views.typing import HTTPMethod
+
 
 def add_default_response(responses):
     if ... not in set(responses.values()):
@@ -18,7 +20,7 @@ def add_default_response(responses):
 
 class PipelineSchemaMixin:
 
-    responses: Dict[int, Union[str, Type[serializers.Serializer]]] = {}
+    responses: Dict[HTTPMethod, Dict[int, Union[str, Type[serializers.Serializer]]]] = {}
 
     def get_components(self, path, method):
         request_serializer = self.get_request_serializer(path, method)
@@ -40,19 +42,23 @@ class PipelineSchemaMixin:
             content = self.map_serializer(response_serializer)
             components.setdefault(component_name, content)
 
-        for serializer_class in self.responses.values():
-            if isinstance(serializer_class, type) and issubclass(serializer_class, serializers.Serializer):
-                serializer = self.view.initialize_serializer(serializer_class=serializer_class)
-                component_name = self.get_component_name(serializer)
-                content = self.map_serializer(serializer)
-                components.setdefault(component_name, content)
+            for method_responses in self.responses.values():
+                for serializer_class in method_responses.values():
+                    if isinstance(serializer_class, type) and issubclass(serializer_class, serializers.Serializer):
+                        serializer = self.view.initialize_serializer(serializer_class=serializer_class)
+                        component_name = self.get_component_name(serializer)
+                        content = self.map_serializer(serializer)
+                        components.setdefault(component_name, content)
 
         return components
 
     def get_responses(self, path, method):
         data = {}
 
-        responses = self.responses
+        responses = self.responses.get(method, {})
+        if not responses and method not in self.view.pipelines:
+            return data
+
         add_default_response(responses)
 
         for status_code, info in responses.items():

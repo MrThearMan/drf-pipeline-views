@@ -73,7 +73,7 @@ def test_pipeline_schema__get_responses(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    components = view.schema.get_responses("", "")
+    components = view.schema.get_responses("", "POST")
     assert components == {
         "200": {
             "content": {
@@ -94,9 +94,11 @@ def test_pipeline_schema__example__get_components(drf_request):
 
     class CustomSchema(PipelineSchemaMixin, AutoSchema):
         responses = {
-            200: ...,
-            400: "Unavailable",
-            404: CustomSerializer,
+            "POST": {
+                200: ...,
+                400: "Unavailable",
+                404: CustomSerializer,
+            },
         }
 
     class CustomView(ExampleView):
@@ -108,7 +110,7 @@ def test_pipeline_schema__example__get_components(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    components = view.schema.get_components("", "")
+    components = view.schema.get_components("", "POST")
     assert components == {
         "Custom": {
             "properties": {
@@ -162,9 +164,11 @@ def test_pipeline_schema__example__get_responses(drf_request):
 
     class CustomSchema(PipelineSchemaMixin, AutoSchema):
         responses = {
-            200: ...,
-            400: "Unavailable",
-            404: CustomSerializer,
+            "POST": {
+                200: ...,
+                400: "Unavailable",
+                404: CustomSerializer,
+            },
         }
 
     class CustomView(ExampleView):
@@ -176,7 +180,7 @@ def test_pipeline_schema__example__get_responses(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    components = view.schema.get_responses("", "")
+    components = view.schema.get_responses("", "POST")
     assert components == {
         "200": {
             "content": {
@@ -209,3 +213,54 @@ def test_pipeline_schema__example__get_responses(drf_request):
             "description": "",
         },
     }
+
+
+def test_pipeline_schema__example__get_responses__none(drf_request):
+    class CustomSerializer(Serializer):
+        data = CharField()
+
+    class CustomSchema(PipelineSchemaMixin, AutoSchema):
+        pass
+
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        schema = CustomSchema()
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    components = view.schema.get_responses("", "POST")
+    assert components == {
+        "200": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/Output",
+                    },
+                },
+            },
+            "description": "Example Output",
+        },
+    }
+
+
+def test_pipeline_schema__example__get_responses__wrong_method(drf_request):
+    class CustomSerializer(Serializer):
+        data = CharField()
+
+    class CustomSchema(PipelineSchemaMixin, AutoSchema):
+        pass
+
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        schema = CustomSchema()
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    components = view.schema.get_responses("", "GET")
+    assert components == {}
