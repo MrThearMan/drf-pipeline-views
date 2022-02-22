@@ -11,6 +11,7 @@ try:
         List,
         Literal,
         Optional,
+        ParamSpec,
         Protocol,
         Set,
         Tuple,
@@ -43,6 +44,7 @@ except ImportError:
         Type,
         TypedDict,
         Protocol,
+        ParamSpec,
     )
 
 from rest_framework.request import Request
@@ -79,16 +81,16 @@ __all__ = [
     "SerializerType",
     "TypesDict",
     "T",
+    "P",
     "Set",
     "ForwardRef",
     "eval_type",
-    "CallableAny",
     "Coroutine",
-    "CoroutineCallable",
 ]
 
 
 T = TypeVar("T")  # pylint: disable=C0103
+P = ParamSpec("P")  # pylint: disable=C0103
 eval_type = _eval_type
 DataDict = Dict[str, Any]
 SerializerType = Type[BaseSerializer]
@@ -99,8 +101,6 @@ LogicCallable = Callable[..., DataReturn]
 PipelineLogic = Union[LogicCallable, SerializerType, Iterable["PipelineLogic"]]  # type: ignore
 PipelinesDict = Dict[HTTPMethod, PipelineLogic]  # type: ignore
 TypesDict = Dict[str, Union[Optional[Type], "TypesDict"]]  # type: ignore
-CoroutineCallable = Callable[..., Coroutine[Any, Any, T]]
-CallableAny = Callable[..., T]
 
 
 class ViewContext(TypedDict):

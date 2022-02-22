@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "drf-pipeline-views"
-version = "0.3.1"
+version = "0.3.2"
 description = "Django REST framework views using the pipeline pattern."
 authors = [
     "Matti Lamppu <lamppu.matti.akseli@gmail.com>",
@@ -71,7 +71,7 @@ django-stubs = "^1.9.0"
 djangorestframework-stubs = "^1.4.0"
 mkdocs = "^1.2.3"
 pymdown-extensions = "^9.2"
-mkdocs-material = "^8.1.8"
+mkdocs-material = "^8.2.1"
 Pygments = "^2.11.2"
 
 [tool.poetry.extras]
@@ -145,6 +145,9 @@ exclude_lines = [
     "except ImportError:",
     "pragma: no cover",
 ]
+
+[tool.pytest.ini_options]
+addopts = "-vv -s --log-cli-level=INFO"
 
 [tool.tox]
 legacy_tox_ini = """

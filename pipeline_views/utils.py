@@ -10,7 +10,7 @@ from django.utils.translation import override
 from rest_framework.request import Request
 from rest_framework.serializers import BaseSerializer
 
-from .typing import Any, Callable, CallableAny, CoroutineCallable, Generator, List, Optional, T, Union
+from .typing import Any, Callable, Generator, List, Optional, P, T, Union
 
 
 __all__ = [
@@ -47,7 +47,7 @@ def get_language(request: Request) -> str:
     return current_language()
 
 
-def translate(item: Union[CallableAny, Request]) -> Union[Generator[Any, Any, None], CallableAny]:
+def translate(item: Union[Callable[P, T], Request]) -> Union[Generator[Any, Any, None], Callable[P, T]]:
     """Override current language with one from language header or 'lang' parameter.
     Can be used as a context manager or a decorator. If a function is decorated,
     one of the parameters for the function must be a `rest_framework.Request` object.
@@ -56,7 +56,7 @@ def translate(item: Union[CallableAny, Request]) -> Union[Generator[Any, Any, No
     if not isinstance(item, Request):
 
         @wraps(item)
-        def decorator(*args: Any, **kwargs: Any) -> Any:
+        def decorator(*args: P.args, **kwargs: P.kwargs) -> Any:
             request = None
             for arg in chain(args, kwargs.values()):
                 if isinstance(arg, Request):
@@ -79,7 +79,7 @@ def translate(item: Union[CallableAny, Request]) -> Union[Generator[Any, Any, No
     return context_manager(item)
 
 
-def cache_pipeline_logic(cache_key: str, timeout: int) -> Callable[[CoroutineCallable], CoroutineCallable]:
+def cache_pipeline_logic(cache_key: str, timeout: int) -> Callable[P, T]:
     """Cache the result of a pipeline logic function. Calls with different arguments will be saved under
     different keys, using the given key as a prefix and joining it with a hash of the arguments.
 
@@ -87,9 +87,9 @@ def cache_pipeline_logic(cache_key: str, timeout: int) -> Callable[[CoroutineCal
     :param timeout: How long to cache the data in seconds.
     """
 
-    def decorator(func: CoroutineCallable) -> CoroutineCallable:
+    def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)
-        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             nonlocal cache_key
             key = cache_key + str(hash(args + tuple(kwargs.values())))
             data = run_in_thread(cache.get)(key, None)
@@ -103,14 +103,14 @@ def cache_pipeline_logic(cache_key: str, timeout: int) -> Callable[[CoroutineCal
     return decorator
 
 
-def run_in_thread(task: CallableAny) -> CallableAny:
+def run_in_thread(task: Callable[P, T]) -> Callable[P, T]:
     """Decorator to run given callable in a thread.
     Useful for running functions that require a database or otherwise
     cannot run in async mode.
     """
 
     @wraps(task)
-    def wrapper(*args, **kwargs) -> T:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         def func() -> T:
             return task(*args, **kwargs)
 
