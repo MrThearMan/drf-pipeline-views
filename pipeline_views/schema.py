@@ -2,15 +2,14 @@ from typing import Dict, Type, Union
 
 from rest_framework import serializers
 
-from pipeline_views.serializers import DetailSerializer
+from .serializers import DetailSerializer
+from .typing import HTTPMethod
 
 
 __all__ = [
     "add_default_response",
     "PipelineSchemaMixin",
 ]
-
-from pipeline_views.typing import HTTPMethod
 
 
 def add_default_response(responses):

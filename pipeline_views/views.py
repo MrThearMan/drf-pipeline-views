@@ -23,7 +23,7 @@ from .typing import (
     Tuple,
     ViewContext,
 )
-from .utils import is_serializer_class, sentinel
+from .utils import is_serializer_class, run_parallel, sentinel
 
 
 __all__ = [
@@ -39,14 +39,14 @@ class BaseAPIView(APIView):
 
     schema = type("Schema", (PipelineSchemaMixin, AutoSchema), {})()
 
-    async def process_request(self, data: DataDict, lang: str = None) -> Response:
+    def process_request(self, data: DataDict, lang: str = None) -> Response:
         """Process request in a pipeline-fashion."""
         if lang is None:
             lang = get_language()
 
         with override(lang):
             pipeline = self.get_pipeline_for_current_request_method()
-            data = await self.run_logic(logic=pipeline, data=data)  # type: ignore
+            data = self.run_logic(logic=pipeline, data=data)  # type: ignore
 
         if data:
             return Response(data=data, status=status.HTTP_200_OK)
@@ -59,12 +59,12 @@ class BaseAPIView(APIView):
         except KeyError as missing_method:
             raise KeyError(f"Pipeline not configured for HTTP method '{self.request.method}'") from missing_method
 
-    async def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
+    def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
         """Run pipeline logic recursively."""
         if callable(logic):
             result = logic(**data)
             if isinstance(result, Coroutine):
-                result = await result
+                result = asyncio.run(result)
             return result  # type: ignore
 
         try:
@@ -92,7 +92,7 @@ class BaseAPIView(APIView):
                     except ValueError:
                         pass
 
-                    results: Tuple[DataDict, ...] = await asyncio.gather(*[task(**data) for task in step])
+                    results: Tuple[DataDict, ...] = asyncio.run(run_parallel(step, data))
                     data = {key: value for result in results for key, value in result.items()}
 
                     if old_kwargs is not None:
@@ -101,7 +101,7 @@ class BaseAPIView(APIView):
 
                 # Logic block or callable
                 elif isinstance(step, list) or callable(step):
-                    data = await self.run_logic(logic=step, data=data if data is not None else {})  # type: ignore
+                    data = self.run_logic(logic=step, data=data if data is not None else {})  # type: ignore
 
                 else:
                     raise TypeError("Only Serializers and callables are supported in the pipeline.")

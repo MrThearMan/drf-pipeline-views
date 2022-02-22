@@ -1,3 +1,4 @@
+import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from functools import wraps
@@ -10,7 +11,20 @@ from django.utils.translation import override
 from rest_framework.request import Request
 from rest_framework.serializers import BaseSerializer
 
-from .typing import Any, Callable, Generator, List, Optional, P, T, Union
+from .typing import (
+    Any,
+    Callable,
+    DataDict,
+    Generator,
+    List,
+    LogicCallable,
+    Optional,
+    P,
+    SerializerType,
+    T,
+    Tuple,
+    Union,
+)
 
 
 __all__ = [
@@ -20,6 +34,7 @@ __all__ = [
     "is_serializer_class",
     "cache_pipeline_logic",
     "run_in_thread",
+    "run_parallel",
 ]
 
 
@@ -119,3 +134,7 @@ def run_in_thread(task: Callable[P, T]) -> Callable[P, T]:
             return future.result()
 
     return wrapper
+
+
+async def run_parallel(step: Tuple[Union[LogicCallable, SerializerType], ...], data: DataDict) -> Tuple[DataDict, ...]:
+    return await asyncio.gather(*[task(**data) for task in step])  # noqa
