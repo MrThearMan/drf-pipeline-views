@@ -53,6 +53,7 @@ python = ">=3.7,<4"
 Django = ">=2.2"
 djangorestframework = ">=3.12.0"
 typing-extensions = {version = ">=4.0", optional = true}
+uvloop = {version = ">=0.16.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest-cov = "^3.0.0"
@@ -76,6 +77,7 @@ Pygments = "^2.11.2"
 
 [tool.poetry.extras]
 typing = ["typing-extensions"]
+uvloop = ["uvloop"]
 
 [tool.black]
 line-length = 120

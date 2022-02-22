@@ -4,6 +4,14 @@ from .serializers import MockSerializer
 from .views import BaseAPIView
 
 
+try:
+    import uvloop
+
+    uvloop.install()
+except ImportError:
+    pass
+
+
 __all__ = [
     "BaseAPIView",
     "DeleteMixin",
