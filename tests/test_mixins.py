@@ -1,12 +1,12 @@
 from pipeline_views.mixins import DeleteMixin, GetMixin, PatchMixin, PostMixin, PutMixin
-from pipeline_views.views import BaseAPIView
+from pipeline_views.views import BasePipelineView
 
 
 def test_get_mixin(drf_request):
     def callable_method(testing: int):
         return {"testing": testing * 2}
 
-    class BasicView(GetMixin, BaseAPIView):
+    class BasicView(GetMixin, BasePipelineView):
 
         pipelines = {"GET": [callable_method]}
 
@@ -28,7 +28,7 @@ def test_post_mixin(drf_request):
     def callable_method(testing: int):
         return {"testing": testing * 2}
 
-    class BasicView(PostMixin, BaseAPIView):
+    class BasicView(PostMixin, BasePipelineView):
 
         pipelines = {"POST": [callable_method]}
 
@@ -49,7 +49,7 @@ def test_patch_mixin(drf_request):
     def callable_method(testing: int):
         return {"testing": testing * 2}
 
-    class BasicView(PatchMixin, BaseAPIView):
+    class BasicView(PatchMixin, BasePipelineView):
 
         pipelines = {"PATCH": [callable_method]}
 
@@ -70,7 +70,7 @@ def test_put_mixin(drf_request):
     def callable_method(testing: int):
         return {"testing": testing * 2}
 
-    class BasicView(PutMixin, BaseAPIView):
+    class BasicView(PutMixin, BasePipelineView):
 
         pipelines = {"PUT": [callable_method]}
 
@@ -91,7 +91,7 @@ def test_delete_mixin(drf_request):
     def callable_method(testing: int):
         return {"testing": testing * 2}
 
-    class BasicView(DeleteMixin, BaseAPIView):
+    class BasicView(DeleteMixin, BasePipelineView):
 
         pipelines = {"DELETE": [callable_method]}
 

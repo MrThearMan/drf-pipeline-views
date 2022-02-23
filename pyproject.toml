@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "drf-pipeline-views"
-version = "0.4.0"
+version = "0.5.0"
 description = "Django REST framework views using the pipeline pattern."
 authors = [
     "Matti Lamppu <lamppu.matti.akseli@gmail.com>",
@@ -74,6 +74,7 @@ mkdocs = "^1.2.3"
 pymdown-extensions = "^9.2"
 mkdocs-material = "^8.2.1"
 Pygments = "^2.11.2"
+uritemplate = "^4.1.1"
 
 [tool.poetry.extras]
 typing = ["typing-extensions"]
@@ -181,6 +182,7 @@ deps =
     typing-extensions
     pytest-cov
     pytest-django
+    uritemplate
 commands =
     coverage run -m pytest -vv -s --log-cli-level=INFO
 """

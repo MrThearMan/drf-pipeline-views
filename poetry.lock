@@ -955,7 +955,7 @@ uvloop = ["uvloop"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<4"
-content-hash = "0e77c9280163df8696c550ddee152aaf3a44861d4c0f6a101fa491ca36b7919d"
+content-hash = "a74995971495eae4dad2137b1fdcef83bb9c4c105da0052180c8a9c8cbd23366"
 
 [metadata.files]
 asgiref = [

@@ -1,19 +1,19 @@
 from .exceptions import NextLogicBlock
 from .mixins import DeleteMixin, GetMixin, PatchMixin, PostMixin, PutMixin
 from .serializers import MockSerializer
-from .views import BaseAPIView
+from .views import BasePipelineView
 
 
 try:
-    import uvloop
+    import uvloop  # noqa pylint: disable=import-error
 
-    uvloop.install()
-except ImportError:
+    uvloop.install()  # pragma: no cover
+except Exception:  # noqa pylint: disable=broad-except
     pass
 
 
 __all__ = [
-    "BaseAPIView",
+    "BasePipelineView",
     "DeleteMixin",
     "GetMixin",
     "PatchMixin",

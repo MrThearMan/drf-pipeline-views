@@ -8,11 +8,13 @@ If you wish to add data to a request, you can do that on the endpoint level by o
 ```python
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.authentication import get_authorization_header
-from pipeline_views import BaseAPIView, GetMixin
+from pipeline_views import BasePipelineView, GetMixin
 
 
-class BasicView(GetMixin, BaseAPIView):
-    pipelines = {"GET": ...}
+class BasicView(GetMixin, BasePipelineView):
+    pipelines = {
+        "GET": ...
+    }
 
     def get(self, request, *args, **kwargs):
         # Add language to every get request for this endpoint
@@ -58,10 +60,10 @@ If some endpoint input parameter is not required in the pipeline logic, it can b
 from the input data by placing it in a set on the endpoint level:
 
 ```python hl_lines="5 6 8 9"
-from pipeline_views import BaseAPIView, GetMixin, PostMixin
+from pipeline_views import BasePipelineView, GetMixin, PostMixin
 
 
-class BasicView(GetMixin, PostMixin, BaseAPIView):
+class BasicView(GetMixin, PostMixin, BasePipelineView):
     # Redefine ignored values
     ignored_get_params = {...}
 

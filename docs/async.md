@@ -23,11 +23,11 @@ async def async_step3(...):
 ```
 
 ```python title="views.py" hl_lines="10 11 12 13"
-from pipeline_views import BaseAPIView, GetMixin
+from pipeline_views import BasePipelineView, GetMixin
 from .services import async_step1, async_step2_1, async_step2_2, async_step3
 
 
-class SomeView(GetMixin, BaseAPIView):
+class SomeView(GetMixin, BasePipelineView):
 
     pipelines = {
         "GET": [
@@ -49,11 +49,11 @@ Return values from the callable before the parallel excecution can be passed to 
 parallel execution by setting "..." (ellipses) in the tuple.
 
 ```python title="views.py" hl_lines="13"
-from pipeline_views import BaseAPIView, GetMixin
+from pipeline_views import BasePipelineView, GetMixin
 from .services import async_step1, async_step2_1, async_step2_2, async_step3
 
 
-class SomeView(GetMixin, BaseAPIView):
+class SomeView(GetMixin, BasePipelineView):
 
     pipelines = {
         "GET": [

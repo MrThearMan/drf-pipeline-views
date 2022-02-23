@@ -11,7 +11,7 @@ def step1(data):
         return "bar", data
 
 
-class SomeView(GetMixin, BaseAPIView):
+class SomeView(GetMixin, BasePipelineView):
 
     pipelines = {
         "GET": [
@@ -40,7 +40,7 @@ def step1(data):
         return 1, data
 
 
-class SomeView(GetMixin, BaseAPIView):
+class SomeView(GetMixin, BasePipelineView):
 
     pipelines = {
         "GET": [

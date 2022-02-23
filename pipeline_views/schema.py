@@ -1,14 +1,17 @@
-from typing import Dict, Type, Union
-
-from rest_framework import serializers
+from django.utils.encoding import smart_str
+from rest_framework.schemas.openapi import AutoSchema
+from rest_framework.serializers import BaseSerializer
+from rest_framework.utils import formatting
 
 from .serializers import DetailSerializer
-from .typing import HTTPMethod
+from .typing import Any, Dict, ExternalDocs, HTTPMethod, List, Type, Union
+from .utils import is_serializer_class
 
 
 __all__ = [
     "add_default_response",
     "PipelineSchemaMixin",
+    "PipelineSchema",
 ]
 
 
@@ -17,41 +20,56 @@ def add_default_response(responses):
         responses.setdefault(200, ...)
 
 
-class PipelineSchemaMixin:
+class PipelineSchemaMixin(AutoSchema):
 
-    responses: Dict[HTTPMethod, Dict[int, Union[str, Type[serializers.Serializer]]]] = {}
+    responses: Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]] = {}
+    deprecated: Dict[HTTPMethod, bool] = {}
+    security: Dict[HTTPMethod, List[Dict[str, List[str]]]] = {}
+    external_docs: Dict[HTTPMethod, ExternalDocs] = {}
 
-    def get_components(self, path, method):
+    def get_operation(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
+        operation = super().get_operation(path, method)
+        if self.deprecated.get(method):
+            operation["deprecated"] = True
+
+        security = self.security.get(method)
+        if security is not None:
+            operation["security"] = security
+
+        external_docs = self.external_docs.get(method)
+        if external_docs is not None:
+            operation["externalDocs"] = external_docs
+
+        operation["summary"] = operation.pop("description", "")
+        return operation
+
+    def get_description(self, path: str, method: HTTPMethod) -> str:
+        serializer = self.get_request_serializer(path, method)
+        description = serializer.__class__.__doc__ or (self.view.__class__.__doc__ or "")
+        return self._get_description_section(self.view, method, formatting.dedent(smart_str(description)))
+
+    def get_components(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
         request_serializer = self.get_request_serializer(path, method)
         response_serializer = self.get_response_serializer(path, method)
 
         components = {}
 
-        component_name = self.get_component_name(DetailSerializer())
-        content = self.map_serializer(DetailSerializer())
-        components.setdefault(component_name, content)
-
-        if isinstance(request_serializer, serializers.Serializer):
-            component_name = self.get_component_name(request_serializer)
-            content = self.map_serializer(request_serializer)
+        for serializer in (DetailSerializer(), request_serializer, response_serializer):
+            component_name = self.get_component_name(serializer)
+            content = self.map_serializer(serializer)
             components.setdefault(component_name, content)
 
-        if isinstance(response_serializer, serializers.Serializer):
-            component_name = self.get_component_name(response_serializer)
-            content = self.map_serializer(response_serializer)
-            components.setdefault(component_name, content)
-
-            for method_responses in self.responses.values():
-                for serializer_class in method_responses.values():
-                    if isinstance(serializer_class, type) and issubclass(serializer_class, serializers.Serializer):
-                        serializer = self.view.initialize_serializer(serializer_class=serializer_class)
-                        component_name = self.get_component_name(serializer)
-                        content = self.map_serializer(serializer)
-                        components.setdefault(component_name, content)
+        for method_responses in self.responses.values():
+            for serializer_class in method_responses.values():
+                if is_serializer_class(serializer_class):
+                    serializer = self.view.initialize_serializer(serializer_class=serializer_class)
+                    component_name = self.get_component_name(serializer)
+                    content = self.map_serializer(serializer)
+                    components.setdefault(component_name, content)
 
         return components
 
-    def get_responses(self, path, method):
+    def get_responses(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
         data = {}
 
         responses = self.responses.get(method, {})
@@ -63,13 +81,13 @@ class PipelineSchemaMixin:
         for status_code, info in responses.items():
             serializer_class = DetailSerializer
 
-            if isinstance(info, type) and issubclass(info, serializers.Serializer):
+            if is_serializer_class(info):
                 serializer_class = info
                 info = serializer_class.__doc__ or ""
 
             if info is ...:
                 serializer = self.get_response_serializer(path, method)
-                info = serializer.__doc__ or ""
+                info = serializer.__class__.__doc__ or ""
             else:
                 serializer = self.view.initialize_serializer(serializer_class=serializer_class)
 
@@ -82,8 +100,12 @@ class PipelineSchemaMixin:
 
         return data
 
-    def get_request_serializer(self, path, method):  # pylint: disable=W0613
+    def get_request_serializer(self, path: str, method: HTTPMethod) -> BaseSerializer:  # pylint: disable=W0613
         return self.view.get_serializer()
 
-    def get_response_serializer(self, path, method):  # pylint: disable=W0613
+    def get_response_serializer(self, path: str, method: HTTPMethod) -> BaseSerializer:  # pylint: disable=W0613
         return self.view.get_serializer(output=True)
+
+
+class PipelineSchema(PipelineSchemaMixin, AutoSchema):
+    pass

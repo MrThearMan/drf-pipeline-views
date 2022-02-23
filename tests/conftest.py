@@ -5,7 +5,7 @@ from django.http import HttpRequest
 from pytest_django.fixtures import SettingsWrapper
 from rest_framework.request import Request
 
-from pipeline_views.views import BaseAPIView
+from pipeline_views.views import BasePipelineView
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django.settings")
@@ -28,8 +28,8 @@ def drf_request() -> Request:
 
 
 @pytest.fixture()
-def base_api_view(drf_request) -> BaseAPIView:
-    view = BaseAPIView()
+def base_api_view(drf_request) -> BasePipelineView:
+    view = BasePipelineView()
     view.request = drf_request
     view.format_kwarg = None
     return view

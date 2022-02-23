@@ -52,7 +52,7 @@ from rest_framework.serializers import BaseSerializer
 
 
 if TYPE_CHECKING:
-    from .views import BaseAPIView  # pylint: disable=R0401
+    from .views import BasePipelineView  # pylint: disable=R0401
 
 
 __all__ = [
@@ -86,6 +86,7 @@ __all__ = [
     "ForwardRef",
     "eval_type",
     "Coroutine",
+    "ExternalDocs",
 ]
 
 
@@ -106,4 +107,9 @@ TypesDict = Dict[str, Union[Optional[Type], "TypesDict"]]  # type: ignore
 class ViewContext(TypedDict):
     request: Request
     format: str
-    view: "BaseAPIView"
+    view: "BasePipelineView"
+
+
+class ExternalDocs(TypedDict):
+    description: str
+    url: str

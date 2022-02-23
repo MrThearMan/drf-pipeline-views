@@ -1,12 +1,10 @@
-try:
-    from django.urls import re_path
-except ImportError:
-    from django.conf.urls import url as re_path
-
+from django.urls import path
+from django.views.generic import TemplateView
 from rest_framework import serializers
+from rest_framework.schemas import get_schema_view
 
 from pipeline_views.mixins import PostMixin
-from pipeline_views.views import BaseAPIView
+from pipeline_views.views import BasePipelineView
 
 
 class InputSerializer(serializers.Serializer):
@@ -27,7 +25,7 @@ def test_method(name: str, age: int):
     return {"email": f"{name.lower()}@email.com", "age": age}
 
 
-class ExampleView(PostMixin, BaseAPIView):
+class ExampleView(PostMixin, BasePipelineView):
     """Example View"""
 
     pipelines = {
@@ -40,5 +38,22 @@ class ExampleView(PostMixin, BaseAPIView):
 
 
 urlpatterns = [
-    re_path(r"^$", ExampleView.as_view(), name="test_view"),
+    path("", ExampleView.as_view(), name="test_view"),
+    path(
+        "openapi/",
+        get_schema_view(
+            title="Your Project",
+            description="API for all things",
+            version="1.0.0",
+        ),
+        name="openapi-schema",
+    ),
+    path(
+        "swagger-ui/",
+        TemplateView.as_view(
+            template_name="swagger-ui.html",
+            extra_context={"schema_url": "openapi-schema"},
+        ),
+        name="swagger-ui",
+    ),
 ]

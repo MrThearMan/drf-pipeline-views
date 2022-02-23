@@ -37,14 +37,14 @@ data flowing through the pipeline remains the same.
 
 
 ```python title="Example Pipeline"
-from pipeline_views import BaseAPIView, GetMixin
+from pipeline_views import BasePipelineView, GetMixin
 
 from .my_serializers import InputSerializer, OutputSerializer
 from .my_validators import validator
 from .my_services import io_func, logging_func, integration_func
 
 
-class SomeView(GetMixin, BaseAPIView):
+class SomeView(GetMixin, BasePipelineView):
 
     pipelines = {
         "GET": [

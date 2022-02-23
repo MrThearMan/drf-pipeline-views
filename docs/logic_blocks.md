@@ -3,7 +3,7 @@
 Pipeline logic, as well as serializers, can be grouped into blocks:
 
 ```python hl_lines="5 6 7 8"
-class SomeView(GetMixin, BaseAPIView):
+class SomeView(GetMixin, BasePipelineView):
 
     pipelines = {
         "GET": [
@@ -54,7 +54,7 @@ Logic blocks can be stacked recursively inside each other. In this case, `NextLo
 parent logic block.
 
 ```python
-class SomeView(GetMixin, BaseAPIView):
+class SomeView(GetMixin, BasePipelineView):
 
     pipelines = {
         "GET": [

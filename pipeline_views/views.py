@@ -4,13 +4,12 @@ from collections.abc import Coroutine
 from django.utils.translation import get_language, override
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
 from .inference import serializer_from_callable
-from .schema import PipelineSchemaMixin
+from .schema import PipelineSchema
 from .typing import (
     Any,
     DataDict,
@@ -27,17 +26,16 @@ from .utils import is_serializer_class, run_parallel, sentinel
 
 
 __all__ = [
-    "BaseAPIView",
+    "BasePipelineView",
 ]
 
 
-class BaseAPIView(APIView):
-    """Base view for pipeline views."""
+class BasePipelineView(APIView):
 
     pipelines: PipelinesDict = {}
     """Dictionary describing the HTTP method pipelines."""
 
-    schema = type("Schema", (PipelineSchemaMixin, AutoSchema), {})()
+    schema = PipelineSchema()
 
     def process_request(self, data: DataDict, lang: str = None) -> Response:
         """Process request in a pipeline-fashion."""

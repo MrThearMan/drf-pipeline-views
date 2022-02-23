@@ -33,10 +33,10 @@ docs:
 	@poetry run mkdocs serve -a localhost:8080
 
 tests:
-	@poetry run coverage run -m pytest -vv -s --log-cli-level=INFO
+	@poetry run coverage run -m pytest
 
 test:
-	@poetry run pytest -s -vv --log-cli-level=INFO -k $(call args, "")
+	@poetry run pytest -k $(call args, "")
 
 tox:
 	@poetry run tox

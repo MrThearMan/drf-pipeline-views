@@ -5,7 +5,7 @@
 A pipeline can also be constructed without Serializers.
 
 ```python
-class SomeView(GetMixin, BaseAPIView):
+class SomeView(GetMixin, BasePipelineView):
 
     pipelines = {
         "GET": [
@@ -18,7 +18,7 @@ class SomeView(GetMixin, BaseAPIView):
     }
 ```
 
-BaseAPIView will try to infer an input serializer with the correct serializer fields,
+BasePipelineView will try to infer an input serializer with the correct serializer fields,
 based on the type hints to the first function `step1`.
 
 ```python
@@ -44,7 +44,7 @@ Serializer inference can be extended to create output serializers a well.
 In this case, the last callable would be used (`step5` in this case), and the
 inference would be done based on it's output type.
 
-For this, `BaseAPIView.get_serializer(...)` needs `output=True` in it's kwargs.
-`output=True` can also be passed to `BaseAPIView.get_serializer_class(...)`.
+For this, `BasePipelineView.get_serializer(...)` needs `output=True` in it's kwargs.
+`output=True` can also be passed to `BasePipelineView.get_serializer_class(...)`.
 A TypedDict (or a list containing a TypedDict) should be used so that Fields
 can be determined.
