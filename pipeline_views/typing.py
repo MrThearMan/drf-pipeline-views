@@ -3,6 +3,7 @@ try:
         TYPE_CHECKING,
         Any,
         Callable,
+        Container,
         Coroutine,
         Dict,
         ForwardRef,
@@ -36,6 +37,7 @@ except ImportError:
         Set,
         ForwardRef,
         Coroutine,
+        Container,
         _eval_type,
     )
     from typing_extensions import (  # type: ignore
@@ -83,6 +85,7 @@ __all__ = [
     "T",
     "P",
     "Set",
+    "Container",
     "ForwardRef",
     "eval_type",
     "Coroutine",

@@ -2,26 +2,8 @@ from rest_framework.fields import CharField
 from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.serializers import Serializer
 
-from pipeline_views.schema import PipelineSchemaMixin, add_default_response
+from pipeline_views.schema import PipelineSchemaMixin
 from tests.django.urls import ExampleView
-
-
-def test_add_default_response():
-    responses = {}
-    add_default_response(responses)
-    assert responses == {200: ...}
-
-
-def test_add_default_response__ellipeses_exists():
-    responses = {204: ...}
-    add_default_response(responses)
-    assert responses == {204: ...}
-
-
-def test_add_default_response__status_code_exists():
-    responses = {200: "foo"}
-    add_default_response(responses)
-    assert responses == {200: "foo"}
 
 
 def test_pipeline_schema__get_components(drf_request):
@@ -278,7 +260,7 @@ def test_pipeline_schema__example__get_operation(drf_request):
                 404: CustomSerializer,
             },
         }
-        deprecated = {"POST": True}
+        deprecated = {"POST"}
         security = {"POST": [{"foo": ["bar"]}]}
         external_docs = {"POST": {"description": "foo", "url": "bar"}}
 

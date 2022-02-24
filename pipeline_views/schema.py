@@ -4,32 +4,26 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.utils import formatting
 
 from .serializers import DetailSerializer
-from .typing import Any, Dict, ExternalDocs, HTTPMethod, List, Type, Union
+from .typing import Any, Container, Dict, ExternalDocs, HTTPMethod, List, Type, Union
 from .utils import is_serializer_class
 
 
 __all__ = [
-    "add_default_response",
     "PipelineSchemaMixin",
     "PipelineSchema",
 ]
 
 
-def add_default_response(responses):
-    if ... not in set(responses.values()):
-        responses.setdefault(200, ...)
-
-
-class PipelineSchemaMixin(AutoSchema):
+class PipelineSchemaMixin:
 
     responses: Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]] = {}
-    deprecated: Dict[HTTPMethod, bool] = {}
+    deprecated: Container[HTTPMethod] = []
     security: Dict[HTTPMethod, List[Dict[str, List[str]]]] = {}
     external_docs: Dict[HTTPMethod, ExternalDocs] = {}
 
     def get_operation(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
         operation = super().get_operation(path, method)
-        if self.deprecated.get(method):
+        if method in self.deprecated:
             operation["deprecated"] = True
 
         security = self.security.get(method)
@@ -76,7 +70,8 @@ class PipelineSchemaMixin(AutoSchema):
         if not responses and method not in self.view.pipelines:
             return data
 
-        add_default_response(responses)
+        if ... not in set(responses.values()):
+            responses.setdefault(200, ...)
 
         for status_code, info in responses.items():
             serializer_class = DetailSerializer

@@ -21,7 +21,7 @@ class OutputSerializer(serializers.Serializer):
     age = serializers.IntegerField()
 
 
-def test_method(name: str, age: int):
+def example_method(name: str, age: int):
     return {"email": f"{name.lower()}@email.com", "age": age}
 
 
@@ -31,7 +31,7 @@ class ExampleView(PostMixin, BasePipelineView):
     pipelines = {
         "POST": [
             InputSerializer,
-            test_method,
+            example_method,
             OutputSerializer,
         ],
     }
