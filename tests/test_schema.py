@@ -1,9 +1,9 @@
-from rest_framework.fields import CharField
+from rest_framework.fields import CharField, IntegerField
 from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.serializers import Serializer
 
 from pipeline_views.schema import PipelineSchemaMixin
-from tests.django.urls import ExampleView
+from tests.django.urls import ExampleView, InputSerializer, OutputSerializer
 
 
 def test_pipeline_schema__get_components(drf_request):
@@ -142,6 +142,73 @@ def test_pipeline_schema__example__get_components(drf_request):
     }
 
 
+def test_pipeline_schema__example__get_components__list(drf_request):
+    class CustomSerializer(Serializer):
+        """This is the description"""
+
+        many = True
+
+        data = CharField()
+
+    class ExampleSerializer(Serializer):
+        """This is the description for this one"""
+
+        many = True
+
+        data = IntegerField()
+
+    class CustomSchema(PipelineSchemaMixin, AutoSchema):
+        responses = {
+            "POST": {
+                200: ...,
+                400: "Unavailable",
+                404: CustomSerializer,
+            },
+        }
+
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        pipelines = {"POST": [ExampleSerializer]}
+
+        schema = CustomSchema()
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    components = view.schema.get_components("", "POST")
+    assert components == {
+        "Custom": {
+            "properties": {
+                "data": {
+                    "type": "string",
+                },
+            },
+            "required": ["data"],
+            "type": "object",
+        },
+        "Detail": {
+            "properties": {
+                "detail": {
+                    "type": "string",
+                },
+            },
+            "required": ["detail"],
+            "type": "object",
+        },
+        "Example": {
+            "properties": {
+                "data": {
+                    "type": "integer",
+                },
+            },
+            "required": ["data"],
+            "type": "object",
+        },
+    }
+
+
 def test_pipeline_schema__example__get_responses(drf_request):
     class CustomSerializer(Serializer):
         """This is the description"""
@@ -242,8 +309,72 @@ def test_pipeline_schema__example__get_responses__wrong_method(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    components = view.schema.get_responses("", "GET")
-    assert components == {}
+    responses = view.schema.get_responses("", "GET")
+    assert responses == {}
+
+
+def test_pipeline_schema__example__get_responses__list(drf_request):
+    class CustomSerializer(Serializer):
+        """This is the description"""
+
+        many = True
+
+        data = CharField()
+
+    class CustomSchema(PipelineSchemaMixin, AutoSchema):
+        responses = {
+            "POST": {
+                200: ...,
+                400: "Unavailable",
+                404: CustomSerializer,
+            },
+        }
+
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        schema = CustomSchema()
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    responses = view.schema.get_responses("", "POST")
+    assert responses == {
+        "200": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/Output",
+                    },
+                },
+            },
+            "description": "Example Output",
+        },
+        "400": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/Detail",
+                    },
+                },
+            },
+            "description": "Unavailable",
+        },
+        "404": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "items": {
+                            "$ref": "#/components/schemas/Custom",
+                        },
+                        "type": "array",
+                    },
+                }
+            },
+            "description": "This is the description",
+        },
+    }
 
 
 def test_pipeline_schema__example__get_operation(drf_request):
@@ -273,8 +404,8 @@ def test_pipeline_schema__example__get_operation(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    responses = view.schema.get_operation("", "POST")
-    assert responses == {
+    operation = view.schema.get_operation("", "POST")
+    assert operation == {
         "deprecated": True,
         "externalDocs": {
             "description": "foo",
@@ -341,3 +472,21 @@ def test_pipeline_schema__example__get_operation(drf_request):
         "summary": "Example Input",
         "tags": [""],
     }
+
+
+def test_pipeline_schema__example__get_request_serializer(drf_request):
+    view = ExampleView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    serializer = view.schema.get_request_serializer("", "POST")
+    assert serializer.__class__ == InputSerializer
+
+
+def test_pipeline_schema__example__get_response_serializer(drf_request):
+    view = ExampleView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    serializer = view.schema.get_response_serializer("", "POST")
+    assert serializer.__class__ == OutputSerializer
