@@ -3,15 +3,37 @@ from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.serializers import BaseSerializer
 from rest_framework.utils import formatting
 
-from .serializers import DetailSerializer
-from .typing import Any, Container, Dict, ExternalDocs, HTTPMethod, List, Type, Union
+from .serializers import DetailSerializer, MockSerializer
+from .typing import Any, Container, Dict, ExternalDocs, HTTPMethod, List, Optional, Sequence, Type, Union
 from .utils import is_serializer_class
 
 
 __all__ = [
     "PipelineSchemaMixin",
     "PipelineSchema",
+    "convert_to_schema",
 ]
+
+
+def convert_to_schema(schema: Union[List[Any], Dict[str, Any], Any]) -> Dict[str, Any]:
+    """Recursively convert a json-like object to OpenAPI example response."""
+
+    if isinstance(schema, list):
+        return {
+            "type": "array",
+            "items": convert_to_schema(schema[0] if len(schema) > 0 else "???"),
+        }
+
+    if isinstance(schema, dict):
+        return {
+            "type": "object",
+            "properties": {str(key): convert_to_schema(value) for key, value in schema.items()},
+        }
+
+    return {
+        "type": "string",
+        "default": str(schema),
+    }
 
 
 class PipelineSchemaMixin:
@@ -34,7 +56,6 @@ class PipelineSchemaMixin:
         if external_docs is not None:
             operation["externalDocs"] = external_docs
 
-        operation["summary"] = operation.pop("description", "")
         return operation
 
     def get_description(self, path: str, method: HTTPMethod) -> str:  # pylint: disable=W0613
@@ -107,7 +128,10 @@ class PipelineSchemaMixin:
         return data
 
     def _get_reference(self, serializer: BaseSerializer) -> Dict[str, Any]:
-        if getattr(serializer, "many", False):
+        if isinstance(serializer, MockSerializer):
+            response_schema = convert_to_schema(serializer._example)  # pylint: disable=W0212
+
+        elif getattr(serializer, "many", False):
             response_schema = {
                 "type": "array",
                 "items": {
@@ -132,4 +156,18 @@ class PipelineSchemaMixin:
 
 
 class PipelineSchema(PipelineSchemaMixin, AutoSchema):
-    pass
+    def __init__(
+        self,
+        responses: Optional[Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]]] = None,
+        deprecated: Optional[Container[HTTPMethod]] = None,
+        security: Optional[Dict[HTTPMethod, List[Dict[str, List[str]]]]] = None,
+        external_docs: Optional[Dict[HTTPMethod, ExternalDocs]] = None,
+        tags: Optional[Sequence[str]] = None,
+        operation_id_base: Optional[str] = None,
+        component_name: Optional[str] = None,
+    ):
+        self.responses = responses or {}
+        self.deprecated = deprecated or []
+        self.security = security or {}
+        self.external_docs = external_docs or {}
+        super().__init__(tags=tags, operation_id_base=operation_id_base, component_name=component_name)

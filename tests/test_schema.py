@@ -2,7 +2,8 @@ from rest_framework.fields import CharField, IntegerField
 from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.serializers import Serializer
 
-from pipeline_views.schema import PipelineSchemaMixin
+from pipeline_views import MockSerializer
+from pipeline_views.schema import PipelineSchema
 from tests.django.urls import ExampleView, InputSerializer, OutputSerializer
 
 
@@ -76,19 +77,18 @@ def test_pipeline_schema__example__get_components(drf_request):
 
         data = CharField()
 
-    class CustomSchema(PipelineSchemaMixin, AutoSchema):
-        responses = {
-            "POST": {
-                200: ...,
-                400: "Unavailable",
-                404: CustomSerializer,
-            },
-        }
-
     class CustomView(ExampleView):
         """Custom View"""
 
-        schema = CustomSchema()
+        schema = PipelineSchema(
+            responses={
+                "POST": {
+                    200: ...,
+                    400: "Unavailable",
+                    404: CustomSerializer,
+                },
+            }
+        )
 
     view = CustomView()
     view.request = drf_request
@@ -157,21 +157,24 @@ def test_pipeline_schema__example__get_components__list(drf_request):
 
         data = IntegerField()
 
-    class CustomSchema(PipelineSchemaMixin, AutoSchema):
-        responses = {
-            "POST": {
-                200: ...,
-                400: "Unavailable",
-                404: CustomSerializer,
-            },
-        }
-
     class CustomView(ExampleView):
         """Custom View"""
 
-        pipelines = {"POST": [ExampleSerializer]}
+        pipelines = {
+            "POST": [
+                ExampleSerializer,
+            ],
+        }
 
-        schema = CustomSchema()
+        schema = PipelineSchema(
+            responses={
+                "POST": {
+                    200: ...,
+                    400: "Unavailable",
+                    404: CustomSerializer,
+                },
+            }
+        )
 
     view = CustomView()
     view.request = drf_request
@@ -215,19 +218,18 @@ def test_pipeline_schema__example__get_responses(drf_request):
 
         data = CharField()
 
-    class CustomSchema(PipelineSchemaMixin, AutoSchema):
-        responses = {
-            "POST": {
-                200: ...,
-                400: "Unavailable",
-                404: CustomSerializer,
-            },
-        }
-
     class CustomView(ExampleView):
         """Custom View"""
 
-        schema = CustomSchema()
+        schema = PipelineSchema(
+            responses={
+                "POST": {
+                    200: ...,
+                    400: "Unavailable",
+                    404: CustomSerializer,
+                },
+            }
+        )
 
     view = CustomView()
     view.request = drf_request
@@ -269,13 +271,10 @@ def test_pipeline_schema__example__get_responses(drf_request):
 
 
 def test_pipeline_schema__example__get_responses__none(drf_request):
-    class CustomSchema(PipelineSchemaMixin, AutoSchema):
-        pass
-
     class CustomView(ExampleView):
         """Custom View"""
 
-        schema = CustomSchema()
+        schema = PipelineSchema()
 
     view = CustomView()
     view.request = drf_request
@@ -297,13 +296,10 @@ def test_pipeline_schema__example__get_responses__none(drf_request):
 
 
 def test_pipeline_schema__example__get_responses__wrong_method(drf_request):
-    class CustomSchema(PipelineSchemaMixin, AutoSchema):
-        pass
-
     class CustomView(ExampleView):
         """Custom View"""
 
-        schema = CustomSchema()
+        schema = PipelineSchema()
 
     view = CustomView()
     view.request = drf_request
@@ -321,19 +317,18 @@ def test_pipeline_schema__example__get_responses__list(drf_request):
 
         data = CharField()
 
-    class CustomSchema(PipelineSchemaMixin, AutoSchema):
-        responses = {
-            "POST": {
-                200: ...,
-                400: "Unavailable",
-                404: CustomSerializer,
-            },
-        }
-
     class CustomView(ExampleView):
         """Custom View"""
 
-        schema = CustomSchema()
+        schema = PipelineSchema(
+            responses={
+                "POST": {
+                    200: ...,
+                    400: "Unavailable",
+                    404: CustomSerializer,
+                },
+            }
+        )
 
     view = CustomView()
     view.request = drf_request
@@ -377,28 +372,118 @@ def test_pipeline_schema__example__get_responses__list(drf_request):
     }
 
 
+def test_pipeline_schema__example__get_responses__mock_serializer(drf_request):
+    class CustomSerializer(Serializer):
+        """This is the description"""
+
+        many = True
+
+        data = CharField()
+
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        pipelines = {
+            "POST": [
+                InputSerializer,
+                MockSerializer.with_example(
+                    description="This is the response",
+                    response={"foo": {"bar": ["baz"]}},
+                ),
+            ]
+        }
+
+        schema = PipelineSchema(
+            responses={
+                "POST": {
+                    200: ...,
+                    400: "Unavailable",
+                    404: CustomSerializer,
+                },
+            }
+        )
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    responses = view.schema.get_responses("", "POST")
+    assert responses == {
+        "200": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "properties": {
+                            "foo": {
+                                "properties": {
+                                    "bar": {
+                                        "items": {
+                                            "default": "baz",
+                                            "type": "string",
+                                        },
+                                        "type": "array",
+                                    },
+                                },
+                                "type": "object",
+                            }
+                        },
+                        "type": "object",
+                    }
+                }
+            },
+            "description": "This is the response",
+        },
+        "400": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/Detail",
+                    },
+                },
+            },
+            "description": "Unavailable",
+        },
+        "404": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "items": {
+                            "$ref": "#/components/schemas/Custom",
+                        },
+                        "type": "array",
+                    },
+                }
+            },
+            "description": "This is the description",
+        },
+    }
+
+
 def test_pipeline_schema__example__get_operation(drf_request):
     class CustomSerializer(Serializer):
         """This is the description"""
 
         data = CharField()
 
-    class CustomSchema(PipelineSchemaMixin, AutoSchema):
-        responses = {
-            "POST": {
-                200: ...,
-                400: "Unavailable",
-                404: CustomSerializer,
-            },
-        }
-        deprecated = {"POST"}
-        security = {"POST": [{"foo": ["bar"]}]}
-        external_docs = {"POST": {"description": "foo", "url": "bar"}}
-
     class CustomView(ExampleView):
         """Custom View"""
 
-        schema = CustomSchema()
+        schema = PipelineSchema(
+            responses={
+                "POST": {
+                    200: ...,
+                    400: "Unavailable",
+                    404: CustomSerializer,
+                },
+            },
+            deprecated=["POST"],
+            security={
+                "POST": [{"foo": ["bar"]}],
+            },
+            external_docs={
+                "POST": {"description": "foo", "url": "bar"},
+            },
+        )
 
     view = CustomView()
     view.request = drf_request
@@ -407,10 +492,8 @@ def test_pipeline_schema__example__get_operation(drf_request):
     operation = view.schema.get_operation("", "POST")
     assert operation == {
         "deprecated": True,
-        "externalDocs": {
-            "description": "foo",
-            "url": "bar",
-        },
+        "description": "Example Input",
+        "externalDocs": {"description": "foo", "url": "bar"},
         "operationId": "createInput",
         "parameters": [],
         "requestBody": {
@@ -469,7 +552,6 @@ def test_pipeline_schema__example__get_operation(drf_request):
                 "foo": ["bar"],
             },
         ],
-        "summary": "Example Input",
         "tags": [""],
     }
 

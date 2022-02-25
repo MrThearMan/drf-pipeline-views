@@ -14,6 +14,7 @@ try:
         Optional,
         ParamSpec,
         Protocol,
+        Sequence,
         Set,
         Tuple,
         Type,
@@ -39,6 +40,7 @@ except ImportError:
         Coroutine,
         Container,
         _eval_type,
+        Sequence,
     )
     from typing_extensions import (  # type: ignore
         TYPE_CHECKING,
@@ -90,6 +92,7 @@ __all__ = [
     "eval_type",
     "Coroutine",
     "ExternalDocs",
+    "Sequence",
 ]
 
 
