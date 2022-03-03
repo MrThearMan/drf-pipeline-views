@@ -1,6 +1,6 @@
 from django.utils.encoding import smart_str
 from rest_framework.schemas.openapi import AutoSchema
-from rest_framework.serializers import BaseSerializer
+from rest_framework.serializers import BaseSerializer, Serializer
 from rest_framework.utils import formatting
 
 from .serializers import DetailSerializer, MockSerializer
@@ -39,6 +39,7 @@ def convert_to_schema(schema: Union[List[Any], Dict[str, Any], Any]) -> Dict[str
 class PipelineSchemaMixin:
 
     responses: Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]] = {}
+    query_parameters: Dict[HTTPMethod, List[str]] = {}
     deprecated: Container[HTTPMethod] = []
     security: Dict[HTTPMethod, List[Dict[str, List[str]]]] = {}
     external_docs: Dict[HTTPMethod, ExternalDocs] = {}
@@ -127,6 +128,32 @@ class PipelineSchemaMixin:
 
         return data
 
+    def get_filter_parameters(self, path, method):
+        parameters = super().get_filter_parameters(path, method)
+        if method not in ["GET", "PUT", "PATCH", "DELETE"]:
+            return parameters
+
+        serializer = self.get_request_serializer(path, method)
+
+        if getattr(serializer, "many", False):
+            serializer: Serializer = getattr(serializer, "child", serializer)
+
+        for field_name, field in serializer.fields.items():
+            if method != "GET" and field_name not in self.query_parameters.get(method, []):
+                continue
+
+            parameters += [
+                {
+                    "name": str(field_name),
+                    "required": field.required,
+                    "in": "query",
+                    "description": str(field.help_text) if field.help_text is not None else "",
+                    "schema": self.map_field(field),
+                },
+            ]
+
+        return parameters
+
     def _get_reference(self, serializer: BaseSerializer) -> Dict[str, Any]:
         if isinstance(serializer, MockSerializer):
             response_schema = convert_to_schema(serializer._example)  # pylint: disable=W0212
@@ -159,6 +186,7 @@ class PipelineSchema(PipelineSchemaMixin, AutoSchema):
     def __init__(
         self,
         responses: Optional[Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]]] = None,
+        query_parameters: Optional[Dict[HTTPMethod, List[str]]] = None,
         deprecated: Optional[Container[HTTPMethod]] = None,
         security: Optional[Dict[HTTPMethod, List[Dict[str, List[str]]]]] = None,
         external_docs: Optional[Dict[HTTPMethod, ExternalDocs]] = None,
@@ -167,6 +195,7 @@ class PipelineSchema(PipelineSchemaMixin, AutoSchema):
         component_name: Optional[str] = None,
     ):
         self.responses = responses or {}
+        self.query_parameters = query_parameters or {}
         self.deprecated = deprecated or []
         self.security = security or {}
         self.external_docs = external_docs or {}
