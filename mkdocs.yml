@@ -7,6 +7,7 @@ nav:
   - Logic Blocks: logic_blocks.md
   - Conditional Logic Paths: conditional_logic_paths.md
   - Async Logic Callables: async.md
+  - OpenAPI Schema: schema.md
   - Miscellaneous: misc.md
 
 theme:
