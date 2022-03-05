@@ -729,7 +729,7 @@ python-versions = "*"
 name = "pyyaml"
 version = "6.0"
 description = "YAML parser and emitter for Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -868,7 +868,7 @@ python-versions = ">=3.6"
 name = "uritemplate"
 version = "4.1.1"
 description = "Implementation of RFC 6570 URI Templates"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -949,13 +949,14 @@ docs = ["sphinx", "jaraco.packaging (>=8.2)", "rst.linker (>=1.9)"]
 testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.0.1)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy"]
 
 [extras]
+schema = ["uritemplate", "PyYAML"]
 typing = ["typing-extensions"]
 uvloop = ["uvloop"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<4"
-content-hash = "debca0297b544f630f8b54852520f6e27dfcdc00bff928ca0a6ef74f0e93be8c"
+content-hash = "482b312b0d84bfea4c4b38dd25108a8d06d6821d0c929b60c2b4961d50f1066a"
 
 [metadata.files]
 asgiref = [

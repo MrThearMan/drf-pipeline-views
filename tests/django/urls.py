@@ -3,7 +3,7 @@ from django.views.generic import TemplateView
 from rest_framework import serializers
 from rest_framework.schemas import get_schema_view
 
-from pipeline_views.mixins import PostMixin
+from pipeline_views.mixins import PatchMixin, PostMixin
 from pipeline_views.views import BasePipelineView
 
 
@@ -37,8 +37,21 @@ class ExampleView(PostMixin, BasePipelineView):
     }
 
 
+class ExamplePathView(PatchMixin, BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "PATCH": [
+            InputSerializer,
+            example_method,
+            OutputSerializer,
+        ],
+    }
+
+
 urlpatterns = [
     path("", ExampleView.as_view(), name="test_view"),
+    path("<int:age>", ExamplePathView.as_view(), name="test_path_view"),
     path(
         "openapi/",
         get_schema_view(

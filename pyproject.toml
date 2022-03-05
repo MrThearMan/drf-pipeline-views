@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "drf-pipeline-views"
-version = "0.5.4"
+version = "0.5.5"
 description = "Django REST framework views using the pipeline pattern."
 authors = [
     "Matti Lamppu <lamppu.matti.akseli@gmail.com>",
@@ -54,6 +54,8 @@ Django = ">=2.2"
 djangorestframework = ">=3.12.0"
 typing-extensions = {version = ">=4.0", optional = true}
 uvloop = {version = ">=0.16.0", optional = true}
+uritemplate = {version = ">=4.1.1", optional = true}
+PyYAML = {version = ">=6.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest-cov = "^3.0.0"
@@ -79,6 +81,7 @@ uritemplate = "^4.1.1"
 [tool.poetry.extras]
 typing = ["typing-extensions"]
 uvloop = ["uvloop"]
+schema = ["uritemplate", "PyYAML"]
 
 [tool.black]
 line-length = 120

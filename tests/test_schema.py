@@ -2,9 +2,9 @@ from rest_framework.fields import CharField, IntegerField
 from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.serializers import Serializer
 
-from pipeline_views import BasePipelineView, GetMixin, MockSerializer, PutMixin
+from pipeline_views import BasePipelineView, GetMixin, MockSerializer, PatchMixin, PutMixin
 from pipeline_views.schema import PipelineSchema
-from tests.django.urls import ExampleView, InputSerializer, OutputSerializer, example_method
+from tests.django.urls import ExamplePathView, ExampleView, InputSerializer, OutputSerializer, example_method
 
 
 def test_pipeline_schema__get_components(drf_request):
@@ -465,54 +465,61 @@ def test_pipeline_schema__get_operation(drf_request):
 
         data = CharField()
 
-    class CustomView(ExampleView):
+    class CustomView(ExamplePathView):
         """Custom View"""
 
         schema = PipelineSchema(
             responses={
-                "POST": {
+                "PATCH": {
                     200: ...,
                     400: "Unavailable",
                     404: CustomSerializer,
                 },
             },
-            deprecated=["POST"],
+            deprecated=["PATCH"],
             security={
-                "POST": [{"foo": ["bar"]}],
+                "PATCH": [{"foo": ["bar"]}],
             },
             external_docs={
-                "POST": {"description": "foo", "url": "bar"},
+                "PATCH": {"description": "foo", "url": "bar"},
             },
+            query_parameters={"PATCH": ["name"]},
         )
 
     view = CustomView()
     view.request = drf_request
-    view.request.method = "POST"
+    view.request.method = "PATCH"
     view.format_kwarg = None
-    operation = view.schema.get_operation("", "POST")
+    operation = view.schema.get_operation("", "PATCH")
     assert operation == {
         "deprecated": True,
         "description": "Example Input",
         "externalDocs": {"description": "foo", "url": "bar"},
-        "operationId": "createInput",
-        "parameters": [],
+        "operationId": "partialUpdateInput",
+        "parameters": [
+            {
+                "description": "",
+                "in": "query",
+                "name": "name",
+                "required": True,
+                "schema": {
+                    "type": "string",
+                },
+            }
+        ],
         "requestBody": {
             "content": {
                 "application/json": {
                     "schema": {
-                        "$ref": "#/components/schemas/Input",
-                    },
-                },
-                "application/x-www-form-urlencoded": {
-                    "schema": {
-                        "$ref": "#/components/schemas/Input",
-                    },
-                },
-                "multipart/form-data": {
-                    "schema": {
-                        "$ref": "#/components/schemas/Input",
-                    },
-                },
+                        "properties": {
+                            "age": {
+                                "type": "integer",
+                            },
+                        },
+                        "required": ["age"],
+                        "type": "object",
+                    }
+                }
             }
         },
         "responses": {
@@ -591,26 +598,26 @@ def test_pipeline_schema__get_filter_parameters__get(drf_request):
     view.request.method = "GET"
     view.format_kwarg = None
     parameters = view.schema.get_filter_parameters("", "GET")
-    assert parameters == [
-        {
-            "name": "name",
-            "required": True,
-            "in": "query",
+    assert parameters == {
+        "age": {
             "description": "",
-            "schema": {
-                "type": "string",
-            },
-        },
-        {
+            "in": "query",
             "name": "age",
             "required": True,
-            "in": "query",
-            "description": "",
             "schema": {
                 "type": "integer",
             },
         },
-    ]
+        "name": {
+            "description": "",
+            "in": "query",
+            "name": "name",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+    }
 
 
 def test_pipeline_schema__get_filter_parameters__post(drf_request):
@@ -628,7 +635,7 @@ def test_pipeline_schema__get_filter_parameters__post(drf_request):
     view.request.method = "POST"
     view.format_kwarg = None
     parameters = view.schema.get_filter_parameters("", "POST")
-    assert parameters == []
+    assert parameters == {}
 
 
 def test_pipeline_schema__get_filter_parameters__put__not_defined(drf_request):
@@ -648,7 +655,7 @@ def test_pipeline_schema__get_filter_parameters__put__not_defined(drf_request):
     view.request.method = "PUT"
     view.format_kwarg = None
     parameters = view.schema.get_filter_parameters("", "PUT")
-    assert parameters == []
+    assert parameters == {}
 
 
 def test_pipeline_schema__get_filter_parameters__put__partial(drf_request):
@@ -674,20 +681,20 @@ def test_pipeline_schema__get_filter_parameters__put__partial(drf_request):
     view.request.method = "PUT"
     view.format_kwarg = None
     parameters = view.schema.get_filter_parameters("", "PUT")
-    assert parameters == [
-        {
+    assert parameters == {
+        "name": {
+            "description": "",
+            "in": "query",
             "name": "name",
             "required": True,
-            "in": "query",
-            "description": "",
             "schema": {
                 "type": "string",
             },
-        },
-    ]
+        }
+    }
 
 
-def test_pipeline_schema__get_filter_parameters__many(drf_request):
+def test_pipeline_schema__get_filter_parameters__list(drf_request):
     class CustomSerializer(InputSerializer):
         many = True
 
@@ -707,23 +714,177 @@ def test_pipeline_schema__get_filter_parameters__many(drf_request):
     view.request.method = "GET"
     view.format_kwarg = None
     parameters = view.schema.get_filter_parameters("", "GET")
-    assert parameters == [
-        {
-            "name": "name",
-            "required": True,
-            "in": "query",
+    assert parameters == {
+        "age": {
             "description": "",
-            "schema": {
-                "type": "string",
-            },
-        },
-        {
+            "in": "query",
             "name": "age",
             "required": True,
-            "in": "query",
-            "description": "",
             "schema": {
                 "type": "integer",
             },
         },
-    ]
+        "name": {
+            "description": "",
+            "in": "query",
+            "name": "name",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+    }
+
+
+def test_pipeline_scheme__get_path_parameters(drf_request):
+    view = ExamplePathView()
+    view.request = drf_request
+    view.request.method = "PATCH"
+    view.format_kwarg = None
+    parameters = view.schema.get_path_parameters("/{age}", "PATCH")
+    assert parameters == {
+        "age": {
+            "description": "",
+            "in": "path",
+            "name": "age",
+            "required": True,
+            "schema": {
+                "type": "integer",
+            },
+        }
+    }
+
+
+def test_pipeline_scheme__get_path_parameters__list(drf_request):
+    class CustomSerializer(Serializer):
+        """This is the description"""
+
+        many = True
+
+        data = CharField(help_text="This is the data")
+
+    class CustomPathView(ExamplePathView):
+        """Custom View"""
+
+        pipelines = {
+            "PATCH": [
+                CustomSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+    view = CustomPathView()
+    view.request = drf_request
+    view.request.method = "PATCH"
+    view.format_kwarg = None
+    parameters = view.schema.get_path_parameters("/{data}", "PATCH")
+    assert parameters == {
+        "data": {
+            "description": "This is the data",
+            "in": "path",
+            "name": "data",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        }
+    }
+
+
+def test_pipeline_schema__get_request_body(drf_request):
+    view = ExampleView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    request_body = view.schema.get_request_body("", "POST")
+    assert request_body == {
+        "content": {
+            "application/json": {
+                "schema": {
+                    "$ref": "#/components/schemas/Input",
+                },
+            },
+        },
+    }
+
+
+def test_pipeline_schema__get_request_body__get(drf_request):
+    class CustomView(GetMixin, BasePipelineView):
+        """Custom View"""
+
+        pipelines = {
+            "GET": [
+                InputSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "GET"
+    view.format_kwarg = None
+    request_body = view.schema.get_request_body("", "GET")
+    assert request_body == {}
+
+
+def test_pipeline_schema__get_request_body__query_parameters(drf_request):
+    class CustomView(PutMixin, BasePipelineView):
+        """Custom View"""
+
+        pipelines = {
+            "PUT": [
+                InputSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+        schema = PipelineSchema(
+            query_parameters={"PUT": ["name"]},
+        )
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "PUT"
+    view.format_kwarg = None
+    request_body = view.schema.get_request_body("", "PUT")
+    assert request_body == {
+        "content": {
+            "application/json": {
+                "schema": {
+                    "properties": {
+                        "age": {
+                            "type": "integer",
+                        },
+                    },
+                    "required": ["age"],
+                    "type": "object",
+                }
+            }
+        }
+    }
+
+
+def test_pipeline_schema__get_tags(drf_request):
+    view = ExampleView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    tags = view.schema.get_tags("/foo/", "POST")
+    assert tags == ["foo"]
+
+
+def test_pipeline_schema__get_tags__predefined(drf_request):
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        schema = PipelineSchema(tags=["foo", "bar"])
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "GET"
+    view.format_kwarg = None
+    tags = view.schema.get_tags("", "GET")
+    assert tags == ["foo", "bar"]
