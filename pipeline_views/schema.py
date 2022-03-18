@@ -158,6 +158,16 @@ class PipelineSchemaMixin:
 
             if info is ...:
                 serializer_class = self.view.get_serializer_class(output=True)
+
+                if getattr(serializer_class, "many", False):
+                    data.setdefault(
+                        "204",
+                        {
+                            "content": {"application/json": {"type": "string", "default": ""}},
+                            "description": "No Results",
+                        },
+                    )
+
                 info = serializer_class.__doc__ or ""
 
             serializer = self.view.initialize_serializer(serializer_class=serializer_class)

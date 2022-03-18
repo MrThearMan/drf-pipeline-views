@@ -148,6 +148,8 @@ class ExampleView(PostMixin, BasePipelineView):
     )
 ```
 
+> In case your pipeline returns a list response, a default 204 response will be added automatically.
+
 ### Dynamic responses
 
 You can also define dynamic responses with the help of MockSerializer.

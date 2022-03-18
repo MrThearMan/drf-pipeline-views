@@ -459,6 +459,57 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
     }
 
 
+def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
+    class CustomSerializer(Serializer):
+        """This is the description"""
+
+        many = True
+
+        data = CharField()
+
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        pipelines = {
+            "POST": [
+                InputSerializer,
+                CustomSerializer,
+            ]
+        }
+
+        schema = PipelineSchema()
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    responses = view.schema.get_responses("", "POST")
+    assert responses == {
+        "200": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "items": {
+                            "$ref": "#/components/schemas/Custom",
+                        },
+                        "type": "array",
+                    },
+                }
+            },
+            "description": "This is the description",
+        },
+        "204": {
+            "content": {
+                "application/json": {
+                    "default": "",
+                    "type": "string",
+                },
+            },
+            "description": "No Results",
+        },
+    }
+
+
 def test_pipeline_schema__get_operation(drf_request):
     class CustomSerializer(Serializer):
         """This is the description"""
