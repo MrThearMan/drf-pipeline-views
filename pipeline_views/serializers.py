@@ -4,9 +4,15 @@ from .typing import Any, Dict, List, Type, Union
 
 
 __all__ = [
+    "EmptySerializer",
     "MockSerializer",
     "DetailSerializer",
 ]
+
+
+class EmptySerializer(Serializer):  # pylint: disable=W0223
+    # Used for schema 204 responses
+    pass
 
 
 class DetailSerializer(Serializer):  # pylint: disable=W0223

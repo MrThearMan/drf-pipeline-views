@@ -4,6 +4,7 @@ from rest_framework.serializers import Serializer
 
 from pipeline_views import BasePipelineView, GetMixin, MockSerializer, PatchMixin, PutMixin
 from pipeline_views.schema import PipelineSchema
+from pipeline_views.serializers import EmptySerializer
 from tests.django.urls import ExamplePathView, ExampleView, InputSerializer, OutputSerializer, example_method
 
 
@@ -507,6 +508,40 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
             },
             "description": "No Results",
         },
+    }
+
+
+def test_pipeline_schema__get_responses__204_if_output_is_emptyserializer(drf_request):
+    class CustomSerializer(EmptySerializer):
+        """This is the description"""
+
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        pipelines = {
+            "POST": [
+                InputSerializer,
+                CustomSerializer,
+            ]
+        }
+
+        schema = PipelineSchema()
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    responses = view.schema.get_responses("", "POST")
+    assert responses == {
+        "204": {
+            "content": {
+                "application/json": {
+                    "content": {"application/json": {"default": "", "type": "string"}},
+                    "description": "No Results",
+                }
+            },
+            "description": "This is the description",
+        }
     }
 
 

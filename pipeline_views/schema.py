@@ -5,7 +5,7 @@ from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.serializers import BaseSerializer, Serializer
 from rest_framework.utils import formatting
 
-from .serializers import DetailSerializer, MockSerializer
+from .serializers import DetailSerializer, EmptySerializer, MockSerializer
 from .typing import Any, Container, Dict, ExternalDocs, HTTPMethod, List, Optional, Sequence, Type, Union
 from .utils import is_serializer_class
 
@@ -137,7 +137,7 @@ class PipelineSchemaMixin:
 
         item_schema = self._get_reference(serializer)
 
-        return {"content": {"application/json": {"schema": item_schema}}}
+        return {"content": {"application/json": item_schema}}
 
     def get_responses(self, path: str, method: HTTPMethod) -> Dict[str, Any]:  # pylint: disable=W0613
         data = {}
@@ -160,22 +160,19 @@ class PipelineSchemaMixin:
                 serializer_class = self.view.get_serializer_class(output=True)
 
                 if getattr(serializer_class, "many", False):
-                    data.setdefault(
-                        "204",
-                        {
-                            "content": {"application/json": {"type": "string", "default": ""}},
-                            "description": "No Results",
-                        },
-                    )
+                    data.setdefault("204", self._get_no_result_schema())
 
                 info = serializer_class.__doc__ or ""
 
             serializer = self.view.initialize_serializer(serializer_class=serializer_class)
 
+            if isinstance(serializer, EmptySerializer):
+                status_code = 204
+
             response_schema = self._get_reference(serializer)
 
             data[str(status_code)] = {
-                "content": {"application/json": {"schema": response_schema}},
+                "content": {"application/json": response_schema},
                 "description": info,
             }
 
@@ -245,23 +242,40 @@ class PipelineSchemaMixin:
     def _get_reference(self, serializer: BaseSerializer) -> Dict[str, Any]:
         if isinstance(serializer, MockSerializer):
             if serializer.fields:
-                response_schema = self.map_serializer(serializer)
+                response_schema = {"schema": self.map_serializer(serializer)}
             else:
-                response_schema = convert_to_schema(serializer._example)  # pylint: disable=W0212
+                response_schema = {"schema": convert_to_schema(serializer._example)}  # pylint: disable=W0212
+
+        elif isinstance(serializer, EmptySerializer):
+            response_schema = self._get_no_result_schema()
 
         elif getattr(serializer, "many", False):
             response_schema = {
-                "type": "array",
-                "items": {
-                    "$ref": f"#/components/schemas/{self.get_component_name(getattr(serializer, 'child', serializer))}"
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "$ref": (
+                            f"#/components/schemas/"
+                            f"{self.get_component_name(getattr(serializer, 'child', serializer))}"
+                        )
+                    },
                 },
             }
         else:
             response_schema = {
-                "$ref": f"#/components/schemas/{self.get_component_name(serializer)}",
+                "schema": {
+                    "$ref": f"#/components/schemas/{self.get_component_name(serializer)}",
+                },
             }
 
         return response_schema
+
+    @staticmethod
+    def _get_no_result_schema():
+        return {
+            "content": {"application/json": {"type": "string", "default": ""}},
+            "description": "No Results",
+        }
 
     def get_request_serializer(self, path: str, method: HTTPMethod) -> BaseSerializer:  # pylint: disable=W0613
         return self.view.get_serializer()
