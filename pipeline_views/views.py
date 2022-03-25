@@ -1,6 +1,6 @@
 import asyncio
-from collections.abc import Coroutine
 
+from asgiref.sync import async_to_sync
 from django.utils.translation import get_language, override
 from rest_framework import status
 from rest_framework.response import Response
@@ -60,10 +60,10 @@ class BasePipelineView(APIView):
     def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
         """Run pipeline logic recursively."""
         if callable(logic):
-            result = logic(**data)
-            if isinstance(result, Coroutine):
-                result = asyncio.run(result)
-            return result  # type: ignore
+            if asyncio.iscoroutinefunction(logic):
+                logic = async_to_sync(logic)
+
+            return logic(**data)  # type: ignore
 
         try:
             for step in logic:  # type: ignore
@@ -90,7 +90,7 @@ class BasePipelineView(APIView):
                     except ValueError:
                         pass
 
-                    results: Tuple[DataDict, ...] = asyncio.run(run_parallel(step, data))
+                    results: Tuple[DataDict, ...] = async_to_sync(run_parallel)(step, data)
                     data = {key: value for result in results for key, value in result.items()}
 
                     if old_kwargs is not None:

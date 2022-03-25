@@ -972,7 +972,7 @@ uvloop = ["uvloop"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<4"
-content-hash = "3b58afadfe4e6dc15bc8fd50c26f62516877ce0cd35c624fe5b817b69eb764d9"
+content-hash = "88bd904a3ee76ae5655e71094118dd0bfa0a182a530c2c53e03bf2b752eef58e"
 
 [metadata.files]
 asgiref = [
