@@ -1,8 +1,6 @@
-import sys
 from functools import wraps
 from typing import List
 
-import pytest
 from rest_framework import fields
 from rest_framework.serializers import Serializer
 from typing_extensions import TypedDict

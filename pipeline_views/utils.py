@@ -9,13 +9,16 @@ from django.core.cache import cache
 from django.utils.translation import get_language as current_language
 from django.utils.translation import override
 from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
 from .typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     DataDict,
     Generator,
+    HTTPMethod,
     List,
     LogicCallable,
     Optional,
@@ -24,7 +27,12 @@ from .typing import (
     T,
     Tuple,
     Union,
+    ViewMethod,
 )
+
+
+if TYPE_CHECKING:
+    from .views import BasePipelineView
 
 
 __all__ = [
@@ -35,6 +43,7 @@ __all__ = [
     "cache_pipeline_logic",
     "run_in_thread",
     "run_parallel",
+    "get_view_method",
 ]
 
 
@@ -138,3 +147,24 @@ def run_in_thread(task: Callable[P, T]) -> Callable[P, T]:
 
 async def run_parallel(step: Tuple[Union[LogicCallable, SerializerType], ...], data: DataDict) -> Tuple[DataDict, ...]:
     return await asyncio.gather(*[task(**data) for task in step])  # noqa
+
+
+def get_view_method(method: HTTPMethod) -> ViewMethod:
+    source = "query_params" if method == "GET" else "data"
+
+    def inner(  # pylint: disable=W0613
+        self: "BasePipelineView",
+        request: Request,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Response:
+        kwargs.update(
+            {
+                key: value
+                for key, value in getattr(request, source, {}).items()
+                if key not in getattr(self, f"ignored_{method.lower()}_params", set())
+            }
+        )
+        return self.process_request(data=kwargs)
+
+    return inner  # type: ignore

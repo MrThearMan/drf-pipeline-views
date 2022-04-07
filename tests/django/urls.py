@@ -3,7 +3,6 @@ from django.views.generic import TemplateView
 from rest_framework import serializers
 from rest_framework.schemas import get_schema_view
 
-from pipeline_views.mixins import PatchMixin, PostMixin
 from pipeline_views.views import BasePipelineView
 
 
@@ -25,7 +24,7 @@ def example_method(name: str, age: int):
     return {"email": f"{name.lower()}@email.com", "age": age}
 
 
-class ExampleView(PostMixin, BasePipelineView):
+class ExampleView(BasePipelineView):
     """Example View"""
 
     pipelines = {
@@ -37,7 +36,7 @@ class ExampleView(PostMixin, BasePipelineView):
     }
 
 
-class ExamplePathView(PatchMixin, BasePipelineView):
+class ExamplePathView(BasePipelineView):
     """Example View"""
 
     pipelines = {

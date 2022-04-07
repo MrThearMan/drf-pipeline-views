@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 from django.utils.translation import get_language
 from rest_framework.fields import CharField, IntegerField
@@ -593,9 +591,10 @@ def test_BaseAPIView__translated_en(base_api_view):
         return {"lang": str(get_language())}
 
     base_api_view.request.method = "GET"
+    base_api_view.request.LANGUAGE_CODE = "en"
     base_api_view.pipelines = {"GET": [callable_method]}
 
-    response = base_api_view.process_request(data={}, lang="en")
+    response = base_api_view.process_request(data={})
 
     assert response.data == {"lang": "en"}
     assert response.status_code == 200
@@ -606,9 +605,10 @@ def test_BaseAPIView__translated_fi(base_api_view):
         return {"lang": str(get_language())}
 
     base_api_view.request.method = "GET"
+    base_api_view.request.LANGUAGE_CODE = "fi"
     base_api_view.pipelines = {"GET": [callable_method]}
 
-    response = base_api_view.process_request(data={}, lang="fi")
+    response = base_api_view.process_request(data={})
 
     assert response.data == {"lang": "fi"}
     assert response.status_code == 200

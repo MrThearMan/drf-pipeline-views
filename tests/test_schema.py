@@ -1,8 +1,7 @@
 from rest_framework.fields import CharField, IntegerField
-from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.serializers import Serializer
 
-from pipeline_views import BasePipelineView, GetMixin, MockSerializer, PatchMixin, PutMixin
+from pipeline_views import BasePipelineView, MockSerializer
 from pipeline_views.schema import PipelineSchema
 from pipeline_views.serializers import EmptySerializer
 from tests.django.urls import ExamplePathView, ExampleView, InputSerializer, OutputSerializer, example_method
@@ -668,7 +667,7 @@ def test_pipeline_schema__get_response_serializer(drf_request):
 
 
 def test_pipeline_schema__get_filter_parameters__get(drf_request):
-    class CustomView(GetMixin, BasePipelineView):
+    class CustomView(BasePipelineView):
         """Custom View"""
 
         pipelines = {
@@ -725,7 +724,7 @@ def test_pipeline_schema__get_filter_parameters__post(drf_request):
 
 
 def test_pipeline_schema__get_filter_parameters__put__not_defined(drf_request):
-    class CustomView(PutMixin, BasePipelineView):
+    class CustomView(BasePipelineView):
         """Custom View"""
 
         pipelines = {
@@ -745,7 +744,7 @@ def test_pipeline_schema__get_filter_parameters__put__not_defined(drf_request):
 
 
 def test_pipeline_schema__get_filter_parameters__put__partial(drf_request):
-    class CustomView(PutMixin, BasePipelineView):
+    class CustomView(BasePipelineView):
         """Custom View"""
 
         pipelines = {
@@ -784,7 +783,7 @@ def test_pipeline_schema__get_filter_parameters__list(drf_request):
     class CustomSerializer(InputSerializer):
         many = True
 
-    class CustomView(GetMixin, BasePipelineView):
+    class CustomView(BasePipelineView):
         """Custom View"""
 
         pipelines = {
@@ -896,7 +895,7 @@ def test_pipeline_schema__get_request_body(drf_request):
 
 
 def test_pipeline_schema__get_request_body__get(drf_request):
-    class CustomView(GetMixin, BasePipelineView):
+    class CustomView(BasePipelineView):
         """Custom View"""
 
         pipelines = {
@@ -916,7 +915,7 @@ def test_pipeline_schema__get_request_body__get(drf_request):
 
 
 def test_pipeline_schema__get_request_body__query_parameters(drf_request):
-    class CustomView(PutMixin, BasePipelineView):
+    class CustomView(BasePipelineView):
         """Custom View"""
 
         pipelines = {

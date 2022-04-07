@@ -52,6 +52,7 @@ except ImportError:
     )
 
 from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
 
@@ -93,6 +94,7 @@ __all__ = [
     "Coroutine",
     "ExternalDocs",
     "Sequence",
+    "ViewMethod",
 ]
 
 
@@ -108,6 +110,11 @@ LogicCallable = Callable[..., DataReturn]
 PipelineLogic = Union[LogicCallable, SerializerType, Iterable["PipelineLogic"]]  # type: ignore
 PipelinesDict = Dict[HTTPMethod, PipelineLogic]  # type: ignore
 TypesDict = Dict[str, Union[Optional[Type], "TypesDict"]]  # type: ignore
+
+
+class ViewMethod(Protocol):
+    def __call__(self: "BasePipelineView", request: Request, *args: Any, **kwargs: Any) -> Response:
+        """..."""
 
 
 class ViewContext(TypedDict):

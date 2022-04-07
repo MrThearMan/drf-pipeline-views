@@ -1,7 +1,6 @@
 import asyncio
 
 from asgiref.sync import async_to_sync
-from django.utils.translation import get_language, override
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
@@ -9,6 +8,7 @@ from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
 from .inference import serializer_from_callable
+from .meta import PipelineMetadata
 from .schema import PipelineSchema
 from .typing import (
     Any,
@@ -22,7 +22,7 @@ from .typing import (
     Tuple,
     ViewContext,
 )
-from .utils import is_serializer_class, run_parallel, sentinel
+from .utils import get_view_method, is_serializer_class, run_parallel, sentinel, translate
 
 
 __all__ = [
@@ -36,14 +36,27 @@ class BasePipelineView(APIView):
     """Dictionary describing the HTTP method pipelines."""
 
     schema = PipelineSchema()
+    metadata_class = PipelineMetadata
 
-    def process_request(self, data: DataDict, lang: str = None) -> Response:
+    ignored_get_params = {"lang", "format"}
+    ignored_post_params = {"csrfmiddlewaretoken", "lang", "format"}
+    ignored_put_params = {"lang", "format"}
+    ignored_patch_params = {"lang", "format"}
+    ignored_delete_params = {"lang", "format"}
+
+    def __new__(cls, *args, **kwargs):  # pylint: disable=W0613
+        for key in cls.pipelines:
+            if not hasattr(cls, key.lower()):
+                setattr(cls, key.lower(), get_view_method(key))
+
+        return super().__new__(cls)
+
+    def process_request(self, data: DataDict) -> Response:
         """Process request in a pipeline-fashion."""
-        if lang is None:
-            lang = get_language()
 
-        with override(lang):
-            pipeline = self.get_pipeline_for_current_request_method()
+        pipeline = self.get_pipeline_for_current_request_method()
+
+        with translate(self.request):
             data = self.run_logic(logic=pipeline, data=data)  # type: ignore
 
         if data:

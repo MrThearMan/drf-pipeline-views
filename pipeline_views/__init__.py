@@ -1,6 +1,5 @@
 from .exceptions import NextLogicBlock
-from .mixins import DeleteMixin, GetMixin, PatchMixin, PostMixin, PutMixin
-from .serializers import MockSerializer
+from .serializers import EmptySerializer, MockSerializer
 from .views import BasePipelineView
 
 
@@ -14,11 +13,7 @@ except Exception:  # noqa pylint: disable=broad-except
 
 __all__ = [
     "BasePipelineView",
-    "DeleteMixin",
-    "GetMixin",
-    "PatchMixin",
-    "PostMixin",
-    "PutMixin",
     "MockSerializer",
+    "EmptySerializer",
     "NextLogicBlock",
 ]
