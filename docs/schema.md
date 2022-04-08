@@ -14,7 +14,6 @@ from django.urls import path
 from rest_framework import serializers
 from rest_framework.schemas import get_schema_view
 
-from pipeline_views.mixins import PostMixin
 from pipeline_views.views import BasePipelineView
 
 
@@ -36,7 +35,7 @@ def example_method(name: str, age: int):
     ...
 
 
-class ExampleView(PostMixin, BasePipelineView):
+class ExampleView(BasePipelineView):
     """Example View"""
 
     pipelines = {
@@ -132,7 +131,7 @@ added for this purpose.
 from pipeline_views.schema import PipelineSchema
 
 
-class ExampleView(PostMixin, BasePipelineView):
+class ExampleView(BasePipelineView):
     """Example View"""
 
     pipelines = {
@@ -159,7 +158,7 @@ from pipeline_views.schema import PipelineSchema
 from pipeline_views.serializers import MockSerializer
 
 
-class ExampleView(PostMixin, BasePipelineView):
+class ExampleView(BasePipelineView):
     """Example View"""
 
     pipelines = {
@@ -213,7 +212,7 @@ paths:
 You can deprecate endpoints on a method by method basis.
 
 ```python hl_lines="9"
-class ExampleView(PostMixin, BasePipelineView):
+class ExampleView(BasePipelineView):
     """Example View"""
 
     pipelines = {
@@ -230,7 +229,7 @@ class ExampleView(PostMixin, BasePipelineView):
 Add security schemes to the endpoints.
 
 ```python hl_lines="9 10 11 12 13 14 15"
-class ExampleView(PostMixin, BasePipelineView):
+class ExampleView(BasePipelineView):
     """Example View"""
 
     pipelines = {
@@ -282,7 +281,7 @@ input serializer should be given as a query parameter. This is just for schema d
 the endpoints will actually accept the input from both places.
 
 ```python hl_lines="9 10 11"
-class ExampleView(PostMixin, BasePipelineView):
+class ExampleView(BasePipelineView):
     """Example View"""
 
     pipelines = {
@@ -301,7 +300,7 @@ class ExampleView(PostMixin, BasePipelineView):
 External docs for an endpoint can also be added.
 
 ```python hl_lines="9 10 11 12 13 14"
-class ExampleView(PostMixin, BasePipelineView):
+class ExampleView(BasePipelineView):
     """Example View"""
 
     pipelines = {

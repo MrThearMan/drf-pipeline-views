@@ -37,14 +37,14 @@ data flowing through the pipeline remains the same.
 
 
 ```python title="Example Pipeline"
-from pipeline_views import BasePipelineView, GetMixin
+from pipeline_views import BasePipelineView
 
 from .my_serializers import InputSerializer, OutputSerializer
 from .my_validators import validator
 from .my_services import io_func, logging_func, integration_func
 
 
-class SomeView(GetMixin, BasePipelineView):
+class SomeView(BasePipelineView):
 
     pipelines = {
         "GET": [
@@ -58,6 +58,8 @@ class SomeView(GetMixin, BasePipelineView):
     }
 ```
 
+> **New in 0.6.0**, mixin classes were removed, BasePiplineView adds
+> view methods automatically based on pipeline definitions!
 
 [clean]: https://archive.org/details/pyvideo_2840___The_Clean_Architecture_in_Python
 [drf]: https://www.django-rest-framework.org/

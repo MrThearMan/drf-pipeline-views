@@ -8,10 +8,11 @@ If you wish to add data to a request, you can do that on the endpoint level by o
 ```python
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.authentication import get_authorization_header
-from pipeline_views import BasePipelineView, GetMixin
+from pipeline_views import BasePipelineView
+from pipeline_views.utils import get_view_method
 
 
-class BasicView(GetMixin, BasePipelineView):
+class BasicView(BasePipelineView):
     pipelines = {
         "GET": ...
     }
@@ -19,12 +20,13 @@ class BasicView(GetMixin, BasePipelineView):
     def get(self, request, *args, **kwargs):
         # Add language to every get request for this endpoint
         kwargs["lang"] = request.LANGUAGE_CODE
-        return super().get(request, *args, **kwargs)
+        # View method needs to be added manually, since defined `get` ourselves
+        return get_view_method("GET")(self, request, *args, **kwargs)
 
-    async def process_request(self, data, lang=None):
+    def process_request(self, data):
         # Add authorization token to every http method
         data["token"] = self.token_from_headers()
-        return await super().process_request(data, lang)
+        return super().process_request(data=data)
 
     def token_from_headers(self):
         auth_header = get_authorization_header(self.request)
@@ -35,7 +37,7 @@ class BasicView(GetMixin, BasePipelineView):
 
 ## Translation
 
-The HTTP method mixins use a `@translate` decorator to enable translations based on what the
+The pipeline use a `translate` context manager to enable translations based on what the
 client is asking for. Use the `LANGUAGES` setting in django to define supported languages.
 Used language is determined from 1. a `lang` query parameter, or 2. `request.LANGUAGE_CODE` fetched from Accept-Language header
 (requires [LocaleMiddleware](https://docs.djangoproject.com/en/3.1/ref/middleware/#django.middleware.locale.LocaleMiddleware)).
@@ -57,18 +59,18 @@ A handy utility that can be used to cache pipeline logic to the django cache bac
 ## Ignoring input parameters
 
 If some endpoint input parameter is not required in the pipeline logic, it can be ignored
-from the input data by placing it in a set on the endpoint level:
+from the input data by placing it in a corresponding set on the endpoint level:
 
 ```python hl_lines="5 6 8 9"
-from pipeline_views import BasePipelineView, GetMixin, PostMixin
+from pipeline_views import BasePipelineView
 
 
-class BasicView(GetMixin, PostMixin, BasePipelineView):
+class BasicView(BasePipelineView):
     # Redefine ignored values
     ignored_get_params = {...}
 
     # Extend the ignored values
-    ignored_post_params = PostMixin.ignored_post_params | {...}
+    ignored_post_params = BasePipelineView.ignored_post_params | {...}
 
     pipelines = {
         "GET": ...,
@@ -76,7 +78,7 @@ class BasicView(GetMixin, PostMixin, BasePipelineView):
     }
 ```
 
-By default, the mixin classes ignore the "format" (used by DRF Rendered classes)
-and "lang" (used by `@translate` decorator) parameters. POST mixin class also ignores the
+By default, the ignored keys include: "format" (used by DRF Rendered classes)
+and "lang" (used by `@translate` decorator) parameters. POST requests also ignore the
 `csrfmiddlewaretoken` given by forms.
 

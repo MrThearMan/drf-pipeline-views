@@ -5,7 +5,7 @@
 A pipeline can also be constructed without Serializers.
 
 ```python
-class SomeView(GetMixin, BasePipelineView):
+class SomeView(BasePipelineView):
 
     pipelines = {
         "GET": [

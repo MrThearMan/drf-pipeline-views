@@ -81,12 +81,12 @@ def get_recommendations(product: Product, review: Review):
 Finally, let's put those together in the pipeline.
 
 ```python title="views.py"
-from pipeline_views import BasePipelineView, PostMixin
+from pipeline_views import BasePipelineView
 from .serializers import ReviewInputSerializer, ReviewOutputSerializer
 from .services import review_product, get_recommendations
 
 
-class SomeView(PostMixin, BasePipelineView):
+class SomeView(BasePipelineView):
 
     pipelines = {
         "POST": [
