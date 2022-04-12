@@ -120,6 +120,7 @@ class PipelineSchemaMixin:
         if method not in {"POST", "PUT", "PATCH", "DELETE"}:
             return {}
 
+        request_media_types = self.map_parsers(path, method)
         serializer = self.get_request_serializer(path, method)
 
         query_params = self.query_parameters.get(method, {})
@@ -137,10 +138,11 @@ class PipelineSchemaMixin:
 
         item_schema = self._get_reference(serializer)
 
-        return {"content": {"application/json": item_schema}}
+        return {"content": {content_type: item_schema for content_type in request_media_types}}
 
     def get_responses(self, path: str, method: HTTPMethod) -> Dict[str, Any]:  # pylint: disable=W0613
         data = {}
+        response_media_types = self.map_renderers(path, method)
 
         responses = self.responses.get(method, {})
         if not responses and method not in self.view.pipelines:
@@ -172,7 +174,7 @@ class PipelineSchemaMixin:
             response_schema = self._get_reference(serializer)
 
             data[str(status_code)] = {
-                "content": {"application/json": response_schema},
+                "content": {content_type: response_schema for content_type in response_media_types},
                 "description": info,
             }
 

@@ -579,7 +579,10 @@ def test_pipeline_schema__get_operation(drf_request):
     assert operation == {
         "deprecated": True,
         "description": "Example Input",
-        "externalDocs": {"description": "foo", "url": "bar"},
+        "externalDocs": {
+            "description": "foo",
+            "url": "bar",
+        },
         "operationId": "partialUpdateInput",
         "parameters": [
             {
@@ -604,7 +607,29 @@ def test_pipeline_schema__get_operation(drf_request):
                         "required": ["age"],
                         "type": "object",
                     }
-                }
+                },
+                "application/x-www-form-urlencoded": {
+                    "schema": {
+                        "properties": {
+                            "age": {
+                                "type": "integer",
+                            },
+                        },
+                        "required": ["age"],
+                        "type": "object",
+                    }
+                },
+                "multipart/form-data": {
+                    "schema": {
+                        "properties": {
+                            "age": {
+                                "type": "integer",
+                            },
+                        },
+                        "required": ["age"],
+                        "type": "object",
+                    }
+                },
             }
         },
         "responses": {
@@ -890,7 +915,17 @@ def test_pipeline_schema__get_request_body(drf_request):
                     "$ref": "#/components/schemas/Input",
                 },
             },
-        },
+            "application/x-www-form-urlencoded": {
+                "schema": {
+                    "$ref": "#/components/schemas/Input",
+                },
+            },
+            "multipart/form-data": {
+                "schema": {
+                    "$ref": "#/components/schemas/Input",
+                },
+            },
+        }
     }
 
 
@@ -947,7 +982,29 @@ def test_pipeline_schema__get_request_body__query_parameters(drf_request):
                     "required": ["age"],
                     "type": "object",
                 }
-            }
+            },
+            "application/x-www-form-urlencoded": {
+                "schema": {
+                    "properties": {
+                        "age": {
+                            "type": "integer",
+                        },
+                    },
+                    "required": ["age"],
+                    "type": "object",
+                }
+            },
+            "multipart/form-data": {
+                "schema": {
+                    "properties": {
+                        "age": {
+                            "type": "integer",
+                        },
+                    },
+                    "required": ["age"],
+                    "type": "object",
+                }
+            },
         }
     }
 
