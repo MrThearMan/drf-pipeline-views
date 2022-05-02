@@ -14,15 +14,6 @@ def test_pipeline_schema__get_components(drf_request):
     view.format_kwarg = None
     components = view.schema.get_components("", "")
     assert components == {
-        "Detail": {
-            "properties": {
-                "detail": {
-                    "type": "string",
-                },
-            },
-            "required": ["detail"],
-            "type": "object",
-        },
         "Input": {
             "properties": {
                 "age": {
@@ -105,15 +96,6 @@ def test_pipeline_schema__get_components__from_schema(drf_request):
             "required": ["data"],
             "type": "object",
         },
-        "Detail": {
-            "properties": {
-                "detail": {
-                    "type": "string",
-                },
-            },
-            "required": ["detail"],
-            "type": "object",
-        },
         "Input": {
             "properties": {
                 "age": {
@@ -191,15 +173,6 @@ def test_pipeline_schema__get_components__list(drf_request):
             "required": ["data"],
             "type": "object",
         },
-        "Detail": {
-            "properties": {
-                "detail": {
-                    "type": "string",
-                },
-            },
-            "required": ["detail"],
-            "type": "object",
-        },
         "Example": {
             "properties": {
                 "data": {
@@ -251,7 +224,13 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
             "content": {
                 "application/json": {
                     "schema": {
-                        "$ref": "#/components/schemas/Detail",
+                        "type": "object",
+                        "properties": {
+                            "detail": {
+                                "type": "string",
+                                "default": "Error message",
+                            },
+                        },
                     },
                 },
             },
@@ -350,7 +329,13 @@ def test_pipeline_schema__get_responses__list(drf_request):
             "content": {
                 "application/json": {
                     "schema": {
-                        "$ref": "#/components/schemas/Detail",
+                        "type": "object",
+                        "properties": {
+                            "detail": {
+                                "type": "string",
+                                "default": "Error message",
+                            },
+                        },
                     },
                 },
             },
@@ -437,7 +422,13 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
             "content": {
                 "application/json": {
                     "schema": {
-                        "$ref": "#/components/schemas/Detail",
+                        "type": "object",
+                        "properties": {
+                            "detail": {
+                                "type": "string",
+                                "default": "Error message",
+                            },
+                        },
                     },
                 },
             },
@@ -647,7 +638,13 @@ def test_pipeline_schema__get_operation(drf_request):
                 "content": {
                     "application/json": {
                         "schema": {
-                            "$ref": "#/components/schemas/Detail",
+                            "type": "object",
+                            "properties": {
+                                "detail": {
+                                    "type": "string",
+                                    "default": "Error message",
+                                },
+                            },
                         },
                     },
                 },

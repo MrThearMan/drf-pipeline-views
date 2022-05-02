@@ -5,8 +5,20 @@ from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.serializers import BaseSerializer, Serializer
 from rest_framework.utils import formatting
 
-from .serializers import DetailSerializer, EmptySerializer, MockSerializer
-from .typing import Any, Container, Dict, ExternalDocs, HTTPMethod, List, Optional, Sequence, Type, Union
+from .serializers import EmptySerializer, MockSerializer
+from .typing import (
+    Any,
+    Container,
+    Dict,
+    ExternalDocs,
+    HTTPMethod,
+    List,
+    Optional,
+    Sequence,
+    SerializerType,
+    Type,
+    Union,
+)
 from .utils import is_serializer_class
 
 
@@ -90,7 +102,7 @@ class PipelineSchemaMixin:
 
         components = {}
 
-        for serializer_class in (DetailSerializer, request_serializer_class, response_serializer_class):
+        for serializer_class in (request_serializer_class, response_serializer_class):
             serializer = self.view.initialize_serializer(serializer_class=serializer_class)
 
             if getattr(serializer, "many", False):
@@ -152,26 +164,28 @@ class PipelineSchemaMixin:
             responses.setdefault(200, ...)
 
         for status_code, info in responses.items():
-            serializer_class = DetailSerializer
-
-            if is_serializer_class(info):
-                serializer_class = info
-                info = serializer_class.__doc__ or ""
+            serializer_class: Optional[SerializerType] = None
 
             if info is ...:
                 serializer_class = self.view.get_serializer_class(output=True)
+                info = serializer_class.__doc__ or ""
 
                 if getattr(serializer_class, "many", False):
                     data.setdefault("204", self._get_no_result_schema())
 
+            elif is_serializer_class(info):
+                serializer_class = info
                 info = serializer_class.__doc__ or ""
 
-            serializer = self.view.initialize_serializer(serializer_class=serializer_class)
+            if serializer_class is not None:
+                serializer = self.view.initialize_serializer(serializer_class=serializer_class)
 
-            if isinstance(serializer, EmptySerializer):
-                status_code = 204
+                if isinstance(serializer, EmptySerializer):
+                    status_code = 204
 
-            response_schema = self._get_reference(serializer)
+                response_schema = self._get_reference(serializer)
+            else:
+                response_schema = {"schema": self._get_error_message_schema()}
 
             data[str(status_code)] = {
                 "content": {content_type: response_schema for content_type in response_media_types},
@@ -273,10 +287,17 @@ class PipelineSchemaMixin:
         return response_schema
 
     @staticmethod
-    def _get_no_result_schema():
+    def _get_no_result_schema(description: str = "No Results") -> Dict[str, Any]:
         return {
             "content": {"application/json": {"type": "string", "default": ""}},
-            "description": "No Results",
+            "description": description,
+        }
+
+    @staticmethod
+    def _get_error_message_schema(error_message: str = "Error message") -> Dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {"detail": {"type": "string", "default": error_message}},
         }
 
     def get_request_serializer(self, path: str, method: HTTPMethod) -> BaseSerializer:  # pylint: disable=W0613

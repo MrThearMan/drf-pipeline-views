@@ -86,13 +86,6 @@ paths:
       - example
 components:
   schemas:
-    Detail:
-      type: object
-      properties:
-        detail:
-          type: string
-      required:
-      - detail
     Input:
       type: object
       properties:
@@ -124,8 +117,6 @@ components:
 
 You can add additional responses in the initialization of the schema.
 The following adds an error response as if given by raising an APIException.
-It uses the "Detail" component in the OpenAPI chema, which is automatically
-added for this purpose.
 
 ```python hl_lines="12 13 14 15 16"
 from pipeline_views.schema import PipelineSchema
