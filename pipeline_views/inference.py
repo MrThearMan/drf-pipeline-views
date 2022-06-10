@@ -1,7 +1,6 @@
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from inspect import getfullargspec
-from typing import Any, Callable, Dict, ForwardRef, List, Optional, Tuple, Type, Union
 
 from rest_framework.fields import (
     BooleanField,
@@ -20,7 +19,7 @@ from rest_framework.fields import (
 from rest_framework.serializers import BaseSerializer, Serializer
 
 from .serializers import MockSerializer
-from .typing import TypesDict, eval_type
+from .typing import Any, Callable, Dict, ForwardRef, List, Optional, Tuple, Type, TypesDict, Union, eval_type
 
 
 __all__ = [

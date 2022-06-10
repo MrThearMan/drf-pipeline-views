@@ -1,13 +1,19 @@
 import uritemplate  # pylint: disable=E0401
 from django.utils.encoding import smart_str
 from rest_framework.fields import Field
-from rest_framework.schemas.openapi import AutoSchema
+from rest_framework.request import Request
+from rest_framework.schemas.generators import EndpointEnumerator
+from rest_framework.schemas.openapi import AutoSchema, SchemaGenerator
 from rest_framework.serializers import BaseSerializer, Serializer
 from rest_framework.utils import formatting
 
 from .serializers import EmptySerializer, MockSerializer
 from .typing import (
     Any,
+    APIContact,
+    APIInfo,
+    APILicense,
+    APISchema,
     Container,
     Dict,
     ExternalDocs,
@@ -25,6 +31,9 @@ from .utils import is_serializer_class
 __all__ = [
     "PipelineSchemaMixin",
     "PipelineSchema",
+    "VersionEndpointEnumerator",
+    "VersionSchemaGeneratorMixin",
+    "VersionSchemaGenerator",
     "convert_to_schema",
 ]
 
@@ -327,3 +336,122 @@ class PipelineSchema(PipelineSchemaMixin, AutoSchema):
         self.external_docs = external_docs or self.external_docs
         self.prefix = prefix or self.prefix
         super().__init__(tags=tags, operation_id_base=operation_id_base, component_name=component_name)
+
+
+class VersionEndpointEnumerator(EndpointEnumerator):
+
+    url: str = ""
+
+    def get_path_from_regex(self, path_regex: str) -> str:
+        reg = super().get_path_from_regex(path_regex)
+        url = self.url
+
+        if reg.startswith("/"):
+            reg = reg[1:]
+        if url.startswith("/"):
+            url = url[1:]
+
+        if reg[: len(url)] == url:
+            return reg[len(url) :]
+
+        return reg
+
+
+class VersionSchemaGeneratorMixin(SchemaGenerator):
+
+    contact: APIContact = {}
+    license: APILicense = {}
+    terms_of_service: str = ""
+
+    endpoint_inspector_cls = VersionEndpointEnumerator
+
+    @classmethod
+    def with_info(
+        cls,
+        contact: Optional[APIContact] = None,
+        license: Optional[APILicense] = None,  # pylint: disable=redefined-builtin
+        terms_of_service: Optional[str] = None,
+    ) -> Type[SchemaGenerator]:
+        return type(  # type: ignore
+            cls.__name__,
+            (cls,),
+            {
+                "contact": contact or cls.contact,
+                "license": license or cls.license,
+                "terms_of_service": terms_of_service or cls.terms_of_service,
+            },
+        )
+
+    def get_info(self) -> APIInfo:
+        info: APIInfo = super().get_info()  # type: ignore
+        if self.contact:
+            info["contact"] = self.contact
+        if self.license:
+            info["license"] = self.license
+        if self.terms_of_service:
+            info["termsOfService"] = self.terms_of_service
+        return info
+
+    def get_schema(self, request: Optional[Request] = None, public: bool = False) -> APISchema:
+        schema: APISchema = super().get_schema(request, public)  # type: ignore
+
+        sorted_paths = {}
+        for path, operations in schema["paths"].items():
+            tag = list(operations.values())[0]["tags"][0]
+            sorted_paths.setdefault(tag, {})
+            sorted_paths[tag][path] = operations
+
+        schema["paths"] = {
+            path: operations
+            for endpoints in dict(sorted(sorted_paths.items())).values()
+            for path, operations in dict(sorted(endpoints.items())).items()
+        }
+
+        return schema
+
+
+class VersionSchemaGenerator(VersionSchemaGeneratorMixin, SchemaGenerator):
+    def __init__(
+        self,
+        title: Optional[str] = None,
+        url: Optional[str] = None,
+        description: Optional[str] = None,
+        patterns: Optional[List[str]] = None,
+        urlconf: Optional[str] = None,
+        version: Optional[str] = None,
+        contact: Optional[APIContact] = None,
+        license: Optional[APILicense] = None,  # pylint: disable=redefined-builtin
+        terms_of_service: Optional[str] = None,
+    ):
+        """Create a versioned schema.
+
+        :param title: The name of the API (required).
+        :param url: The root URL of the API schema. This option is not required unless
+                    the schema is included under path prefix.
+        :param description: Longer descriptive text.
+        :param patterns: A list of URLs to inspect when generating the schema.
+                         Defaults to the project's URL conf.
+        :param urlconf: A URL conf module name to use when generating the schema.
+                        Defaults to settings.ROOT_URLCONF.
+        :param version: The version of the API. Defaults to 0.1.0.
+        :param contact: API developer contact information.
+        :param license: API license information.
+        :param terms_of_service: API terms of service link.
+        """
+
+        if url and not url.startswith("/"):
+            url = "/" + url
+
+        super().__init__(
+            title=title,
+            url=url,
+            description=description,
+            patterns=patterns,
+            urlconf=urlconf,
+            version=version,
+        )
+
+        self.endpoint_inspector_cls.url = self.url or ""
+        self.contact = contact or self.contact
+        self.license = license or self.license
+        self.terms_of_service = terms_of_service or self.terms_of_service

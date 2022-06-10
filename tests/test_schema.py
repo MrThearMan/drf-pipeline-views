@@ -1,5 +1,6 @@
 from rest_framework.fields import CharField, IntegerField
 from rest_framework.serializers import Serializer
+from rest_framework.test import APIClient
 
 from pipeline_views import BasePipelineView, MockSerializer
 from pipeline_views.schema import PipelineSchema
@@ -1027,3 +1028,147 @@ def test_pipeline_schema__get_tags__predefined(drf_request):
     view.format_kwarg = None
     tags = view.schema.get_tags("", "GET")
     assert tags == ["foo", "bar"]
+
+
+def test_pipeline_openapi():
+    client = APIClient()
+
+    response = client.get("/openapi/", content_type="application/vnd.oai.openapi")
+
+    assert response.data == {
+        "components": {
+            "schemas": {
+                "Input": {
+                    "properties": {
+                        "age": {"type": "integer"},
+                        "name": {"type": "string"},
+                    },
+                    "required": ["name", "age"],
+                    "type": "object",
+                },
+                "Output": {
+                    "properties": {
+                        "age": {"type": "integer"},
+                        "email": {"format": "email", "type": "string"},
+                    },
+                    "required": ["email", "age"],
+                    "type": "object",
+                },
+            }
+        },
+        "info": {
+            "contact": {"email": "user@example.com"},
+            "description": "API for all things",
+            "license": {"name": "MIT"},
+            "termsOfService": "example.com",
+            "title": "Your Project",
+            "version": "1.0.0",
+        },
+        "openapi": "3.0.2",
+        "paths": {
+            "/api/example/": {
+                "post": {
+                    "description": "Example Input",
+                    "operationId": "createInput",
+                    "parameters": [],
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Input",
+                                },
+                            },
+                            "application/x-www-form-urlencoded": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Input",
+                                },
+                            },
+                            "multipart/form-data": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Input",
+                                },
+                            },
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/Output",
+                                    },
+                                },
+                            },
+                            "description": "Example " "Output",
+                        }
+                    },
+                    "tags": ["example"],
+                }
+            },
+            "/api/example/{age}": {
+                "patch": {
+                    "description": "Example Input",
+                    "operationId": "partialUpdateInput",
+                    "parameters": [
+                        {
+                            "description": "",
+                            "in": "path",
+                            "name": "age",
+                            "required": True,
+                            "schema": {"type": "integer"},
+                        }
+                    ],
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "name": {
+                                            "type": "string",
+                                        },
+                                    },
+                                    "required": ["name"],
+                                    "type": "object",
+                                }
+                            },
+                            "application/x-www-form-urlencoded": {
+                                "schema": {
+                                    "properties": {
+                                        "name": {
+                                            "type": "string",
+                                        },
+                                    },
+                                    "required": ["name"],
+                                    "type": "object",
+                                }
+                            },
+                            "multipart/form-data": {
+                                "schema": {
+                                    "properties": {
+                                        "name": {
+                                            "type": "string",
+                                        },
+                                    },
+                                    "required": ["name"],
+                                    "type": "object",
+                                }
+                            },
+                        }
+                    },
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/Output",
+                                    },
+                                },
+                            },
+                            "description": "Example " "Output",
+                        }
+                    },
+                    "tags": ["example"],
+                }
+            },
+        },
+    }

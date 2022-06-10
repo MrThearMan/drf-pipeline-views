@@ -1,55 +1,36 @@
+from typing import _eval_type  # type: ignore
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Container,
+    Coroutine,
+    Dict,
+    ForwardRef,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
+
+
+# New in version 3.8
 try:
-    from typing import (  # type: ignore
-        TYPE_CHECKING,
-        Any,
-        Callable,
-        Container,
-        Coroutine,
-        Dict,
-        ForwardRef,
-        Generator,
-        Iterable,
-        List,
-        Literal,
-        Optional,
-        ParamSpec,
-        Protocol,
-        Sequence,
-        Set,
-        Tuple,
-        Type,
-        TypedDict,
-        TypeVar,
-        Union,
-        _eval_type,
-    )
+    from typing import Literal, Protocol, TypedDict
 except ImportError:
-    from typing import (  # type: ignore
-        Any,
-        Callable,
-        Dict,
-        List,
-        Tuple,
-        Iterable,
-        Optional,
-        Union,
-        Generator,
-        TypeVar,
-        Set,
-        ForwardRef,
-        Coroutine,
-        Container,
-        _eval_type,
-        Sequence,
-    )
-    from typing_extensions import (  # type: ignore
-        TYPE_CHECKING,
-        Literal,
-        Type,
-        TypedDict,
-        Protocol,
-        ParamSpec,
-    )
+    from typing_extensions import Literal, Protocol, TypedDict
+
+# New in version 3.10
+try:
+    from typing import ParamSpec
+except ImportError:
+    from typing_extensions import ParamSpec
 
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -95,6 +76,10 @@ __all__ = [
     "ExternalDocs",
     "Sequence",
     "ViewMethod",
+    "APIContact",
+    "APILicense",
+    "APIInfo",
+    "APISchema",
 ]
 
 
@@ -126,3 +111,34 @@ class ViewContext(TypedDict):
 class ExternalDocs(TypedDict):
     description: str
     url: str
+
+
+class APIContact(TypedDict, total=False):
+    name: str
+    url: str
+    email: str
+
+
+class APILicense(TypedDict, total=False):
+    name: str
+    url: str
+
+
+class APIInfo(TypedDict, total=False):
+    title: str
+    version: str
+    description: str
+    contact: APIContact
+    license: APILicense
+    termsOfService: str
+
+
+class APISchema(TypedDict, total=False):
+    openapi: str
+    info: APIInfo
+    paths: Dict[str, Dict[str, Any]]
+    components: Dict[str, Dict[str, Any]]
+    security: List[Dict[str, List[Any]]]
+    tags: List[Dict[str, Any]]
+    externalDocs: ExternalDocs
+    servers: List[Dict[str, Any]]

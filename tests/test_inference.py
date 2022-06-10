@@ -1,9 +1,7 @@
 from functools import wraps
-from typing import List
 
 from rest_framework import fields
 from rest_framework.serializers import Serializer
-from typing_extensions import TypedDict
 
 from pipeline_views import MockSerializer
 from pipeline_views.inference import (
@@ -13,6 +11,7 @@ from pipeline_views.inference import (
     inline_serializer,
     serializer_from_callable,
 )
+from pipeline_views.typing import List, TypedDict
 from tests.arg_spec_functions import *
 
 

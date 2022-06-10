@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 from rest_framework import serializers
 from rest_framework.schemas import get_schema_view
 
+from pipeline_views.schema import VersionSchemaGenerator
 from pipeline_views.views import BasePipelineView
 
 
@@ -49,14 +50,20 @@ class ExamplePathView(BasePipelineView):
 
 
 urlpatterns = [
-    path("", ExampleView.as_view(), name="test_view"),
-    path("<int:age>", ExamplePathView.as_view(), name="test_path_view"),
+    path("api/example/", ExampleView.as_view(), name="test_view"),
+    path("api/example/<int:age>", ExamplePathView.as_view(), name="test_path_view"),
     path(
         "openapi/",
         get_schema_view(
             title="Your Project",
             description="API for all things",
             version="1.0.0",
+            url="api",
+            generator_class=VersionSchemaGenerator.with_info(
+                contact={"email": "user@example.com"},
+                license={"name": "MIT"},
+                terms_of_service="example.com",
+            ),
         ),
         name="openapi-schema",
     ),

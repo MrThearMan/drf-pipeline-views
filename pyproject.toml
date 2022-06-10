@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "drf-pipeline-views"
-version = "0.6.2"
+version = "0.6.3"
 description = "Django REST framework views using the pipeline pattern."
 authors = [
     "Matti Lamppu <lamppu.matti.akseli@gmail.com>",
@@ -53,7 +53,7 @@ python = ">=3.7,<4"
 Django = ">=2.2"
 djangorestframework = ">=3.12.0"
 asgiref = ">=3.5.0"
-typing-extensions = {version = ">=4.0", optional = true}
+typing-extensions = {version = ">=4.0", python = "<3.10"}
 uvloop = {version = ">=0.16.0", optional = true}
 uritemplate = {version = ">=4.1.1", optional = true}
 PyYAML = {version = ">=6.0", optional = true}
@@ -76,7 +76,6 @@ Pygments = "2.12.0"
 uritemplate = "4.1.1"
 
 [tool.poetry.extras]
-typing = ["typing-extensions"]
 uvloop = ["uvloop"]
 schema = ["uritemplate", "PyYAML"]
 
@@ -103,8 +102,6 @@ ignore-paths = [
 
 [tool.pylint.messages_control]
 disable = [
-    "bad-continuation",
-    "bad-whitespace",
     "missing-module-docstring",
     "missing-class-docstring",
     "missing-function-docstring",
@@ -156,7 +153,7 @@ addopts = "-vv -s --log-cli-level=INFO"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{37, 38, 39}-drf312, py{37, 38, 39, 310, 311}-drf313
+envlist = py{37, 38, 39}-drf312, py{38, 39, 310, 311}-drf313
 isolated_build = true
 
 [gh-actions]
@@ -185,7 +182,7 @@ deps =
     pytest-django
     asgiref
     uritemplate
-    typing-extensions
+    pyyaml
 commands =
     coverage run -m pytest -vv -s --log-cli-level=INFO
 """
