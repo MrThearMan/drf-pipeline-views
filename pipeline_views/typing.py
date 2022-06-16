@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import _eval_type  # type: ignore
 from typing import (
     TYPE_CHECKING,
@@ -28,16 +30,18 @@ except ImportError:
 
 # New in version 3.10
 try:
-    from typing import ParamSpec
+    from typing import ParamSpec, TypeAlias
 except ImportError:
-    from typing_extensions import ParamSpec
-
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.serializers import BaseSerializer
+    from typing_extensions import ParamSpec, TypeAlias
 
 
 if TYPE_CHECKING:
+    from rest_framework.authentication import BaseAuthentication
+    from rest_framework.permissions import BasePermission
+    from rest_framework.request import Request
+    from rest_framework.response import Response
+    from rest_framework.serializers import BaseSerializer
+
     from .views import BasePipelineView  # pylint: disable=R0401
 
 
@@ -69,6 +73,7 @@ __all__ = [
     "T",
     "P",
     "Set",
+    "TypeAlias",
     "Container",
     "ForwardRef",
     "eval_type",
@@ -80,32 +85,40 @@ __all__ = [
     "APILicense",
     "APIInfo",
     "APISchema",
+    "BasicAuth",
+    "BearerAuth",
+    "ApiKeyAuth",
+    "AnyAuth",
+    "SecurityRules",
+    "AuthOrPerm",
 ]
 
 
 T = TypeVar("T")  # pylint: disable=C0103
 P = ParamSpec("P")  # pylint: disable=C0103
 eval_type = _eval_type
-DataDict = Dict[str, Any]
-SerializerType = Type[BaseSerializer]
-DataConditional = Tuple[Any, DataDict]
-DataReturn = Union[DataDict, DataConditional, None]
-HTTPMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
-LogicCallable = Callable[..., DataReturn]
-PipelineLogic = Union[LogicCallable, SerializerType, Iterable["PipelineLogic"]]  # type: ignore
-PipelinesDict = Dict[HTTPMethod, PipelineLogic]  # type: ignore
-TypesDict = Dict[str, Union[Optional[Type], "TypesDict"]]  # type: ignore
+DataDict: TypeAlias = Dict[str, Any]
+SerializerType: TypeAlias = Type["BaseSerializer"]
+DataConditional: TypeAlias = Tuple[Any, DataDict]
+DataReturn: TypeAlias = Union[DataDict, DataConditional, None]
+HTTPMethod: TypeAlias = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
+LogicCallable: TypeAlias = Callable[..., DataReturn]
+PipelineLogic: TypeAlias = Union[LogicCallable, SerializerType, Iterable["PipelineLogic"]]  # type: ignore
+PipelinesDict: TypeAlias = Dict[HTTPMethod, PipelineLogic]  # type: ignore
+TypesDict: TypeAlias = Dict[str, Union[Optional[Type], "TypesDict"]]  # type: ignore
+AuthOrPerm: TypeAlias = Union[Type["BasePermission"], Type["BaseAuthentication"]]
+SecurityRules: TypeAlias = Dict[Union[Tuple[AuthOrPerm, ...], AuthOrPerm], Dict[str, List[str]]]
 
 
 class ViewMethod(Protocol):
-    def __call__(self: "BasePipelineView", request: Request, *args: Any, **kwargs: Any) -> Response:
+    def __call__(self: BasePipelineView, request: Request, *args: Any, **kwargs: Any) -> Response:
         """..."""
 
 
 class ViewContext(TypedDict):
     request: Request
     format: str
-    view: "BasePipelineView"
+    view: BasePipelineView
 
 
 class ExternalDocs(TypedDict):
@@ -142,3 +155,88 @@ class APISchema(TypedDict, total=False):
     tags: List[Dict[str, Any]]
     externalDocs: ExternalDocs
     servers: List[Dict[str, Any]]
+
+
+class BasicAuth(TypedDict):
+    type: Literal["http"]
+    scheme: Literal["basic"]
+
+
+class BearerAuthBase(TypedDict):
+    type: Literal["http"]
+    scheme: Literal["bearer"]
+
+
+class BearerAuth(BearerAuthBase, total=False):
+    bearerFormat: str
+
+
+ApiKeyAuth = TypedDict(
+    "ApiKeyAuth",
+    {
+        "type": Literal["apiKey"],
+        "in": Literal["header", "query", "cookie"],
+        "name": str,
+    },
+)
+
+
+class OAuthFlowBase(TypedDict):
+    scopes: List[str]
+
+
+class OAuthFlowAuthorizationCodeBase(OAuthFlowBase):
+    authorizationUrl: str
+    tokenUrl: str
+
+
+class OAuthFlowAuthorizationCode(OAuthFlowAuthorizationCodeBase, total=False):
+    refreshUrl: str
+
+
+class OAuthFlowImplicitBase(OAuthFlowBase):
+    authorizationUrl: str
+
+
+class OAuthFlowImplicit(OAuthFlowImplicitBase, total=False):
+    refreshUrl: str
+
+
+class OAuthFlowPasswordBase(OAuthFlowBase):
+    tokenUrl: str
+
+
+class OAuthFlowPassword(OAuthFlowPasswordBase, total=False):
+    refreshUrl: str
+
+
+class OAuthFlowClientCredentialsBase(OAuthFlowBase):
+    tokenUrl: str
+
+
+class OAuthFlowClientCredentials(OAuthFlowClientCredentialsBase, total=False):
+    refreshUrl: str
+
+
+class OAuthFlows(TypedDict, total=False):
+    authorizationCode: OAuthFlowAuthorizationCode
+    implicit: OAuthFlowImplicit
+    password: OAuthFlowPassword
+    clientCredentials: OAuthFlowClientCredentials
+
+
+class OAuthBase(TypedDict):
+    type: Literal["openIdConnect"]
+    flows: OAuthFlows
+
+
+class OAuth(OAuthBase, total=False):
+    description: str
+
+
+class OpenIDAuth(TypedDict):
+    type: Literal["oauth2"]
+    openIdConnectUrl: str
+
+
+AnyAuth: TypeAlias = Union[BasicAuth, BearerAuth, ApiKeyAuth, OAuth, OpenIDAuth]

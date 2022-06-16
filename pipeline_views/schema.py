@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import uritemplate  # pylint: disable=E0401
 from django.utils.encoding import smart_str
 from rest_framework.fields import Field
+from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.schemas.generators import EndpointEnumerator
 from rest_framework.schemas.openapi import AutoSchema, SchemaGenerator
@@ -9,17 +12,19 @@ from rest_framework.utils import formatting
 
 from .serializers import EmptySerializer, MockSerializer
 from .typing import (
+    TYPE_CHECKING,
     Any,
+    AnyAuth,
     APIContact,
     APIInfo,
     APILicense,
     APISchema,
-    Container,
     Dict,
     ExternalDocs,
     HTTPMethod,
     List,
     Optional,
+    SecurityRules,
     Sequence,
     SerializerType,
     Type,
@@ -28,12 +33,16 @@ from .typing import (
 from .utils import is_serializer_class
 
 
+if TYPE_CHECKING:
+    from .views import BasePipelineView
+
+
 __all__ = [
     "PipelineSchemaMixin",
     "PipelineSchema",
-    "VersionEndpointEnumerator",
-    "VersionSchemaGeneratorMixin",
-    "VersionSchemaGenerator",
+    "PipelineEndpointEnumerator",
+    "PipelineSchemaGeneratorMixin",
+    "PipelineSchemaGenerator",
     "convert_to_schema",
 ]
 
@@ -63,9 +72,10 @@ class PipelineSchemaMixin:
 
     responses: Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]] = {}
     query_parameters: Dict[HTTPMethod, List[str]] = {}
-    deprecated: Container[HTTPMethod] = []
-    security: Dict[HTTPMethod, List[Dict[str, List[str]]]] = {}
+    deprecated: List[HTTPMethod] = []
+    security: Dict[HTTPMethod, Dict[str, List[str]]] = {}
     external_docs: Dict[HTTPMethod, ExternalDocs] = {}
+    public: Dict[HTTPMethod, bool] = {}
     prefix: str = ""
 
     def get_operation(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
@@ -92,7 +102,7 @@ class PipelineSchemaMixin:
 
         security = self.security.get(method)
         if security is not None:
-            operation["security"] = security
+            operation["security"] = [security]
 
         external_docs = self.external_docs.get(method)
         if external_docs is not None:
@@ -163,14 +173,23 @@ class PipelineSchemaMixin:
 
     def get_responses(self, path: str, method: HTTPMethod) -> Dict[str, Any]:  # pylint: disable=W0613
         data = {}
-        response_media_types = self.map_renderers(path, method)
 
         responses = self.responses.get(method, {})
         if not responses and method not in self.view.pipelines:
             return data
 
+        response_media_types = self.map_renderers(path, method)
+        authentication_classes = self.view.authentication_classes
+        permission_classes = self.view.permission_classes
+
         if ... not in set(responses.values()):
             responses.setdefault(200, ...)
+
+        if authentication_classes:
+            responses.setdefault(401, "Unauthenticated.")
+
+        if permission_classes and permission_classes != [AllowAny]:
+            responses.setdefault(403, "Permission Denied.")
 
         for status_code, info in responses.items():
             serializer_class: Optional[SerializerType] = None
@@ -296,14 +315,14 @@ class PipelineSchemaMixin:
         return response_schema
 
     @staticmethod
-    def _get_no_result_schema(description: str = "No Results") -> Dict[str, Any]:
+    def _get_no_result_schema(description: str = "no results") -> Dict[str, Any]:
         return {
             "content": {"application/json": {"type": "string", "default": ""}},
             "description": description,
         }
 
     @staticmethod
-    def _get_error_message_schema(error_message: str = "Error message") -> Dict[str, Any]:
+    def _get_error_message_schema(error_message: str = "error message") -> Dict[str, Any]:
         return {
             "type": "object",
             "properties": {"detail": {"type": "string", "default": error_message}},
@@ -319,11 +338,13 @@ class PipelineSchemaMixin:
 class PipelineSchema(PipelineSchemaMixin, AutoSchema):
     def __init__(
         self,
+        *,
         responses: Optional[Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]]] = None,
         query_parameters: Optional[Dict[HTTPMethod, List[str]]] = None,
-        deprecated: Optional[Container[HTTPMethod]] = None,
-        security: Optional[Dict[HTTPMethod, List[Dict[str, List[str]]]]] = None,
+        deprecated: Optional[List[HTTPMethod]] = None,
+        security: Optional[Dict[HTTPMethod, Dict[str, List[str]]]] = None,
         external_docs: Optional[Dict[HTTPMethod, ExternalDocs]] = None,
+        public: Optional[Dict[HTTPMethod, bool]] = None,
         prefix: Optional[str] = None,
         tags: Optional[Sequence[str]] = None,
         operation_id_base: Optional[str] = None,
@@ -334,11 +355,12 @@ class PipelineSchema(PipelineSchemaMixin, AutoSchema):
         self.deprecated = deprecated or self.deprecated
         self.security = security or self.security
         self.external_docs = external_docs or self.external_docs
+        self.public = public or self.public
         self.prefix = prefix or self.prefix
         super().__init__(tags=tags, operation_id_base=operation_id_base, component_name=component_name)
 
 
-class VersionEndpointEnumerator(EndpointEnumerator):
+class PipelineEndpointEnumerator(EndpointEnumerator):
 
     url: str = ""
 
@@ -357,21 +379,39 @@ class VersionEndpointEnumerator(EndpointEnumerator):
         return reg
 
 
-class VersionSchemaGeneratorMixin(SchemaGenerator):
+class PipelineSchemaGeneratorMixin:
 
     contact: APIContact = {}
     license: APILicense = {}
     terms_of_service: str = ""
+    public: bool = True
+    security_schemes: Dict[str, AnyAuth] = {}
+    security_rules: SecurityRules = {}
 
-    endpoint_inspector_cls = VersionEndpointEnumerator
+    endpoint_inspector_cls = PipelineEndpointEnumerator
 
     @classmethod
-    def with_info(
+    def configure(
         cls,
+        *,
         contact: Optional[APIContact] = None,
         license: Optional[APILicense] = None,  # pylint: disable=redefined-builtin
         terms_of_service: Optional[str] = None,
-    ) -> Type[SchemaGenerator]:
+        public: Optional[bool] = None,
+        security_schemes: Optional[Dict[str, AnyAuth]] = None,
+        security_rules: Optional[SecurityRules] = None,
+    ) -> Type[PipelineSchemaGeneratorMixin]:
+        """Configure API with additional options
+
+        :param contact: API developer contact information.
+        :param license: API license information.
+        :param terms_of_service: API terms of service link.
+        :param public: If False, hide endpoint schema if the user does not have permissions to view it.
+        :param security_schemes: Mapping of security scheme name to its definition.
+        :param security_rules: Security schemes to apply if defined authentication or
+                               permission class(es) exist on an endpoint.
+        :return: New subclass with the added options.
+        """
         return type(  # type: ignore
             cls.__name__,
             (cls,),
@@ -379,6 +419,9 @@ class VersionSchemaGeneratorMixin(SchemaGenerator):
                 "contact": contact or cls.contact,
                 "license": license or cls.license,
                 "terms_of_service": terms_of_service or cls.terms_of_service,
+                "public": public if public is not None else cls.public,
+                "security_schemes": security_schemes or cls.security_schemes,
+                "security_rules": security_rules or cls.security_rules,
             },
         )
 
@@ -395,6 +438,9 @@ class VersionSchemaGeneratorMixin(SchemaGenerator):
     def get_schema(self, request: Optional[Request] = None, public: bool = False) -> APISchema:
         schema: APISchema = super().get_schema(request, public)  # type: ignore
 
+        if self.security_schemes:
+            schema["components"]["securitySchemes"] = self.security_schemes
+
         sorted_paths = {}
         for path, operations in schema["paths"].items():
             tag = list(operations.values())[0]["tags"][0]
@@ -409,10 +455,38 @@ class VersionSchemaGeneratorMixin(SchemaGenerator):
 
         return schema
 
+    def has_view_permissions(self, path: str, method: HTTPMethod, view: BasePipelineView) -> bool:
+        self.set_security_schemes(method, view)
 
-class VersionSchemaGenerator(VersionSchemaGeneratorMixin, SchemaGenerator):
+        method_public = getattr(view.schema, "public", {}).get(method, None)
+
+        if method_public is True:
+            return True
+
+        if self.public and method_public is not False:
+            return True
+
+        return super().has_view_permissions(path, method, view)
+
+    def set_security_schemes(self, method: HTTPMethod, view: BasePipelineView) -> None:
+        security: Optional[Dict[HTTPMethod, Dict[str, List[str]]]] = getattr(view.schema, "security")
+        if security is None:  # pragma: no cover
+            return
+
+        for classes, rules in self.security_rules.items():
+            if not isinstance(classes, tuple):
+                classes = (classes,)
+
+            if any(cls in view.permission_classes or cls in view.authentication_classes for cls in classes):
+                view.schema.security.setdefault(method, {})
+                # View specific rules take higher priority
+                view.schema.security[method] = {**rules, **view.schema.security[method]}
+
+
+class PipelineSchemaGenerator(PipelineSchemaGeneratorMixin, SchemaGenerator):
     def __init__(
         self,
+        *,
         title: Optional[str] = None,
         url: Optional[str] = None,
         description: Optional[str] = None,
@@ -422,6 +496,9 @@ class VersionSchemaGenerator(VersionSchemaGeneratorMixin, SchemaGenerator):
         contact: Optional[APIContact] = None,
         license: Optional[APILicense] = None,  # pylint: disable=redefined-builtin
         terms_of_service: Optional[str] = None,
+        public: Optional[bool] = None,
+        security_schemes: Optional[Dict[str, AnyAuth]] = None,
+        security_rules: Optional[SecurityRules] = None,
     ):
         """Create a versioned schema.
 
@@ -437,6 +514,10 @@ class VersionSchemaGenerator(VersionSchemaGeneratorMixin, SchemaGenerator):
         :param contact: API developer contact information.
         :param license: API license information.
         :param terms_of_service: API terms of service link.
+        :param public: If False, hide endpoint schema if the user does not have permissions to view it.
+        :param security_schemes: Mapping of security scheme name to its definition.
+        :param security_rules: Security schemes to apply if defined authentication or
+                               permission class(es) exist on an endpoint.
         """
 
         if url and not url.startswith("/"):
@@ -455,3 +536,6 @@ class VersionSchemaGenerator(VersionSchemaGeneratorMixin, SchemaGenerator):
         self.contact = contact or self.contact
         self.license = license or self.license
         self.terms_of_service = terms_of_service or self.terms_of_service
+        self.public = public if public is not None else self.public
+        self.security_schemes = security_schemes or self.security_schemes
+        self.security_rules = security_rules or self.security_rules

@@ -1,7 +1,7 @@
 # Metadata class
 
-Pipeline views include a metadata class that adds additional data to OPTIONS responses
-based on defined pipelines. For example, a pipeline defined like this:
+Pipeline views include a metadata class that adds additional data to `OPTIONS` responses
+based on defined pipelines' Input and Output serializers. For example, a pipeline defined like this:
 
 ```python
 class InputSerializer(serializers.Serializer):
@@ -27,7 +27,6 @@ class ExampleView(BasePipelineView):
             OutputSerializer,
         ],
     }
-
 ```
 
 ...will produce the following OPTIONS response:

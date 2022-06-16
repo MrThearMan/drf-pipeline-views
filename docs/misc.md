@@ -43,7 +43,6 @@ Used language is determined from 1. a `lang` query parameter, or 2. `request.LAN
 (requires [LocaleMiddleware](https://docs.djangoproject.com/en/3.1/ref/middleware/#django.middleware.locale.LocaleMiddleware)).
 Failing that, the tranlation falls back to the currently active language.
 
-
 ## Run in a thread
 
 Some tasks, like interactions with the Django ORM, cannot be done in an async context. This can be solved by using
@@ -54,7 +53,6 @@ and thus enable these tasks in async contexts.
 ## Cache Pipeline Logic
 
 A handy utility that can be used to cache pipeline logic to the django cache backend.
-
 
 ## Ignoring input parameters
 

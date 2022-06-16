@@ -28,7 +28,7 @@ Inspired by a talk on [The Clean Architecture in Python][clean] by Brandon Rhode
 [Django REST framework][drf] using the *[Pipeline Design Pattern][pipeline]*.
 
 The main idea behind the pipeline pattern is to process data in steps. Input from the previous step
-is passed to the next, resulting in a collection of "data-in, data-out" -functions. These functions
+is passed to the next, resulting in a collection of "_data-in, data-out_" -functions. These functions
 can be easily unit tested, since none of the functions depend on the state of the objects in the other parts
 of the pipeline. Furthermore, IO can be separated into its own step, making the other parts of the
 logic simpler and faster to test by not having to mock or do any other special setup around the IO.

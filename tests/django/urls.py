@@ -1,9 +1,10 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from rest_framework import serializers
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.schemas import get_schema_view
 
-from pipeline_views.schema import VersionSchemaGenerator
+from pipeline_views.schema import PipelineSchema, PipelineSchemaGenerator
 from pipeline_views.views import BasePipelineView
 
 
@@ -48,10 +49,37 @@ class ExamplePathView(BasePipelineView):
         ],
     }
 
+    schema = PipelineSchema(
+        public={
+            "PATCH": True,
+        },
+    )
+
+
+class ExamplePrivateView(BasePipelineView):
+    """Example View"""
+
+    permission_classes = [IsAuthenticated]
+
+    pipelines = {
+        "PUT": [
+            InputSerializer,
+            example_method,
+            OutputSerializer,
+        ],
+    }
+
+    schema = PipelineSchema(
+        public={
+            "PUT": False,
+        },
+    )
+
 
 urlpatterns = [
     path("api/example/", ExampleView.as_view(), name="test_view"),
     path("api/example/<int:age>", ExamplePathView.as_view(), name="test_path_view"),
+    path("api/example/private", ExamplePrivateView.as_view(), name="test_private_view"),
     path(
         "openapi/",
         get_schema_view(
@@ -59,10 +87,29 @@ urlpatterns = [
             description="API for all things",
             version="1.0.0",
             url="api",
-            generator_class=VersionSchemaGenerator.with_info(
+            generator_class=PipelineSchemaGenerator.configure(
                 contact={"email": "user@example.com"},
                 license={"name": "MIT"},
                 terms_of_service="example.com",
+                security_schemes={
+                    "my_security": {
+                        "type": "http",
+                        "scheme": "bearer",
+                        "bearerFormat": "JWT",
+                    },
+                    "another": {
+                        "type": "http",
+                        "scheme": "basic",
+                    },
+                },
+                security_rules={
+                    AllowAny: {
+                        "my_security": [],
+                    },
+                    (IsAuthenticated,): {
+                        "another": [],
+                    },
+                },
             ),
         ),
         name="openapi-schema",

@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AnonymousUser
 from rest_framework.fields import CharField, IntegerField
 from rest_framework.serializers import Serializer
 from rest_framework.test import APIClient
@@ -59,7 +60,23 @@ def test_pipeline_schema__get_responses(drf_request):
                 },
             },
             "description": "Example Output",
-        }
+        },
+        "401": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "properties": {
+                            "detail": {
+                                "default": "error message",
+                                "type": "string",
+                            },
+                        },
+                        "type": "object",
+                    },
+                },
+            },
+            "description": "Unauthenticated.",
+        },
     }
 
 
@@ -225,17 +242,33 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
             "content": {
                 "application/json": {
                     "schema": {
-                        "type": "object",
                         "properties": {
                             "detail": {
+                                "default": "error message",
                                 "type": "string",
-                                "default": "Error message",
                             },
                         },
+                        "type": "object",
                     },
                 },
             },
             "description": "Unavailable",
+        },
+        "401": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "properties": {
+                            "detail": {
+                                "default": "error message",
+                                "type": "string",
+                            },
+                        },
+                        "type": "object",
+                    },
+                },
+            },
+            "description": "Unauthenticated.",
         },
         "404": {
             "content": {
@@ -271,6 +304,22 @@ def test_pipeline_schema__get_responses__none(drf_request):
                 },
             },
             "description": "Example Output",
+        },
+        "401": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "properties": {
+                            "detail": {
+                                "default": "error message",
+                                "type": "string",
+                            },
+                        },
+                        "type": "object",
+                    },
+                },
+            },
+            "description": "Unauthenticated.",
         },
     }
 
@@ -330,17 +379,33 @@ def test_pipeline_schema__get_responses__list(drf_request):
             "content": {
                 "application/json": {
                     "schema": {
-                        "type": "object",
                         "properties": {
                             "detail": {
+                                "default": "error message",
                                 "type": "string",
-                                "default": "Error message",
                             },
                         },
+                        "type": "object",
                     },
                 },
             },
             "description": "Unavailable",
+        },
+        "401": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "properties": {
+                            "detail": {
+                                "default": "error message",
+                                "type": "string",
+                            },
+                        },
+                        "type": "object",
+                    },
+                },
+            },
+            "description": "Unauthenticated.",
         },
         "404": {
             "content": {
@@ -351,7 +416,7 @@ def test_pipeline_schema__get_responses__list(drf_request):
                         },
                         "type": "array",
                     },
-                }
+                },
             },
             "description": "This is the description",
         },
@@ -411,11 +476,11 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
                                     },
                                 },
                                 "type": "object",
-                            }
+                            },
                         },
                         "type": "object",
-                    }
-                }
+                    },
+                },
             },
             "description": "This is the response",
         },
@@ -423,17 +488,33 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
             "content": {
                 "application/json": {
                     "schema": {
-                        "type": "object",
                         "properties": {
                             "detail": {
+                                "default": "error message",
                                 "type": "string",
-                                "default": "Error message",
                             },
                         },
+                        "type": "object",
                     },
                 },
             },
             "description": "Unavailable",
+        },
+        "401": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "properties": {
+                            "detail": {
+                                "default": "error message",
+                                "type": "string",
+                            },
+                        },
+                        "type": "object",
+                    },
+                },
+            },
+            "description": "Unauthenticated.",
         },
         "404": {
             "content": {
@@ -444,7 +525,7 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
                         },
                         "type": "array",
                     },
-                }
+                },
             },
             "description": "This is the description",
         },
@@ -486,7 +567,7 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
                         },
                         "type": "array",
                     },
-                }
+                },
             },
             "description": "This is the description",
         },
@@ -497,7 +578,23 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
                     "type": "string",
                 },
             },
-            "description": "No Results",
+            "description": "no results",
+        },
+        "401": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "properties": {
+                            "detail": {
+                                "default": "error message",
+                                "type": "string",
+                            },
+                        },
+                        "type": "object",
+                    },
+                },
+            },
+            "description": "Unauthenticated.",
         },
     }
 
@@ -527,12 +624,33 @@ def test_pipeline_schema__get_responses__204_if_output_is_emptyserializer(drf_re
         "204": {
             "content": {
                 "application/json": {
-                    "content": {"application/json": {"default": "", "type": "string"}},
-                    "description": "No Results",
-                }
+                    "content": {
+                        "application/json": {
+                            "default": "",
+                            "type": "string",
+                        },
+                    },
+                    "description": "no results",
+                },
             },
             "description": "This is the description",
-        }
+        },
+        "401": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "properties": {
+                            "detail": {
+                                "default": "error message",
+                                "type": "string",
+                            },
+                        },
+                        "type": "object",
+                    },
+                },
+            },
+            "description": "Unauthenticated.",
+        },
     }
 
 
@@ -555,7 +673,7 @@ def test_pipeline_schema__get_operation(drf_request):
             },
             deprecated=["PATCH"],
             security={
-                "PATCH": [{"foo": ["bar"]}],
+                "PATCH": {"foo": ["bar"]},
             },
             external_docs={
                 "PATCH": {"description": "foo", "url": "bar"},
@@ -585,7 +703,7 @@ def test_pipeline_schema__get_operation(drf_request):
                 "schema": {
                     "type": "string",
                 },
-            }
+            },
         ],
         "requestBody": {
             "content": {
@@ -598,7 +716,7 @@ def test_pipeline_schema__get_operation(drf_request):
                         },
                         "required": ["age"],
                         "type": "object",
-                    }
+                    },
                 },
                 "application/x-www-form-urlencoded": {
                     "schema": {
@@ -609,7 +727,7 @@ def test_pipeline_schema__get_operation(drf_request):
                         },
                         "required": ["age"],
                         "type": "object",
-                    }
+                    },
                 },
                 "multipart/form-data": {
                     "schema": {
@@ -620,9 +738,9 @@ def test_pipeline_schema__get_operation(drf_request):
                         },
                         "required": ["age"],
                         "type": "object",
-                    }
+                    },
                 },
-            }
+            },
         },
         "responses": {
             "200": {
@@ -639,17 +757,33 @@ def test_pipeline_schema__get_operation(drf_request):
                 "content": {
                     "application/json": {
                         "schema": {
-                            "type": "object",
                             "properties": {
                                 "detail": {
+                                    "default": "error message",
                                     "type": "string",
-                                    "default": "Error message",
                                 },
                             },
+                            "type": "object",
                         },
                     },
                 },
                 "description": "Unavailable",
+            },
+            "401": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "detail": {
+                                    "default": "error message",
+                                    "type": "string",
+                                },
+                            },
+                            "type": "object",
+                        },
+                    },
+                },
+                "description": "Unauthenticated.",
             },
             "404": {
                 "content": {
@@ -798,7 +932,7 @@ def test_pipeline_schema__get_filter_parameters__put__partial(drf_request):
             "schema": {
                 "type": "string",
             },
-        }
+        },
     }
 
 
@@ -859,7 +993,7 @@ def test_pipeline_scheme__get_path_parameters(drf_request):
             "schema": {
                 "type": "integer",
             },
-        }
+        },
     }
 
 
@@ -896,7 +1030,7 @@ def test_pipeline_scheme__get_path_parameters__list(drf_request):
             "schema": {
                 "type": "string",
             },
-        }
+        },
     }
 
 
@@ -923,7 +1057,7 @@ def test_pipeline_schema__get_request_body(drf_request):
                     "$ref": "#/components/schemas/Input",
                 },
             },
-        }
+        },
     }
 
 
@@ -979,7 +1113,7 @@ def test_pipeline_schema__get_request_body__query_parameters(drf_request):
                     },
                     "required": ["age"],
                     "type": "object",
-                }
+                },
             },
             "application/x-www-form-urlencoded": {
                 "schema": {
@@ -990,7 +1124,7 @@ def test_pipeline_schema__get_request_body__query_parameters(drf_request):
                     },
                     "required": ["age"],
                     "type": "object",
-                }
+                },
             },
             "multipart/form-data": {
                 "schema": {
@@ -1001,9 +1135,9 @@ def test_pipeline_schema__get_request_body__query_parameters(drf_request):
                     },
                     "required": ["age"],
                     "type": "object",
-                }
+                },
             },
-        }
+        },
     }
 
 
@@ -1030,8 +1164,15 @@ def test_pipeline_schema__get_tags__predefined(drf_request):
     assert tags == ["foo", "bar"]
 
 
-def test_pipeline_openapi():
+def test_pipeline_schema__openapi():
     client = APIClient()
+
+    class MockUser(AnonymousUser):
+        @property
+        def is_authenticated(self):
+            return True
+
+    client.force_authenticate(user=MockUser())
 
     response = client.get("/openapi/", content_type="application/vnd.oai.openapi")
 
@@ -1040,26 +1181,50 @@ def test_pipeline_openapi():
             "schemas": {
                 "Input": {
                     "properties": {
-                        "age": {"type": "integer"},
-                        "name": {"type": "string"},
+                        "age": {
+                            "type": "integer",
+                        },
+                        "name": {
+                            "type": "string",
+                        },
                     },
                     "required": ["name", "age"],
                     "type": "object",
                 },
                 "Output": {
                     "properties": {
-                        "age": {"type": "integer"},
-                        "email": {"format": "email", "type": "string"},
+                        "age": {
+                            "type": "integer",
+                        },
+                        "email": {
+                            "format": "email",
+                            "type": "string",
+                        },
                     },
                     "required": ["email", "age"],
                     "type": "object",
                 },
-            }
+            },
+            "securitySchemes": {
+                "another": {
+                    "scheme": "basic",
+                    "type": "http",
+                },
+                "my_security": {
+                    "bearerFormat": "JWT",
+                    "scheme": "bearer",
+                    "type": "http",
+                },
+            },
         },
         "info": {
-            "contact": {"email": "user@example.com"},
+            "contact": {
+                "email": "user@example.com",
+            },
             "description": "API for all things",
-            "license": {"name": "MIT"},
+            "license": {
+                "name": "MIT",
+            },
             "termsOfService": "example.com",
             "title": "Your Project",
             "version": "1.0.0",
@@ -1070,6 +1235,66 @@ def test_pipeline_openapi():
                 "post": {
                     "description": "Example Input",
                     "operationId": "createInput",
+                    "parameters": [],
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Input",
+                                },
+                            },
+                            "application/x-www-form-urlencoded": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Input",
+                                },
+                            },
+                            "multipart/form-data": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Input",
+                                },
+                            },
+                        },
+                    },
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/Output",
+                                    },
+                                },
+                            },
+                            "description": "Example " "Output",
+                        },
+                        "401": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "detail": {
+                                                "default": "error message",
+                                                "type": "string",
+                                            },
+                                        },
+                                        "type": "object",
+                                    },
+                                },
+                            },
+                            "description": "Unauthenticated.",
+                        },
+                    },
+                    "security": [
+                        {
+                            "my_security": [],
+                        },
+                    ],
+                    "tags": ["example"],
+                },
+            },
+            "/api/example/private": {
+                "put": {
+                    "description": "Example Input",
+                    "operationId": "updateInput",
                     "parameters": [],
                     "requestBody": {
                         "content": {
@@ -1100,8 +1325,45 @@ def test_pipeline_openapi():
                                 },
                             },
                             "description": "Example " "Output",
-                        }
+                        },
+                        "401": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "detail": {
+                                                "default": "error message",
+                                                "type": "string",
+                                            },
+                                        },
+                                        "type": "object",
+                                    },
+                                },
+                            },
+                            "description": "Unauthenticated.",
+                        },
+                        "403": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "detail": {
+                                                "default": "error message",
+                                                "type": "string",
+                                            },
+                                        },
+                                        "type": "object",
+                                    },
+                                },
+                            },
+                            "description": "Permission Denied.",
+                        },
                     },
+                    "security": [
+                        {
+                            "another": [],
+                        },
+                    ],
                     "tags": ["example"],
                 }
             },
@@ -1115,8 +1377,10 @@ def test_pipeline_openapi():
                             "in": "path",
                             "name": "age",
                             "required": True,
-                            "schema": {"type": "integer"},
-                        }
+                            "schema": {
+                                "type": "integer",
+                            },
+                        },
                     ],
                     "requestBody": {
                         "content": {
@@ -1140,7 +1404,7 @@ def test_pipeline_openapi():
                                     },
                                     "required": ["name"],
                                     "type": "object",
-                                }
+                                },
                             },
                             "multipart/form-data": {
                                 "schema": {
@@ -1151,9 +1415,9 @@ def test_pipeline_openapi():
                                     },
                                     "required": ["name"],
                                     "type": "object",
-                                }
+                                },
                             },
-                        }
+                        },
                     },
                     "responses": {
                         "200": {
@@ -1165,10 +1429,31 @@ def test_pipeline_openapi():
                                 },
                             },
                             "description": "Example " "Output",
-                        }
+                        },
+                        "401": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "detail": {
+                                                "default": "error message",
+                                                "type": "string",
+                                            },
+                                        },
+                                        "type": "object",
+                                    },
+                                },
+                            },
+                            "description": "Unauthenticated.",
+                        },
                     },
+                    "security": [
+                        {
+                            "my_security": [],
+                        },
+                    ],
                     "tags": ["example"],
-                }
+                },
             },
         },
     }

@@ -3,9 +3,9 @@ site_name: Django REST Framework Pipeline Views
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
-  - Serializer Inference: serializer_inference.md
+  - Serializer Inference: inference.md
   - Logic Blocks: logic_blocks.md
-  - Conditional Logic Paths: conditional_logic_paths.md
+  - Conditional Logic Paths: conditionals.md
   - Async Logic Callables: async.md
   - OpenAPI Schema: schema.md
   - Metadata: metadata.md

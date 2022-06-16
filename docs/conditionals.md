@@ -26,11 +26,11 @@ class SomeView(BasePipelineView):
 ```
 
 Notice that `step1` returned a tuple of the data and key used to select the logic in the next step.
-Data should still be a dict, which matches what ever logic the key selects from the next step.
-Conditional paths also work inside logic blocks.
+Data should still be a dict, which matches the logic function's signature that the given key selects
+from the next step.
 
-You could also use conditionals to run only one method from a logic block, since it just uses
-`__getitem__` to select the next logic method.
+Conditional paths also work inside logic blocks. You could also use conditionals to run only one
+method from a logic block, since it just uses `__getitem__` to select the next logic method.
 
 ```python hl_lines="13 14 15 16"
 def step1(data):

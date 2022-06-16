@@ -42,9 +42,5 @@ This is only used by the Django REST Framework Browsable API to create forms.
 
 Serializer inference can be extended to create output serializers a well.
 In this case, the last callable would be used (`step5` in this case), and the
-inference would be done based on it's output type.
-
-For this, `BasePipelineView.get_serializer(...)` needs `output=True` in it's kwargs.
-`output=True` can also be passed to `BasePipelineView.get_serializer_class(...)`.
-A TypedDict (or a list containing a TypedDict) should be used so that Fields
-can be determined.
+inference would be done based on it's output type. A TypedDict (or a list containing TypedDicts)
+should be used so that fields can be determined.
