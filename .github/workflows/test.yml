@@ -1,9 +1,13 @@
-name: Tests
+name: Test
 
 on:
   push:
     branches:
       - main
+    paths:
+      - "**.py"
+      - "pyproject.toml"
+      - "poetry.lock"
 
 env:
   POETRY_VIRTUALENVS_IN_PROJECT: true
@@ -13,6 +17,7 @@ env:
   COVERALLS_PARALLEL: true
 
 jobs:
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -39,7 +44,7 @@ jobs:
           poetry-version: "1.1.13"
 
       - name: Load cached venv
-        id: cache
+        id: cache-venv
         uses: actions/cache@v3
         with:
           path: |
@@ -48,7 +53,7 @@ jobs:
           key: ${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}-tox-v1
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache-venv.outputs.cache-hit != 'true'
         run: poetry install --no-root
 
       - name: Install project
@@ -79,14 +84,14 @@ jobs:
           poetry-version: "1.1.13"
 
       - name: Load cached venv
-        id: cache
+        id: cache-venv
         uses: actions/cache@v3
         with:
           path: .venv
           key: ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-cov-v1
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.cache-venv.outputs.cache-hit != 'true'
         run: poetry install --no-root
 
       - name: Install project
@@ -94,40 +99,3 @@ jobs:
 
       - name: Finnish coverage report
         run: poetry run coveralls --service=github --finish
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  submit-docs:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
-
-      - name: Set up python
-        id: setup-python
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.10"
-
-      - name: Set up poetry
-        uses: abatilo/actions-poetry@v2.1.4
-        with:
-          poetry-version: "1.1.13"
-
-      - name: Load cached venv
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: ${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-docs-v1
-
-      - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: poetry install --no-root
-
-      - name: Install project
-        run: poetry install
-
-      - name: Deploy docs
-        run: poetry run mkdocs gh-deploy --force --strict --verbose
