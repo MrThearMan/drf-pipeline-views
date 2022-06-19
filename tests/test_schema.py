@@ -1204,6 +1204,22 @@ def test_pipeline_schema__openapi():
                     "required": ["email", "age"],
                     "type": "object",
                 },
+                "Pydanticinput": {
+                    "properties": {
+                        "age": {"type": "integer"},
+                        "name": {"type": "string"},
+                    },
+                    "required": ["name", "age"],
+                    "type": "object",
+                },
+                "Pydanticoutput": {
+                    "properties": {
+                        "age": {"type": "integer"},
+                        "email": {"type": "string"},
+                    },
+                    "required": ["email", "age"],
+                    "type": "object",
+                },
             },
             "securitySchemes": {
                 "another": {
@@ -1264,7 +1280,7 @@ def test_pipeline_schema__openapi():
                                     },
                                 },
                             },
-                            "description": "Example " "Output",
+                            "description": "Example Output",
                         },
                         "401": {
                             "content": {
@@ -1324,7 +1340,7 @@ def test_pipeline_schema__openapi():
                                     },
                                 },
                             },
-                            "description": "Example " "Output",
+                            "description": "Example Output",
                         },
                         "401": {
                             "content": {
@@ -1428,7 +1444,7 @@ def test_pipeline_schema__openapi():
                                     },
                                 },
                             },
-                            "description": "Example " "Output",
+                            "description": "Example Output",
                         },
                         "401": {
                             "content": {
@@ -1453,6 +1469,67 @@ def test_pipeline_schema__openapi():
                         },
                     ],
                     "tags": ["example"],
+                },
+            },
+            "/api/pydantic": {
+                "get": {
+                    "description": "Pydantic View",
+                    "operationId": "listPydanticinputs",
+                    "parameters": [
+                        {
+                            "description": "",
+                            "in": "query",
+                            "name": "name",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "description": "",
+                            "in": "query",
+                            "name": "age",
+                            "required": True,
+                            "schema": {"type": "integer"},
+                        },
+                    ],
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "age": {"type": "integer"},
+                                            "email": {"type": "string"},
+                                        },
+                                        "required": ["email", "age"],
+                                        "type": "object",
+                                    },
+                                },
+                            },
+                            "description": "",
+                        },
+                        "401": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "detail": {
+                                                "default": "error message",
+                                                "type": "string",
+                                            },
+                                        },
+                                        "type": "object",
+                                    },
+                                },
+                            },
+                            "description": "Unauthenticated.",
+                        },
+                    },
+                    "security": [
+                        {
+                            "my_security": [],
+                        },
+                    ],
+                    "tags": ["pydantic"],
                 },
             },
         },

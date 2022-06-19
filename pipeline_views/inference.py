@@ -17,7 +17,7 @@ from rest_framework.fields import (
     ListField,
     TimeField,
 )
-from rest_framework.serializers import BaseSerializer, Serializer
+from rest_framework.serializers import BaseSerializer, ListSerializer, Serializer
 
 from .serializers import MockSerializer
 from .typing import (
@@ -150,7 +150,11 @@ def _get_fields(types: TypesDict) -> Dict[str, Field]:
             continue
 
         if isinstance(type_, list):
-            fields[name] = inline_serializer(name, fields=_get_fields(type_[0]))(many=True)
+            if isinstance(type_[0], dict):
+                fields[name] = inline_serializer(name, fields=_get_fields(type_[0]))(many=True)
+            else:
+                fields[name] = ListField(child=_type_to_serializer_field.get(type_[0], CharField)())
+
             continue
 
         field = _type_to_serializer_field.get(type_, CharField)
@@ -255,3 +259,17 @@ def _get_globals(func: Callable[..., Any]) -> Dict[str, Any]:
 
 def _snake_case_to_pascal_case(string: str) -> str:
     return "".join([s.capitalize() for s in string.split("_")])
+
+
+def _to_comparable_dict(serializer: Serializer) -> Dict[str, Any]:
+    dct = {}
+    is_list = isinstance(serializer, ListSerializer)
+    fields = serializer.child.fields if is_list else serializer.fields
+    for name, field in fields.items():
+        if isinstance(field, ListSerializer):
+            dct[name] = [_to_comparable_dict(field.child)]
+        elif isinstance(field, Serializer):
+            dct[name] = _to_comparable_dict(field)
+        else:
+            dct[name] = str(field)
+    return [dct] if is_list else dct

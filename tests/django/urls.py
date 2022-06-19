@@ -1,5 +1,6 @@
 from django.urls import path
 from django.views.generic import TemplateView
+from pydantic import BaseModel
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.schemas import get_schema_view
@@ -20,6 +21,16 @@ class OutputSerializer(serializers.Serializer):
 
     email = serializers.EmailField()
     age = serializers.IntegerField()
+
+
+class PydanticInput(BaseModel):
+    name: str
+    age: int
+
+
+class PydanticOutput(BaseModel):
+    email: str
+    age: int
 
 
 def example_method(name: str, age: int):
@@ -76,10 +87,23 @@ class ExamplePrivateView(BasePipelineView):
     )
 
 
+class PydanticView(BasePipelineView):
+    """Pydantic View"""
+
+    pipelines = {
+        "GET": [
+            PydanticInput,
+            example_method,
+            PydanticOutput,
+        ],
+    }
+
+
 urlpatterns = [
     path("api/example/", ExampleView.as_view(), name="test_view"),
     path("api/example/<int:age>", ExamplePathView.as_view(), name="test_path_view"),
     path("api/example/private", ExamplePrivateView.as_view(), name="test_private_view"),
+    path("api/pydantic", PydanticView.as_view(), name="test_pydantic_view"),
     path(
         "openapi/",
         get_schema_view(

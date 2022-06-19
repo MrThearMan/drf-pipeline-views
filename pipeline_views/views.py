@@ -1,6 +1,7 @@
 import asyncio
 
 from asgiref.sync import async_to_sync
+from pydantic import BaseModel  # pylint: disable=E0611
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
@@ -20,9 +21,10 @@ from .typing import (
     PipelinesDict,
     SerializerType,
     Tuple,
+    Type,
     ViewContext,
 )
-from .utils import Sentinel, get_view_method, is_serializer_class, run_parallel, translate
+from .utils import Sentinel, get_view_method, is_pydantic_model, is_serializer_class, run_parallel, translate
 
 
 __all__ = [
@@ -57,7 +59,7 @@ class BasePipelineView(APIView):
         pipeline = self.get_pipeline_for_current_request_method()
 
         with translate(self.request):
-            data = self.run_logic(logic=pipeline, data=data)  # type: ignore
+            data = self.run_logic(logic=pipeline, data=data)
 
         if data:
             return Response(data=data, status=status.HTTP_200_OK)
@@ -70,16 +72,16 @@ class BasePipelineView(APIView):
         except KeyError as missing_method:
             raise KeyError(f"Pipeline not configured for HTTP method '{self.request.method}'") from missing_method
 
-    def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:
+    def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:  # pylint: disable=R0912
         """Run pipeline logic recursively."""
         if callable(logic):
             if asyncio.iscoroutinefunction(logic):
                 logic = async_to_sync(logic)
 
-            return logic(**data)  # type: ignore
+            return logic(**data)
 
         try:
-            for step in logic:  # type: ignore
+            for step in logic:
 
                 # Conditional logic path
                 if isinstance(data, tuple):
@@ -92,6 +94,10 @@ class BasePipelineView(APIView):
                 # Serializer
                 if is_serializer_class(step):
                     data = self.run_serializer(serializer_class=step, data=data)
+
+                # Pydantic Model
+                elif is_pydantic_model(step):
+                    data = self.run_model(model_class=step, data=data)
 
                 # Parallel block
                 elif isinstance(step, tuple):
@@ -112,10 +118,10 @@ class BasePipelineView(APIView):
 
                 # Logic block or callable
                 elif isinstance(step, list) or callable(step):
-                    data = self.run_logic(logic=step, data=data if data is not None else {})  # type: ignore
+                    data = self.run_logic(logic=step, data=data if data is not None else {})
 
                 else:
-                    raise TypeError("Only Serializers and callables are supported in the pipeline.")
+                    raise TypeError("Only Serializers, Pydantic Models, and callables are supported in the pipeline.")
 
         except NextLogicBlock as premature_return:
             return premature_return.output
@@ -128,6 +134,10 @@ class BasePipelineView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.data
         return data
+
+    def run_model(self, model_class: Type[BaseModel], data: DataDict) -> DataDict:
+        """Build and validate a pydantic model"""
+        return model_class(**data).dict()
 
     def get_serializer(self, *args: Any, **kwargs: Any) -> BaseSerializer:
         """Initialize serializer for current request HTTP method."""
@@ -157,6 +167,9 @@ class BasePipelineView(APIView):
 
         if is_serializer_class(step):
             return step
+
+        if is_pydantic_model(step):
+            return serializer_from_callable(step)
 
         if callable(step):
             return serializer_from_callable(step, output=output)

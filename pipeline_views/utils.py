@@ -8,6 +8,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils.translation import get_language as current_language
 from django.utils.translation import override
+from pydantic import BaseModel  # pylint: disable=E0611
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
@@ -41,6 +42,7 @@ __all__ = [
     "get_language",
     "translate",
     "is_serializer_class",
+    "is_pydantic_model",
     "cache_pipeline_logic",
     "run_in_thread",
     "run_parallel",
@@ -57,6 +59,10 @@ available_languages: List[str] = [key for (key, value) in settings.LANGUAGES]
 
 def is_serializer_class(obj: Any) -> TypeGuard[BaseSerializer]:
     return isinstance(obj, type) and issubclass(obj, BaseSerializer)
+
+
+def is_pydantic_model(obj: Any) -> TypeGuard[BaseModel]:
+    return isinstance(obj, type) and issubclass(obj, BaseModel)
 
 
 def get_language(request: Request) -> str:

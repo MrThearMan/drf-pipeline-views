@@ -1,5 +1,6 @@
 import pytest
 from django.utils.translation import get_language
+from pydantic import BaseModel
 from rest_framework.fields import CharField, IntegerField
 from rest_framework.serializers import Serializer
 
@@ -94,7 +95,10 @@ def test_BaseAPIView__broken_pipeline(base_api_view):
     base_api_view.request.method = "GET"
     base_api_view.pipelines = {"GET": [1, 2, 3]}
 
-    with pytest.raises(TypeError, match="Only Serializers and callables are supported in the pipeline."):
+    with pytest.raises(
+        TypeError,
+        match="Only Serializers, Pydantic Models, and callables are supported in the pipeline.",
+    ):
         base_api_view.process_request(data={"testing": 1212})
 
 
@@ -345,6 +349,27 @@ def test_BaseAPIView__two_serializers_one_logic_callable__output_serializer_is_l
     response = base_api_view.process_request(data={"name": "John", "age": 26})
 
     assert response.data == [{"full_name": f"John Doe", "age": 26}, {"full_name": f"John Doe", "age": 26}]
+    assert response.status_code == 200
+
+
+def test_BaseAPIView__pyantic_models(base_api_view):
+    class InputModel(BaseModel):
+        name: str
+        age: int
+
+    def callable_method1(name: str, age: int):
+        return {"full_name": f"{name} Doe", "age": age}
+
+    class OutputModel(BaseModel):
+        full_name: str
+        age: int
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {"GET": [InputModel, callable_method1, OutputModel]}
+
+    response = base_api_view.process_request(data={"name": "John", "age": 26})
+
+    assert response.data == {"full_name": f"John Doe", "age": 26}
     assert response.status_code == 200
 
 

@@ -4,6 +4,8 @@ from decimal import Decimal
 # For testing functions parameters to types
 from functools import wraps
 
+from pydantic import BaseModel
+
 from pipeline_views.typing import TYPE_CHECKING, Dict, List, Optional, TypedDict, Union
 
 
@@ -107,6 +109,8 @@ __all__ = [
     "function_93",
     "function_94",
     "function_95",
+    "function_96",
+    "function_97",
     "Foo",
     "Bar",
     "Barr",
@@ -114,6 +118,7 @@ __all__ = [
     "Bazz",
     "Fizz",
     "Buzz",
+    "TestModel",
 ]
 
 
@@ -153,6 +158,11 @@ class Fizz(TypedDict):
 
 class Buzz(TypedDict):
     not_available: "TestType"
+
+
+class TestModel(BaseModel):
+    field: int
+    other: List[str]
 
 
 def function_01(name, age):
@@ -545,4 +555,12 @@ def function_94(foo: "Buzz"):
 
 
 def function_95() -> "Buzz":
+    pass
+
+
+def function_96(foo: TestModel):
+    pass
+
+
+def function_97() -> TestModel:
     pass

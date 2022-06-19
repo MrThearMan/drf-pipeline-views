@@ -4,9 +4,8 @@ import pytest
 from django.http import HttpRequest
 from pytest_django.fixtures import SettingsWrapper
 from rest_framework.request import Request
-from rest_framework.serializers import ListSerializer, Serializer
 
-from pipeline_views.typing import Any, Dict, TypedDict
+from pipeline_views.typing import TypedDict
 from pipeline_views.views import BasePipelineView
 
 
@@ -39,17 +38,3 @@ def base_api_view(drf_request) -> BasePipelineView:
     view.request = drf_request
     view.format_kwarg = None
     return view
-
-
-def to_comparable_dict(serializer: Serializer) -> Dict[str, Any]:
-    d = {}
-    is_list = isinstance(serializer, ListSerializer)
-    fields = serializer.child.fields if is_list else serializer.fields
-    for name, field in fields.items():
-        if isinstance(field, ListSerializer):
-            d[name] = [to_comparable_dict(field.child)]
-        elif isinstance(field, Serializer):
-            d[name] = to_comparable_dict(field)
-        else:
-            d[name] = str(field)
-    return [d] if is_list else d
