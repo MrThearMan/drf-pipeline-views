@@ -182,6 +182,7 @@ deps =
     coverage
     pytest-django
     asgiref
+    pydantic
     uritemplate
     pyyaml
 commands =

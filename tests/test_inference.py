@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from rest_framework import fields
 from rest_framework.serializers import Serializer
@@ -118,8 +120,9 @@ def test_parameter_types():
     }
     assert _parameter_types(function_90) == {"foo": {"name": str, "age": int}}
 
-    # Cannot find test type from globals
-    assert _parameter_types(function_94) == {"foo": {"not_available": ForwardRef("TestType")}}
+    if sys.version_info <= (3, 11):
+        # Cannot find test type from globals
+        assert str(_parameter_types(function_94)) == str({"foo": {"not_available": ForwardRef("TestType")}})
 
 
 def test_return_types():
@@ -154,8 +157,9 @@ def test_return_types():
     assert _return_types(function_91) == {"name": str, "age": int}
     assert _return_types(function_92) == [{"name": str, "age": int}]
 
-    # Cannot find test type from globals
-    assert _return_types(function_95) == {"not_available": ForwardRef("TestType")}
+    if sys.version_info <= (3, 11):
+        # Cannot find test type from globals
+        assert str(_return_types(function_95)) == str({"not_available": ForwardRef("TestType")})
 
 
 def test_serializer_from_callable():
@@ -255,80 +259,80 @@ def test_serializer_from_callable():
 
 
 def test_serializer_from_callable__output():
-    # assert to_comparable_dict(serializer_from_callable(function_84, output=True)()) == {
-    #     "name": "CharField()",
-    #     "age": "IntegerField()",
-    # }
-    # assert to_comparable_dict(serializer_from_callable(function_85, output=True)()) == {
-    #     "optional": "CharField()",
-    #     "union": "CharField()",
-    # }
-    # assert to_comparable_dict(serializer_from_callable(function_86, output=True)()) == {
-    #     "item": {"age": "IntegerField()", "name": "CharField()"},
-    #     "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
-    #     "things": [{"age": "IntegerField()", "name": "CharField()"}],
-    # }
-    # assert to_comparable_dict(serializer_from_callable(function_88, output=True)()) == {
-    #     "another": {
-    #         "str": [
-    #             {
-    #                 "item": {"age": "IntegerField()", "name": "CharField()"},
-    #                 "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
-    #                 "things": [{"age": "IntegerField()", "name": "CharField()"}],
-    #             }
-    #         ]
-    #     },
-    #     "nested": [
-    #         {
-    #             "str": {
-    #                 "item": {"age": "IntegerField()", "name": "CharField()"},
-    #                 "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
-    #                 "things": [{"age": "IntegerField()", "name": "CharField()"}],
-    #             }
-    #         }
-    #     ],
-    #     "weird": {
-    #         "item": {"age": "IntegerField()", "name": "CharField()"},
-    #         "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
-    #         "things": [{"age": "IntegerField()", "name": "CharField()"}],
-    #     },
-    # }
-    # assert to_comparable_dict(serializer_from_callable(function_89, output=True)()) == {
-    #     "another": {
-    #         "str": [
-    #             {
-    #                 "item": {"age": "IntegerField()", "name": "CharField()"},
-    #                 "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
-    #                 "things": [{"age": "IntegerField()", "name": "CharField()"}],
-    #             }
-    #         ]
-    #     },
-    #     "nested": [
-    #         {
-    #             "str": {
-    #                 "item": {"age": "IntegerField()", "name": "CharField()"},
-    #                 "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
-    #                 "things": [{"age": "IntegerField()", "name": "CharField()"}],
-    #             }
-    #         }
-    #     ],
-    #     "weird": {
-    #         "item": {"age": "IntegerField()", "name": "CharField()"},
-    #         "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
-    #         "things": [{"age": "IntegerField()", "name": "CharField()"}],
-    #     },
-    # }
-    # assert to_comparable_dict(serializer_from_callable(function_91, output=True)()) == {
-    #     "age": "IntegerField()",
-    #     "name": "CharField()",
-    # }
-    # assert to_comparable_dict(serializer_from_callable(function_92, output=True)(many=True)) == [
-    #     {"name": "CharField()", "age": "IntegerField()"},
-    # ]
-    # assert to_comparable_dict(serializer_from_callable(function_93, output=True)()) == {
-    #     "str": {"name": "CharField()", "age": "IntegerField()"},
-    # }
-    # assert to_comparable_dict(serializer_from_callable(function_95, output=True)()) == {"not_available": "JSONField()"}
+    assert _to_comparable_dict(serializer_from_callable(function_84, output=True)()) == {
+        "name": "CharField()",
+        "age": "IntegerField()",
+    }
+    assert _to_comparable_dict(serializer_from_callable(function_85, output=True)()) == {
+        "optional": "CharField()",
+        "union": "CharField()",
+    }
+    assert _to_comparable_dict(serializer_from_callable(function_86, output=True)()) == {
+        "item": {"age": "IntegerField()", "name": "CharField()"},
+        "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+        "things": [{"age": "IntegerField()", "name": "CharField()"}],
+    }
+    assert _to_comparable_dict(serializer_from_callable(function_88, output=True)()) == {
+        "another": {
+            "str": [
+                {
+                    "item": {"age": "IntegerField()", "name": "CharField()"},
+                    "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                    "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                }
+            ]
+        },
+        "nested": [
+            {
+                "str": {
+                    "item": {"age": "IntegerField()", "name": "CharField()"},
+                    "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                    "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                }
+            }
+        ],
+        "weird": {
+            "item": {"age": "IntegerField()", "name": "CharField()"},
+            "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+            "things": [{"age": "IntegerField()", "name": "CharField()"}],
+        },
+    }
+    assert _to_comparable_dict(serializer_from_callable(function_89, output=True)()) == {
+        "another": {
+            "str": [
+                {
+                    "item": {"age": "IntegerField()", "name": "CharField()"},
+                    "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                    "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                }
+            ]
+        },
+        "nested": [
+            {
+                "str": {
+                    "item": {"age": "IntegerField()", "name": "CharField()"},
+                    "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                    "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                }
+            }
+        ],
+        "weird": {
+            "item": {"age": "IntegerField()", "name": "CharField()"},
+            "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+            "things": [{"age": "IntegerField()", "name": "CharField()"}],
+        },
+    }
+    assert _to_comparable_dict(serializer_from_callable(function_91, output=True)()) == {
+        "age": "IntegerField()",
+        "name": "CharField()",
+    }
+    assert _to_comparable_dict(serializer_from_callable(function_92, output=True)(many=True)) == [
+        {"name": "CharField()", "age": "IntegerField()"},
+    ]
+    assert _to_comparable_dict(serializer_from_callable(function_93, output=True)()) == {
+        "str": {"name": "CharField()", "age": "IntegerField()"},
+    }
+    assert _to_comparable_dict(serializer_from_callable(function_95, output=True)()) == {"not_available": "JSONField()"}
 
     assert _to_comparable_dict(serializer_from_callable(function_97, output=True)()) == {
         "field": "IntegerField()",
