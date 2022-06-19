@@ -22,7 +22,7 @@ from .typing import (
     Tuple,
     ViewContext,
 )
-from .utils import get_view_method, is_serializer_class, run_parallel, sentinel, translate
+from .utils import Sentinel, get_view_method, is_serializer_class, run_parallel, translate
 
 
 __all__ = [
@@ -93,7 +93,7 @@ class BasePipelineView(APIView):
                 if is_serializer_class(step):
                     data = self.run_serializer(serializer_class=step, data=data)
 
-                # Async group
+                # Parallel block
                 elif isinstance(step, tuple):
                     old_kwargs: Optional[DataDict] = None
                     try:
@@ -138,7 +138,7 @@ class BasePipelineView(APIView):
         serializer_class: SerializerType = kwargs.pop("serializer_class")
         kwargs.setdefault("context", self.get_serializer_context())
         kwargs.setdefault("many", getattr(serializer_class, "many", False))
-        if kwargs.get("data", sentinel) is None:
+        if kwargs.get("data", Sentinel) is None:
             kwargs["data"] = [] if kwargs["many"] else {}
         return serializer_class(*args, **kwargs)
 
@@ -156,7 +156,8 @@ class BasePipelineView(APIView):
                 step = next(iter(step))
 
         if is_serializer_class(step):
-            return step  # type: ignore
+            return step
+
         if callable(step):
             return serializer_from_callable(step, output=output)
 

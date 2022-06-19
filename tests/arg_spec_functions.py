@@ -1,6 +1,15 @@
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
+# For testing functions parameters to types
+from functools import wraps
+
+from pipeline_views.typing import TYPE_CHECKING, Dict, List, Optional, TypedDict, Union
+
+
+if TYPE_CHECKING:
+    from tests.conftest import TestType
+
 
 __all__ = [
     "function_01",
@@ -80,9 +89,70 @@ __all__ = [
     "function_75",
     "function_76",
     "function_77",
+    "function_78",
+    "function_79",
+    "function_80",
+    "function_81",
+    "function_82",
+    "function_83",
+    "function_84",
+    "function_85",
+    "function_86",
+    "function_87",
+    "function_88",
+    "function_89",
+    "function_90",
+    "function_91",
+    "function_92",
+    "function_93",
+    "function_94",
+    "function_95",
+    "Foo",
+    "Bar",
+    "Barr",
+    "Baz",
+    "Bazz",
+    "Fizz",
+    "Buzz",
 ]
 
-# For testing functions parameters to types
+
+class Foo(TypedDict):
+    name: str
+    age: int
+
+
+class Bar(TypedDict):
+    item: Foo
+    things: List[Foo]
+    other: Dict[str, Foo]
+
+
+class Barr(TypedDict):
+    item: "Foo"
+    things: List["Foo"]
+    other: Dict[str, "Foo"]
+
+
+class Baz(TypedDict):
+    weird: Bar
+    nested: List[Dict[str, Bar]]
+    another: Dict[str, List[Bar]]
+
+
+class Bazz(TypedDict):
+    weird: "Barr"
+    nested: List[Dict[str, "Barr"]]
+    another: Dict[str, List["Barr"]]
+
+
+class Fizz(TypedDict):
+    union: Union[int, float]
+    optional: Optional[str]
+
+
+class Buzz(TypedDict):
+    not_available: "TestType"
 
 
 def function_01(name, age):
@@ -344,6 +414,14 @@ def function_64(name: int, *, age: int = 2.0):
 # For testing callables to serializers
 
 
+def decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return {}
+
+    return wrapper
+
+
 def function_65(x: str):
     pass
 
@@ -393,4 +471,78 @@ def function_76(x: type):
 
 
 def function_77(x: Exception):
+    pass
+
+
+def function_78(foo: "Foo"):
+    pass
+
+
+def function_79(foo: "Fizz"):
+    pass
+
+
+def function_80(foo: "Bar"):
+    pass
+
+
+def function_81(foo: "Barr"):
+    pass
+
+
+def function_82(foo: "Baz"):
+    pass
+
+
+def function_83(foo: "Bazz"):
+    pass
+
+
+def function_84() -> "Foo":
+    pass
+
+
+def function_85() -> "Fizz":
+    pass
+
+
+def function_86() -> "Bar":
+    pass
+
+
+def function_87() -> "Barr":
+    pass
+
+
+def function_88() -> "Baz":
+    pass
+
+
+def function_89() -> "Bazz":
+    pass
+
+
+@decorator
+def function_90(foo: "Foo"):
+    pass
+
+
+@decorator
+def function_91() -> "Foo":
+    pass
+
+
+def function_92() -> List["Foo"]:
+    pass
+
+
+def function_93() -> Dict[str, "Foo"]:
+    pass
+
+
+def function_94(foo: "Buzz"):
+    pass
+
+
+def function_95() -> "Buzz":
     pass

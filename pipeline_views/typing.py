@@ -24,15 +24,15 @@ from typing import (
 
 # New in version 3.8
 try:
-    from typing import Literal, Protocol, TypedDict
+    from typing import Literal, Protocol, TypedDict, get_args, get_origin
 except ImportError:
-    from typing_extensions import Literal, Protocol, TypedDict
+    from typing_extensions import Literal, Protocol, TypedDict, get_args, get_origin
 
 # New in version 3.10
 try:
-    from typing import ParamSpec, TypeAlias
+    from typing import ParamSpec, TypeAlias, TypeGuard
 except ImportError:
-    from typing_extensions import ParamSpec, TypeAlias
+    from typing_extensions import ParamSpec, TypeAlias, TypeGuard
 
 
 if TYPE_CHECKING:
@@ -46,6 +46,9 @@ if TYPE_CHECKING:
 
 
 __all__ = [
+    "get_origin",
+    "get_args",
+    "eval_type",
     "HTTPMethod",
     "LogicCallable",
     "PipelineLogic",
@@ -62,6 +65,7 @@ __all__ = [
     "Optional",
     "Type",
     "TypedDict",
+    "TypeGuard",
     "Union",
     "Generator",
     "Protocol",
@@ -76,7 +80,6 @@ __all__ = [
     "TypeAlias",
     "Container",
     "ForwardRef",
-    "eval_type",
     "Coroutine",
     "ExternalDocs",
     "Sequence",

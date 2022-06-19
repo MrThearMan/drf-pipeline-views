@@ -13,13 +13,28 @@ from rest_framework.fields import (
     Field,
     FloatField,
     IntegerField,
+    JSONField,
     ListField,
     TimeField,
 )
 from rest_framework.serializers import BaseSerializer, Serializer
 
 from .serializers import MockSerializer
-from .typing import Any, Callable, Dict, ForwardRef, List, Optional, Tuple, Type, TypesDict, Union, eval_type
+from .typing import (
+    Any,
+    Callable,
+    Dict,
+    ForwardRef,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypesDict,
+    Union,
+    eval_type,
+    get_args,
+    get_origin,
+)
 
 
 __all__ = [
@@ -36,11 +51,11 @@ def serializer_from_callable(func: Callable[..., Any], output: bool = False) -> 
     """
     types = _return_types(func) if output else _parameter_types(func)
     is_list = isinstance(types, list)
-    fields: Dict[str, Field] = _get_fields(types[0]) if is_list else _get_fields(types)  # type: ignore
+    fields: Dict[str, Field] = _get_fields(types[0]) if is_list else _get_fields(types)
     serializer_name = _snake_case_to_pascal_case(f"{func.__name__}_serializer")
     serializer = inline_serializer(serializer_name, super_class=MockSerializer, fields=fields)
     serializer.many = is_list
-    return serializer  # type: ignore
+    return serializer
 
 
 def inline_serializer(
@@ -83,21 +98,19 @@ def _parameter_types(func: Callable[..., Any]) -> TypesDict:
     types.pop(args_spec.varargs or "", None)
     types.pop(args_spec.varkw or "", None)
 
+    globalns = _get_globals(func)
     for name, type_ in types.items():
-        types[name] = _unwrap_types(func, type_)
+        types[name] = _unwrap_types(type_, globalns)
 
     return types
 
 
 def _return_types(func: Callable[..., Any]) -> Union[TypesDict, List[TypesDict]]:
     """Get the callables return types"""
-    func = _unwrap_function(func)  # type: ignore
+    func = _unwrap_function(func)
     args_spec = getfullargspec(func)
-    return_type: Union[Type, List[Type]] = args_spec.annotations.get("return")  # type: ignore
-    is_list = hasattr(return_type, "__args__")
-    type_: Type = getattr(return_type, "__args__", [return_type])[0]  # type: ignore
-    types: TypesDict = _unwrap_types(func, type_)  # type: ignore
-    return [types] if is_list else types
+    return_type = args_spec.annotations.get("return")
+    return _unwrap_types(return_type, _get_globals(func))
 
 
 _type_to_serializer_field: Dict[Optional[Type], Type[Field]] = {
@@ -118,13 +131,26 @@ _type_to_serializer_field: Dict[Optional[Type], Type[Field]] = {
 
 
 def _get_fields(types: TypesDict) -> Dict[str, Field]:
-    """Convert types to serializer fields. TypedDicts and other classes with __annotations__ dicts
+    """Convert types to serializer fields.
+
+    TypedDicts and other classes with __annotations__ dicts
     are recursively converted to serializers based on their types.
     """
     fields: Dict[str, Field] = {}
     for name, type_ in types.items():
+
+        # Could not determine forward referenced TypedDict
+        # from another file. This is the best guess.
+        if isinstance(type_, ForwardRef):
+            fields[name] = JSONField()
+            continue
+
         if isinstance(type_, dict):
             fields[name] = inline_serializer(name, fields=_get_fields(type_))()
+            continue
+
+        if isinstance(type_, list):
+            fields[name] = inline_serializer(name, fields=_get_fields(type_[0]))(many=True)
             continue
 
         field = _type_to_serializer_field.get(type_, CharField)
@@ -137,35 +163,94 @@ def _get_fields(types: TypesDict) -> Dict[str, Field]:
     return fields
 
 
-def _unwrap_types(func: Any, item: Union[Type, str]) -> Union[TypesDict, Type]:
-    """Recurively unwrap types from the given item based on its __annotations__ dict."""
-    func = _unwrap_function(func)
-    type_: Type = _forward_refs_to_types(func, item)
-    if not hasattr(type_, "__annotations__"):
-        return type_
+def _unwrap_types(
+    types: Union[Type, TypesDict, List[TypesDict]],
+    globalns: Dict[str, Any],
+) -> Union[Type, TypesDict, List[TypesDict]]:
+    """Recurively unwrap types from the given item."""
 
-    annotations: TypesDict = type_.__annotations__
+    typ = _forward_refs_to_types(types, globalns)
+
+    if hasattr(typ, "__origin__"):
+        return _unwrap_generic(typ, globalns)
+
+    if not hasattr(typ, "__annotations__"):
+        return typ
+
+    annotations: TypesDict = typ.__annotations__
     for name, annotation in annotations.items():
-        annotations[name] = _unwrap_types(type_, annotation)  # type: ignore
+        annotations[name] = _unwrap_types(annotation, globalns)
+
     return annotations
 
 
-def _forward_refs_to_types(item: Any, type_: Union[Type, str]) -> Type:
+def _forward_refs_to_types(
+    types: Union[Type, TypesDict, List[TypesDict]],
+    globalns: Dict[str, Any],
+) -> Union[Type, TypesDict, List[TypesDict]]:
     """Convert strings and forward references to types."""
-    if isinstance(type_, str):
-        type_: ForwardRef = ForwardRef(type_)  # type: ignore
-    if isinstance(type_, ForwardRef):
-        item = _unwrap_function(item)
-        globalns = getattr(item, "__globals__", {})
-        type_: Type = eval_type(type_, globalns, globalns)  # type: ignore
-    return type_  # type: ignore
+
+    if isinstance(types, str):
+        types = ForwardRef(types)
+
+    if isinstance(types, ForwardRef):
+        try:
+            types = eval_type(types, globalns, globalns)
+        except NameError:
+            pass
+
+    if hasattr(types, "__args__"):
+        args = []
+        for arg in types.__args__:
+            args.append(_forward_refs_to_types(arg, globalns))
+        types.__args__ = tuple(args)
+
+    return types
 
 
-def _unwrap_function(func):
+def _unwrap_generic(type_: Type, globalns: Dict[str, Any]) -> Union[List[TypesDict], Dict[str, List[TypesDict]], Type]:
+    """Ungrap the arguments of generics like list and dicts into proper types."""
+
+    origin_type: Type = get_origin(type_)
+    origin_args: Tuple[Type, ...] = get_args(type_)
+
+    if origin_type not in (tuple, list, set, dict):
+        return type_
+
+    arg_types = []
+
+    if issubclass(origin_type, dict):
+        origin_args = origin_args[1:]
+
+    for arg_type in origin_args:
+        if not hasattr(arg_type, "__annotations__"):
+            if hasattr(arg_type, "__origin__"):
+                arg_type = _unwrap_generic(arg_type, globalns)
+
+            arg_types.append(arg_type)
+            continue
+
+        anns = {}
+        for name, annotation in arg_type.__annotations__.items():
+            anns[name] = _unwrap_types(annotation, globalns)
+
+        arg_types.append(anns)
+
+    if issubclass(origin_type, dict):
+        return {"str": arg_types[0]}
+
+    return arg_types
+
+
+def _unwrap_function(func: Callable[..., Any]) -> Callable[..., Any]:
     """Unwrap decorated functions to allow fetching types from them."""
     while hasattr(func, "__wrapped__"):
         func = func.__wrapped__
     return func
+
+
+def _get_globals(func: Callable[..., Any]) -> Dict[str, Any]:
+    return getattr(_unwrap_function(func), "__globals__", {})
 
 
 def _snake_case_to_pascal_case(string: str) -> str:

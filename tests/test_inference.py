@@ -1,5 +1,4 @@
-from functools import wraps
-
+import pytest
 from rest_framework import fields
 from rest_framework.serializers import Serializer
 
@@ -11,13 +10,9 @@ from pipeline_views.inference import (
     inline_serializer,
     serializer_from_callable,
 )
-from pipeline_views.typing import List, TypedDict
+from pipeline_views.typing import ForwardRef, Optional, Union
 from tests.arg_spec_functions import *
-
-
-class Foo(TypedDict):
-    name: str
-    age: int
+from tests.conftest import to_comparable_dict
 
 
 def test_parameter_types():
@@ -86,89 +81,247 @@ def test_parameter_types():
     assert _parameter_types(function_63) == {"name": None, "age": int}
     assert _parameter_types(function_64) == {"name": int, "age": int}
 
+    foo = {"age": int, "name": str}
+    bar = {
+        "item": foo,
+        "things": [foo],
+        "other": {"str": foo},
+    }
 
-def test_parameter_types__typed_dict():
-    def function(foo: "Foo"):
-        pass
+    assert _parameter_types(function_78) == {"foo": {"name": str, "age": int}}
+    assert _parameter_types(function_79) == {
+        "foo": {
+            "union": Union[int, float],
+            "optional": Optional[str],
+        },
+    }
+    assert _parameter_types(function_80) == {
+        "foo": {
+            "item": foo,
+            "things": [foo],
+            "other": {"str": foo},
+        }
+    }
+    assert _parameter_types(function_82) == {
+        "foo": {
+            "weird": bar,
+            "nested": [{"str": bar}],
+            "another": {"str": [bar]},
+        },
+    }
+    assert _parameter_types(function_83) == {
+        "foo": {
+            "weird": bar,
+            "nested": [{"str": bar}],
+            "another": {"str": [bar]},
+        },
+    }
+    assert _parameter_types(function_90) == {"foo": {"name": str, "age": int}}
 
-    assert _parameter_types(function) == {"foo": {"name": str, "age": int}}
+    # Cannot find test type from globals
+    assert _parameter_types(function_94) == {"foo": {"not_available": ForwardRef("TestType")}}
 
 
-def test_parameter_types__typed_dict__decorated():
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return {}
+def test_return_types():
 
-        return wrapper
+    foo = {"age": int, "name": str}
+    bar = {
+        "item": foo,
+        "things": [foo],
+        "other": {"str": foo},
+    }
 
-    @decorator
-    def function(foo: "Foo"):
-        pass
+    assert _return_types(function_84) == {"name": str, "age": int}
+    assert _return_types(function_85) == {
+        "union": Union[int, float],
+        "optional": Optional[str],
+    }
+    assert _return_types(function_86) == {
+        "item": foo,
+        "things": [foo],
+        "other": {"str": foo},
+    }
+    assert _return_types(function_88) == {
+        "weird": bar,
+        "nested": [{"str": bar}],
+        "another": {"str": [bar]},
+    }
+    assert _return_types(function_89) == {
+        "weird": bar,
+        "nested": [{"str": bar}],
+        "another": {"str": [bar]},
+    }
+    assert _return_types(function_91) == {"name": str, "age": int}
+    assert _return_types(function_92) == [{"name": str, "age": int}]
 
-    assert _parameter_types(function) == {"foo": {"name": str, "age": int}}
-
-
-def test_parameter_types__output__typed_dict():
-    def function() -> "Foo":
-        pass
-
-    assert _return_types(function) == {"name": str, "age": int}
-
-
-def test_parameter_types__output__typed_dict__decorated():
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return {}
-
-        return wrapper
-
-    @decorator
-    def function() -> "Foo":
-        pass
-
-    assert _return_types(function) == {"name": str, "age": int}
+    # Cannot find test type from globals
+    assert _return_types(function_95) == {"not_available": ForwardRef("TestType")}
 
 
 def test_serializer_from_callable():
-    assert str(serializer_from_callable(function_65)().fields) == str({"x": fields.CharField()})
-    assert str(serializer_from_callable(function_66)().fields) == str({"x": fields.IntegerField()})
-    assert str(serializer_from_callable(function_67)().fields) == str({"x": fields.FloatField()})
-    assert str(serializer_from_callable(function_68)().fields) == str({"x": fields.BooleanField()})
-    assert str(serializer_from_callable(function_69)().fields) == str({"x": fields.DictField()})
-    assert str(serializer_from_callable(function_70)().fields) == str({"x": fields.ListField()})
-    assert str(serializer_from_callable(function_71)().fields) == str({"x": fields.DateField()})
-    assert str(serializer_from_callable(function_72)().fields) == str({"x": fields.DateTimeField()})
-    assert str(serializer_from_callable(function_73)().fields) == str({"x": fields.TimeField()})
-    assert str(serializer_from_callable(function_74)().fields) == str({"x": fields.DurationField()})
-    assert str(serializer_from_callable(function_75)().fields) == str(
-        {"x": fields.DecimalField(max_digits=13, decimal_places=3)}
-    )
-    assert str(serializer_from_callable(function_76)().fields) == str({"x": fields.CharField()})
-    assert str(serializer_from_callable(function_77)().fields) == str({"x": fields.CharField()})
+    assert to_comparable_dict(serializer_from_callable(function_65)()) == {"x": "CharField()"}
+    assert to_comparable_dict(serializer_from_callable(function_66)()) == {"x": "IntegerField()"}
+    assert to_comparable_dict(serializer_from_callable(function_67)()) == {"x": "FloatField()"}
+    assert to_comparable_dict(serializer_from_callable(function_68)()) == {"x": "BooleanField()"}
+    assert to_comparable_dict(serializer_from_callable(function_69)()) == {"x": "DictField()"}
+    assert to_comparable_dict(serializer_from_callable(function_70)()) == {"x": "ListField()"}
+    assert to_comparable_dict(serializer_from_callable(function_71)()) == {"x": "DateField()"}
+    assert to_comparable_dict(serializer_from_callable(function_72)()) == {"x": "DateTimeField()"}
+    assert to_comparable_dict(serializer_from_callable(function_73)()) == {"x": "TimeField()"}
+    assert to_comparable_dict(serializer_from_callable(function_74)()) == {"x": "DurationField()"}
+    assert to_comparable_dict(serializer_from_callable(function_75)()) == {
+        "x": "DecimalField(decimal_places=3, max_digits=13)"
+    }
+    assert to_comparable_dict(serializer_from_callable(function_76)()) == {"x": "CharField()"}
+    assert to_comparable_dict(serializer_from_callable(function_77)()) == {"x": "CharField()"}
+    assert to_comparable_dict(serializer_from_callable(function_78)()) == {
+        "foo": {"name": "CharField()", "age": "IntegerField()"}
+    }
+    assert to_comparable_dict(serializer_from_callable(function_79)()) == {
+        "foo": {"optional": "CharField()", "union": "CharField()"}
+    }
+    assert to_comparable_dict(serializer_from_callable(function_80)()) == {
+        "foo": {
+            "item": {"age": "IntegerField()", "name": "CharField()"},
+            "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+            "things": [{"age": "IntegerField()", "name": "CharField()"}],
+        }
+    }
+    assert to_comparable_dict(serializer_from_callable(function_82)()) == {
+        "foo": {
+            "another": {
+                "str": [
+                    {
+                        "item": {"age": "IntegerField()", "name": "CharField()"},
+                        "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                        "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                    }
+                ]
+            },
+            "nested": [
+                {
+                    "str": {
+                        "item": {"age": "IntegerField()", "name": "CharField()"},
+                        "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                        "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                    }
+                }
+            ],
+            "weird": {
+                "item": {"age": "IntegerField()", "name": "CharField()"},
+                "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                "things": [{"age": "IntegerField()", "name": "CharField()"}],
+            },
+        }
+    }
+    assert to_comparable_dict(serializer_from_callable(function_83)()) == {
+        "foo": {
+            "another": {
+                "str": [
+                    {
+                        "item": {"age": "IntegerField()", "name": "CharField()"},
+                        "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                        "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                    }
+                ]
+            },
+            "nested": [
+                {
+                    "str": {
+                        "item": {"age": "IntegerField()", "name": "CharField()"},
+                        "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                        "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                    }
+                }
+            ],
+            "weird": {
+                "item": {"age": "IntegerField()", "name": "CharField()"},
+                "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                "things": [{"age": "IntegerField()", "name": "CharField()"}],
+            },
+        }
+    }
+    assert to_comparable_dict(serializer_from_callable(function_90)()) == {
+        "foo": {"age": "IntegerField()", "name": "CharField()"}
+    }
+    assert to_comparable_dict(serializer_from_callable(function_94)()) == {"foo": {"not_available": "JSONField()"}}
 
 
 def test_serializer_from_callable__output():
-    class Foo(TypedDict):
-        foo: str
-        bar: int
-
-    def func1(x: str) -> Foo:
-        pass
-
-    def func2(x: str) -> List[Foo]:
-        pass
-
-    serializer1 = serializer_from_callable(func1, output=True)
-    assert str(serializer1(many=serializer1.many).fields) == str(
-        {"foo": fields.CharField(), "bar": fields.IntegerField()}
-    )
-
-    serializer2 = serializer_from_callable(func2, output=True)
-    assert str(serializer2(many=serializer2.many).child.fields) == str(
-        {"foo": fields.CharField(), "bar": fields.IntegerField()}
-    )
+    assert to_comparable_dict(serializer_from_callable(function_84, output=True)()) == {
+        "name": "CharField()",
+        "age": "IntegerField()",
+    }
+    assert to_comparable_dict(serializer_from_callable(function_85, output=True)()) == {
+        "optional": "CharField()",
+        "union": "CharField()",
+    }
+    assert to_comparable_dict(serializer_from_callable(function_86, output=True)()) == {
+        "item": {"age": "IntegerField()", "name": "CharField()"},
+        "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+        "things": [{"age": "IntegerField()", "name": "CharField()"}],
+    }
+    assert to_comparable_dict(serializer_from_callable(function_88, output=True)()) == {
+        "another": {
+            "str": [
+                {
+                    "item": {"age": "IntegerField()", "name": "CharField()"},
+                    "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                    "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                }
+            ]
+        },
+        "nested": [
+            {
+                "str": {
+                    "item": {"age": "IntegerField()", "name": "CharField()"},
+                    "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                    "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                }
+            }
+        ],
+        "weird": {
+            "item": {"age": "IntegerField()", "name": "CharField()"},
+            "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+            "things": [{"age": "IntegerField()", "name": "CharField()"}],
+        },
+    }
+    assert to_comparable_dict(serializer_from_callable(function_89, output=True)()) == {
+        "another": {
+            "str": [
+                {
+                    "item": {"age": "IntegerField()", "name": "CharField()"},
+                    "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                    "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                }
+            ]
+        },
+        "nested": [
+            {
+                "str": {
+                    "item": {"age": "IntegerField()", "name": "CharField()"},
+                    "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+                    "things": [{"age": "IntegerField()", "name": "CharField()"}],
+                }
+            }
+        ],
+        "weird": {
+            "item": {"age": "IntegerField()", "name": "CharField()"},
+            "other": {"str": {"age": "IntegerField()", "name": "CharField()"}},
+            "things": [{"age": "IntegerField()", "name": "CharField()"}],
+        },
+    }
+    assert to_comparable_dict(serializer_from_callable(function_91, output=True)()) == {
+        "age": "IntegerField()",
+        "name": "CharField()",
+    }
+    assert to_comparable_dict(serializer_from_callable(function_92, output=True)(many=True)) == [
+        {"name": "CharField()", "age": "IntegerField()"},
+    ]
+    assert to_comparable_dict(serializer_from_callable(function_93, output=True)()) == {
+        "str": {"name": "CharField()", "age": "IntegerField()"},
+    }
+    assert to_comparable_dict(serializer_from_callable(function_95, output=True)()) == {"not_available": "JSONField()"}
 
 
 def test_inline_serializer__defaults():
@@ -195,9 +348,15 @@ def test_inline_serializer__set_attributes():
     assert str(inline()) == "Name():\n    name = CharField()"
 
 
-def test_snake_case_to_pascal_case():
-    assert _snake_case_to_pascal_case("logic_method") == "LogicMethod"
-
-
-def test_snake_case_to_pascal_case__extra_underscore():
-    assert _snake_case_to_pascal_case("logic_method_") == "LogicMethod"
+@pytest.mark.parametrize(
+    "name,result",
+    [
+        ["logic_method", "LogicMethod"],
+        ["logic_method_", "LogicMethod"],
+        ["LogicMethod", "Logicmethod"],
+        ["__logic_method__", "LogicMethod"],
+        ["logic__method", "LogicMethod"],
+    ],
+)
+def test_snake_case_to_pascal_case(name, result):
+    assert _snake_case_to_pascal_case(name) == result

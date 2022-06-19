@@ -26,6 +26,7 @@ from .typing import (
     SerializerType,
     T,
     Tuple,
+    TypeGuard,
     Union,
     ViewMethod,
 )
@@ -36,7 +37,7 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    "sentinel",
+    "Sentinel",
     "get_language",
     "translate",
     "is_serializer_class",
@@ -47,14 +48,14 @@ __all__ = [
 ]
 
 
-class sentinel:  # pylint: disable=C0103
+class Sentinel:
     """Sentinel value."""
 
 
 available_languages: List[str] = [key for (key, value) in settings.LANGUAGES]
 
 
-def is_serializer_class(obj: Any) -> bool:
+def is_serializer_class(obj: Any) -> TypeGuard[BaseSerializer]:
     return isinstance(obj, type) and issubclass(obj, BaseSerializer)
 
 
