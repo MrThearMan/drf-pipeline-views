@@ -8,7 +8,6 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils.translation import get_language as current_language
 from django.utils.translation import override
-from pydantic import BaseModel  # pylint: disable=E0611
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
@@ -38,15 +37,15 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    "Sentinel",
-    "get_language",
-    "translate",
-    "is_serializer_class",
-    "is_pydantic_model",
     "cache_pipeline_logic",
+    "get_language",
+    "get_view_method",
+    "is_pydantic_model",
+    "is_serializer_class",
     "run_in_thread",
     "run_parallel",
-    "get_view_method",
+    "Sentinel",
+    "translate",
 ]
 
 
@@ -61,7 +60,12 @@ def is_serializer_class(obj: Any) -> TypeGuard[BaseSerializer]:
     return isinstance(obj, type) and issubclass(obj, BaseSerializer)
 
 
-def is_pydantic_model(obj: Any) -> TypeGuard[BaseModel]:
+def is_pydantic_model(obj: Any):
+    try:
+        from pydantic import BaseModel  # pylint: disable=import-outside-toplevel
+    except ImportError:
+        return False
+
     return isinstance(obj, type) and issubclass(obj, BaseModel)
 
 

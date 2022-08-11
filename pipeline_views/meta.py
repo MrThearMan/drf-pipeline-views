@@ -18,7 +18,9 @@ if TYPE_CHECKING:
     from .views import BasePipelineView
 
 
-__all__ = ["PipelineMetadata"]
+__all__ = [
+    "PipelineMetadata",
+]
 
 
 class PipelineMetadata(SimpleMetadata):

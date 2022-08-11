@@ -13,7 +13,7 @@ except Exception:  # noqa pylint: disable=broad-except
 
 __all__ = [
     "BasePipelineView",
-    "MockSerializer",
     "EmptySerializer",
+    "MockSerializer",
     "NextLogicBlock",
 ]

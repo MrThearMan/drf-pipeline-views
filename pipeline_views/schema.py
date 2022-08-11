@@ -38,12 +38,12 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    "PipelineSchemaMixin",
-    "PipelineSchema",
-    "PipelineEndpointEnumerator",
-    "PipelineSchemaGeneratorMixin",
-    "PipelineSchemaGenerator",
     "convert_to_schema",
+    "PipelineEndpointEnumerator",
+    "PipelineSchema",
+    "PipelineSchemaGenerator",
+    "PipelineSchemaGeneratorMixin",
+    "PipelineSchemaMixin",
 ]
 
 

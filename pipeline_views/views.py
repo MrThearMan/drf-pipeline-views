@@ -1,7 +1,6 @@
 import asyncio
 
 from asgiref.sync import async_to_sync
-from pydantic import BaseModel  # pylint: disable=E0611
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
@@ -21,7 +20,6 @@ from .typing import (
     PipelinesDict,
     SerializerType,
     Tuple,
-    Type,
     ViewContext,
 )
 from .utils import Sentinel, get_view_method, is_pydantic_model, is_serializer_class, run_parallel, translate
@@ -135,7 +133,7 @@ class BasePipelineView(APIView):
         data = serializer.data
         return data
 
-    def run_model(self, model_class: Type[BaseModel], data: DataDict) -> DataDict:
+    def run_model(self, model_class: Any, data: DataDict) -> DataDict:
         """Build and validate a pydantic model"""
         return model_class(**data).dict()
 

@@ -38,8 +38,8 @@ from .typing import (
 
 
 __all__ = [
-    "serializer_from_callable",
     "inline_serializer",
+    "serializer_from_callable",
 ]
 
 

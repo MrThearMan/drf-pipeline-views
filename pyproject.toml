@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "drf-pipeline-views"
-version = "0.6.5"
+version = "0.6.6"
 description = "Django REST framework views using the pipeline pattern."
 authors = [
     "Matti Lamppu <lamppu.matti.akseli@gmail.com>",
@@ -53,7 +53,7 @@ python = ">=3.7,<4"
 Django = ">=2.2"
 djangorestframework = ">=3.12.0"
 asgiref = ">=3.5.0"
-pydantic = ">=1.6.2"
+pydantic = {version = ">=1.6.2", optional = true}
 typing-extensions = {version = ">=4.0", python = "<3.10"}
 uvloop = {version = ">=0.16.0", optional = true}
 uritemplate = {version = ">=4.1.1", optional = true}
@@ -61,23 +61,24 @@ PyYAML = {version = ">=6.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "7.1.2"
-coverage = "6.4.1"
+coverage = "6.4.3"
 pytest-django = "4.5.2"
-pre-commit = "2.19.0"
-tox = "3.25.0"
+pre-commit = "2.20.0"
+tox = "3.25.1"
 tox-gh-actions = "2.9.1"
 coveralls = "3.3.1"
-mypy = "0.950"
+mypy = "0.971"
 django-stubs = "1.12.0"
-djangorestframework-stubs = "1.6.0"
-mkdocs = "1.3.0"
+djangorestframework-stubs = "1.7.0"
+mkdocs = "1.3.1"
 pymdown-extensions = "9.5"
-mkdocs-material = "8.3.6"
+mkdocs-material = "8.3.9"
 Pygments = "2.12.0"
 uritemplate = "4.1.1"
 
 [tool.poetry.extras]
 uvloop = ["uvloop"]
+pydantic = ["pydantic"]
 schema = ["uritemplate", "PyYAML"]
 
 [tool.black]
