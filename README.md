@@ -82,7 +82,7 @@ Have a look at the [quickstart][quickstart] section in the documentation on basi
 [downloads-badge]: https://img.shields.io/pypi/dm/drf-pipeline-views
 
 [coverage]: https://coveralls.io/github/MrThearMan/drf-pipeline-views?branch=main
-[status]: https://github.com/MrThearMan/drf-pipeline-views/actions/workflows/main.yml
+[status]: https://github.com/MrThearMan/drf-pipeline-views/actions/workflows/test.yml
 [pypi]: https://pypi.org/project/drf-pipeline-views
 [licence]: https://github.com/MrThearMan/drf-pipeline-views/blob/main/LICENSE
 [repo]: https://github.com/MrThearMan/drf-pipeline-views/commits/main
