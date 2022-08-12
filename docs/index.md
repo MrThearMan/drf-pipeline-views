@@ -4,10 +4,8 @@
 [![Workflow Status][status-badge]][status]
 [![PyPI][pypi-badge]][pypi]
 [![Licence][licence-badge]][licence]
-
 [![Last Commit][commit-badge]][repo]
 [![Issues][issues-badge]][issues]
-[![Lines of Code][loc-badge]][repo]
 [![Downloads][downloads-badge]][pypi]
 
 [![Python Version][version-badge]][pypi]
@@ -75,10 +73,9 @@ class SomeView(BasePipelineView):
 [commit-badge]: https://img.shields.io/github/last-commit/MrThearMan/drf-pipeline-views
 [issues-badge]: https://img.shields.io/github/issues-raw/MrThearMan/drf-pipeline-views
 [version-badge]: https://img.shields.io/pypi/pyversions/drf-pipeline-views
+[downloads-badge]: https://img.shields.io/pypi/dm/drf-pipeline-views
 [django-badge]: https://img.shields.io/pypi/djversions/drf-pipeline-views
 [drf-badge]: https://img.shields.io/badge/drf%20versions-3.12%20%7C%203.13-blue
-[loc-badge]: https://img.shields.io/tokei/lines/github.com/mrthearman/drf-pipeline-views
-[downloads-badge]: https://img.shields.io/pypi/dm/drf-pipeline-views
 
 [coverage]: https://coveralls.io/github/MrThearMan/drf-pipeline-views?branch=main
 [status]: https://github.com/MrThearMan/drf-pipeline-views/actions/workflows/test.yml
