@@ -44,7 +44,7 @@ class BasePipelineView(APIView):
     ignored_patch_params = {"lang", "format"}
     ignored_delete_params = {"lang", "format"}
 
-    def __new__(cls, *args, **kwargs):  # pylint: disable=W0613
+    def __new__(cls, *args, **kwargs):
         for key in cls.pipelines:
             if not hasattr(cls, key.lower()):
                 setattr(cls, key.lower(), get_view_method(key))
@@ -70,7 +70,7 @@ class BasePipelineView(APIView):
         except KeyError as missing_method:
             raise KeyError(f"Pipeline not configured for HTTP method '{self.request.method}'") from missing_method
 
-    def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:  # pylint: disable=R0912
+    def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:  # pylint: disable=too-many-branches
         """Run pipeline logic recursively."""
         if callable(logic):
             if asyncio.iscoroutinefunction(logic):
@@ -157,7 +157,11 @@ class BasePipelineView(APIView):
         """
         step = self.get_pipeline_for_current_request_method()
 
-        while isinstance(step, Iterable):  # pylint: disable=W1116
+        while isinstance(step, Iterable):
+            # Conditional block flattened
+            if isinstance(step, dict):
+                step = list(step.values())
+
             if output:
                 *_, step = step
             else:

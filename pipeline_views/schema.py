@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import uritemplate  # pylint: disable=E0401
+import uritemplate
 from django.utils.encoding import smart_str
 from rest_framework.fields import Field
 from rest_framework.permissions import AllowAny
@@ -110,12 +110,12 @@ class PipelineSchemaMixin:
 
         return operation
 
-    def get_description(self, path: str, method: HTTPMethod) -> str:  # pylint: disable=W0613
+    def get_description(self, path: str, method: HTTPMethod) -> str:
         serializer_class = self.view.get_serializer_class()
         description = serializer_class.__doc__ or (self.view.__class__.__doc__ or "")
         return self._get_description_section(self.view, method, formatting.dedent(smart_str(description)))
 
-    def get_components(self, path: str, method: HTTPMethod) -> Dict[str, Any]:  # pylint: disable=W0613
+    def get_components(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
         request_serializer_class = self.view.get_serializer_class()
         response_serializer_class = self.view.get_serializer_class(output=True)
 
@@ -171,7 +171,7 @@ class PipelineSchemaMixin:
 
         return {"content": {content_type: item_schema for content_type in request_media_types}}
 
-    def get_responses(self, path: str, method: HTTPMethod) -> Dict[str, Any]:  # pylint: disable=W0613
+    def get_responses(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
         data = {}
 
         responses = self.responses.get(method, {})
@@ -222,7 +222,7 @@ class PipelineSchemaMixin:
 
         return data
 
-    def get_tags(self, path: str, method: HTTPMethod) -> List[str]:  # pylint: disable=W0613
+    def get_tags(self, path: str, method: HTTPMethod) -> List[str]:
         if self._tags:
             return self._tags
 
@@ -288,7 +288,7 @@ class PipelineSchemaMixin:
             if serializer.fields:
                 response_schema = {"schema": self.map_serializer(serializer)}
             else:
-                response_schema = {"schema": convert_to_schema(serializer._example)}  # pylint: disable=W0212
+                response_schema = {"schema": convert_to_schema(serializer._example)}  # pylint: disable=protected-access
 
         elif isinstance(serializer, EmptySerializer):
             response_schema = self._get_no_result_schema()
@@ -328,10 +328,10 @@ class PipelineSchemaMixin:
             "properties": {"detail": {"type": "string", "default": error_message}},
         }
 
-    def get_request_serializer(self, path: str, method: HTTPMethod) -> BaseSerializer:  # pylint: disable=W0613
+    def get_request_serializer(self, path: str, method: HTTPMethod) -> BaseSerializer:
         return self.view.get_serializer()
 
-    def get_response_serializer(self, path: str, method: HTTPMethod) -> BaseSerializer:  # pylint: disable=W0613
+    def get_response_serializer(self, path: str, method: HTTPMethod) -> BaseSerializer:
         return self.view.get_serializer(output=True)
 
 

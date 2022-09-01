@@ -517,6 +517,117 @@ def test_BaseAPIView__get_serializer__output_serializer__infer_from_logic_callab
     }
 
 
+def test_BaseAPIView__get_serializer__output_serializer__logic_block_at_the_end(base_api_view):
+    class InputSerializer(Serializer):
+        name = CharField()
+        age = IntegerField()
+
+    def callable_method1(name: str, age: int):
+        return {"full_name": f"{name} Doe", "age": age}
+
+    class OutputSerializer1(Serializer):
+        full_name = CharField()
+        age = IntegerField()
+
+    class OutputSerializer2(Serializer):
+        other = CharField()
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {
+        "GET": [
+            InputSerializer,
+            callable_method1,
+            [
+                OutputSerializer1,
+                OutputSerializer2,
+            ],
+        ]
+    }
+
+    serializer = base_api_view.get_serializer(output=True)
+
+    assert str(serializer.fields) == str({"other": CharField()})
+    assert serializer._context == {
+        "request": base_api_view.request,
+        "format": base_api_view.format_kwarg,
+        "view": base_api_view,
+    }
+
+
+def test_BaseAPIView__get_serializer__output_serializer__conditional_block_at_the_end(base_api_view):
+    class InputSerializer(Serializer):
+        name = CharField()
+        age = IntegerField()
+
+    def callable_method1(name: str, age: int):
+        return {"full_name": f"{name} Doe", "age": age}
+
+    class OutputSerializer1(Serializer):
+        full_name = CharField()
+        age = IntegerField()
+
+    class OutputSerializer2(Serializer):
+        other = CharField()
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {
+        "GET": [
+            InputSerializer,
+            callable_method1,
+            {
+                "1": OutputSerializer1,
+                "2": OutputSerializer2,
+            },
+        ]
+    }
+
+    serializer = base_api_view.get_serializer(output=True)
+
+    assert str(serializer.fields) == str({"other": CharField()})
+    assert serializer._context == {
+        "request": base_api_view.request,
+        "format": base_api_view.format_kwarg,
+        "view": base_api_view,
+    }
+
+
+def test_BaseAPIView__get_serializer__output_serializer__parallel_block_at_the_end(base_api_view):
+    class InputSerializer(Serializer):
+        name = CharField()
+        age = IntegerField()
+
+    def callable_method1(name: str, age: int):
+        return {"full_name": f"{name} Doe", "age": age}
+
+    class OutputSerializer1(Serializer):
+        full_name = CharField()
+        age = IntegerField()
+
+    class OutputSerializer2(Serializer):
+        other = CharField()
+
+    base_api_view.request.method = "GET"
+    base_api_view.pipelines = {
+        "GET": [
+            InputSerializer,
+            callable_method1,
+            (
+                OutputSerializer1,
+                OutputSerializer2,
+            ),
+        ]
+    }
+
+    serializer = base_api_view.get_serializer(output=True)
+
+    assert str(serializer.fields) == str({"other": CharField()})
+    assert serializer._context == {
+        "request": base_api_view.request,
+        "format": base_api_view.format_kwarg,
+        "view": base_api_view,
+    }
+
+
 @pytest.mark.parametrize("key,result", [[1, 20], [2, 40]])
 def test_BaseAPIView__conditional(base_api_view, key: int, result: int):
     def callable_method1(param: int):

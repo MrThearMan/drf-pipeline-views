@@ -9,12 +9,12 @@ __all__ = [
 ]
 
 
-class EmptySerializer(Serializer):  # pylint: disable=W0223
+class EmptySerializer(Serializer):
     # Used for schema 204 responses
     pass
 
 
-class MockSerializer(Serializer):  # pylint: disable=W0223
+class MockSerializer(Serializer):
     # Serializer that simply passes initial data to output.
 
     _example: Union[List[Any], Dict[str, Any], Any] = {}

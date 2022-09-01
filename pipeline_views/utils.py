@@ -1,16 +1,20 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from functools import wraps
 from itertools import chain
 
 from django.conf import settings
-from django.core.cache import cache
 from django.utils.translation import get_language as current_language
 from django.utils.translation import override
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
+
+
+try:
+    from pydantic import BaseModel
+except ImportError:
+    BaseModel = None
 
 from .typing import (
     TYPE_CHECKING,
@@ -22,11 +26,11 @@ from .typing import (
     List,
     LogicCallable,
     Optional,
-    P,
+    ParamSpec,
     SerializerType,
-    T,
     Tuple,
     TypeGuard,
+    TypeVar,
     Union,
     ViewMethod,
 )
@@ -37,23 +41,22 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    "cache_pipeline_logic",
     "get_language",
     "get_view_method",
     "is_pydantic_model",
     "is_serializer_class",
-    "run_in_thread",
     "run_parallel",
     "Sentinel",
     "translate",
 ]
 
 
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
 class Sentinel:
     """Sentinel value."""
-
-
-available_languages: List[str] = [key for (key, value) in settings.LANGUAGES]
 
 
 def is_serializer_class(obj: Any) -> TypeGuard[BaseSerializer]:
@@ -61,10 +64,8 @@ def is_serializer_class(obj: Any) -> TypeGuard[BaseSerializer]:
 
 
 def is_pydantic_model(obj: Any):
-    try:
-        from pydantic import BaseModel  # pylint: disable=import-outside-toplevel
-    except ImportError:
-        return False
+    if BaseModel is None:
+        return False  # pragma: no cover
 
     return isinstance(obj, type) and issubclass(obj, BaseModel)
 
@@ -73,6 +74,7 @@ def get_language(request: Request) -> str:
     """Get language based on request Accept-Language header or 'lang' query parameter."""
     lang: Optional[str] = request.query_params.get("lang")
     language_code: Optional[str] = getattr(request, "LANGUAGE_CODE", None)
+    available_languages: List[str] = [key for (key, value) in settings.LANGUAGES]
 
     if lang and lang in available_languages:
         return lang
@@ -114,56 +116,14 @@ def translate(item: Union[Callable[P, T], Request]) -> Union[Generator[Any, Any,
     return context_manager(item)
 
 
-def cache_pipeline_logic(cache_key: str, timeout: int) -> Callable[P, T]:
-    """Cache the result of a pipeline logic function. Calls with different arguments will be saved under
-    different keys, using the given key as a prefix and joining it with a hash of the arguments.
-
-    :param cache_key: Key to save the result under.
-    :param timeout: How long to cache the data in seconds.
-    """
-
-    def decorator(func: Callable[P, T]) -> Callable[P, T]:
-        @wraps(func)
-        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-            nonlocal cache_key
-            key = cache_key + str(hash(args + tuple(kwargs.values())))
-            data = run_in_thread(cache.get)(key, None)
-            if data is None:
-                data = await func(*args, **kwargs)
-                run_in_thread(cache.set)(key, data, timeout)
-            return data
-
-        return wrapper
-
-    return decorator
-
-
-def run_in_thread(task: Callable[P, T]) -> Callable[P, T]:
-    """Decorator to run given callable in a thread.
-    Useful for running functions that require a database or otherwise
-    cannot run in async mode.
-    """
-
-    @wraps(task)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-        def func() -> T:
-            return task(*args, **kwargs)
-
-        with ThreadPoolExecutor() as executor:
-            future = executor.submit(func)
-            return future.result()
-
-    return wrapper
-
-
 async def run_parallel(step: Tuple[Union[LogicCallable, SerializerType], ...], data: DataDict) -> Tuple[DataDict, ...]:
-    return await asyncio.gather(*[task(**data) for task in step])  # noqa
+    return await asyncio.gather(*(task(**data) for task in step))  # noqa
 
 
 def get_view_method(method: HTTPMethod) -> ViewMethod:
     source = "query_params" if method == "GET" else "data"
 
-    def inner(  # pylint: disable=W0613
+    def inner(
         self: "BasePipelineView",
         request: Request,
         *args: Any,

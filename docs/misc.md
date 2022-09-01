@@ -2,8 +2,9 @@
 
 ## Modifying endpoint data
 
-If you wish to add data to a request, you can do that on the endpoint level by overriding
-`process_request`, or on the endpoint HTTP method level by overriding the spesific method, like `get`.
+If you wish to add data to a request, you can do that on the endpoint
+level by overriding `process_request`, or on the endpoint HTTP method
+level by overriding the specific method, like `get`.
 
 ```python
 from rest_framework.exceptions import NotAuthenticated
@@ -20,7 +21,7 @@ class BasicView(BasePipelineView):
     def get(self, request, *args, **kwargs):
         # Add language to every get request for this endpoint
         kwargs["lang"] = request.LANGUAGE_CODE
-        # View method needs to be added manually, since defined `get` ourselves
+        # View method needs to be added manually, since we defined `get` ourselves
         return get_view_method("GET")(self, request, *args, **kwargs)
 
     def process_request(self, data):
@@ -39,20 +40,9 @@ class BasicView(BasePipelineView):
 
 The pipeline use a `translate` context manager to enable translations based on what the
 client is asking for. Use the `LANGUAGES` setting in django to define supported languages.
-Used language is determined from 1. a `lang` query parameter, or 2. `request.LANGUAGE_CODE` fetched from Accept-Language header
-(requires [LocaleMiddleware](https://docs.djangoproject.com/en/3.1/ref/middleware/#django.middleware.locale.LocaleMiddleware)).
-Failing that, the tranlation falls back to the currently active language.
-
-## Run in a thread
-
-Some tasks, like interactions with the Django ORM, cannot be done in an async context. This can be solved by using
-the sync_to_async adapter included in django, or by running the task in a thread. `drf-pipeline-views` includes
-a utility that can be used to wrap a function call so that it will run in a thread,
-and thus enable these tasks in async contexts.
-
-## Cache Pipeline Logic
-
-A handy utility that can be used to cache pipeline logic to the django cache backend.
+Used language is determined from 1. a `lang` query parameter, or 2. `request.LANGUAGE_CODE`
+fetched from Accept-Language header (requires [LocaleMiddleware]). Failing that, the
+tranlation falls back to the currently active language.
 
 ## Ignoring input parameters
 
@@ -80,3 +70,4 @@ By default, the ignored keys include: "format" (used by DRF Rendered classes)
 and "lang" (used by `@translate` decorator) parameters. POST requests also ignore the
 `csrfmiddlewaretoken` given by forms.
 
+[LocaleMiddleware]: https://docs.djangoproject.com/en/dev/ref/middleware/#django.middleware.locale.LocaleMiddleware

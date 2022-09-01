@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from rest_framework.response import Response
     from rest_framework.serializers import BaseSerializer
 
-    from .views import BasePipelineView  # pylint: disable=R0401
+    from .views import BasePipelineView
 
 
 __all__ = [
@@ -75,7 +75,7 @@ __all__ = [
     "Literal",
     "LogicCallable",
     "Optional",
-    "P",
+    "ParamSpec",
     "PipelineLogic",
     "PipelinesDict",
     "Protocol",
@@ -83,7 +83,6 @@ __all__ = [
     "Sequence",
     "SerializerType",
     "Set",
-    "T",
     "Tuple",
     "Type",
     "TYPE_CHECKING",
@@ -91,14 +90,13 @@ __all__ = [
     "TypedDict",
     "TypeGuard",
     "TypesDict",
+    "TypeVar",
     "Union",
     "ViewContext",
     "ViewMethod",
 ]
 
 
-T = TypeVar("T")  # pylint: disable=C0103
-P = ParamSpec("P")  # pylint: disable=C0103
 eval_type = _eval_type
 DataDict: TypeAlias = Dict[str, Any]
 SerializerType: TypeAlias = Type["BaseSerializer"]
