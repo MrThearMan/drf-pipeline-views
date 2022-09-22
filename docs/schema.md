@@ -1,12 +1,6 @@
 # OpenAPI Schema
 
-Pipeline views support OpenAPI schema by default, but you need to install
-some optional dependencies, [as with Django REST framework][drf-schema].
-
-```shell
-pip install drf-pipeline-views[schema]
-# Or add `drf-pipeline-views[schema]` to `requirements.txt`.
-```
+Pipeline views support OpenAPI schema by default.
 
 Here is an example pipeline.
 
