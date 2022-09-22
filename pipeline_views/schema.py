@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import copy
+from functools import partial
+
 import uritemplate
 from django.utils.encoding import smart_str
 from rest_framework.fields import Field
@@ -28,6 +31,7 @@ from .typing import (
     Sequence,
     SerializerType,
     Type,
+    TypeVar,
     Union,
 )
 from .utils import is_serializer_class
@@ -36,15 +40,52 @@ from .utils import is_serializer_class
 if TYPE_CHECKING:
     from .views import BasePipelineView
 
+    T = TypeVar("T", bound=Type[BasePipelineView])
+
 
 __all__ = [
     "convert_to_schema",
+    "deprecate",
     "PipelineEndpointEnumerator",
     "PipelineSchema",
     "PipelineSchemaGenerator",
     "PipelineSchemaGeneratorMixin",
     "PipelineSchemaMixin",
 ]
+
+
+def deprecate(__view: Optional[T] = None, *, methods: Optional[List[HTTPMethod]] = None) -> T:
+    """Deprecate a view in the OpenAPI schema while retaining the original.
+
+    :param methods: HTTP methods to deprecate. Deprecate all if not given.
+    """
+
+    def view(_view: T, _methods: Optional[List[HTTPMethod]] = None):
+        # Mock the "get_serializer_class" method to change the calculated "operation_id"
+        def new_get_serializer_class(old_method):
+            def inner(self, output: bool = False):
+                serializer = old_method.__get__(self, new_view)(output)  # pylint: disable=unnecessary-dunder-call
+                new_serializer = type(f"Deprecated{serializer.__name__}", (serializer,), {})
+                new_serializer.__doc__ = serializer.__doc__
+                return new_serializer
+
+            return inner
+
+        new_view: T = type(f"Deprecated{_view.__name__}", (_view,), {})  # type: ignore
+        new_view.__doc__ = _view.__doc__
+        new_view.get_serializer_class = new_get_serializer_class(new_view.get_serializer_class)
+
+        if _methods is None:
+            _methods = list(new_view.pipelines)
+
+        new_view.schema = copy.deepcopy(new_view.schema)
+        new_view.schema.deprecated = _methods
+        return new_view
+
+    if callable(__view):
+        return view(__view, methods)  # type: ignore
+
+    return partial(view, _methods=methods)  # type: ignore
 
 
 def convert_to_schema(schema: Union[List[Any], Dict[str, Any], Any]) -> Dict[str, Any]:

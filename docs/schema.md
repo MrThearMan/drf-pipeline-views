@@ -328,6 +328,22 @@ class ExampleView(BasePipelineView):
     )
 ```
 
+You can also use the `pipeline_views.schema.deprecate` on the view.
+
+```python hl_lines="3"
+from pipeline_views.schema import deprecate
+
+@deprecate(methods=["POST"])
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+```
+
+> You can deprecate all methods by omitting the `methods` argument.
+
 ## Security schemes
 
 Add security schemes to the endpoints.

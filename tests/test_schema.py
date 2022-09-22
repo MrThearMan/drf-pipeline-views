@@ -1179,6 +1179,37 @@ def test_pipeline_schema__openapi():
     assert response.data == {
         "components": {
             "schemas": {
+                "DeprecatedInput": {
+                    "properties": {
+                        "age": {
+                            "type": "integer",
+                        },
+                        "name": {
+                            "type": "string",
+                        },
+                    },
+                    "required": [
+                        "name",
+                        "age",
+                    ],
+                    "type": "object",
+                },
+                "DeprecatedOutput": {
+                    "properties": {
+                        "age": {
+                            "type": "integer",
+                        },
+                        "email": {
+                            "format": "email",
+                            "type": "string",
+                        },
+                    },
+                    "required": [
+                        "email",
+                        "age",
+                    ],
+                    "type": "object",
+                },
                 "Input": {
                     "properties": {
                         "age": {
@@ -1188,7 +1219,10 @@ def test_pipeline_schema__openapi():
                             "type": "string",
                         },
                     },
-                    "required": ["name", "age"],
+                    "required": [
+                        "name",
+                        "age",
+                    ],
                     "type": "object",
                 },
                 "Output": {
@@ -1201,23 +1235,40 @@ def test_pipeline_schema__openapi():
                             "type": "string",
                         },
                     },
-                    "required": ["email", "age"],
+                    "required": [
+                        "email",
+                        "age",
+                    ],
                     "type": "object",
                 },
-                "Pydanticinput": {
+                "DeprecatedPydanticinput": {
                     "properties": {
-                        "age": {"type": "integer"},
-                        "name": {"type": "string"},
+                        "age": {
+                            "type": "integer",
+                        },
+                        "name": {
+                            "type": "string",
+                        },
                     },
-                    "required": ["name", "age"],
+                    "required": [
+                        "name",
+                        "age",
+                    ],
                     "type": "object",
                 },
-                "Pydanticoutput": {
+                "DeprecatedPydanticoutput": {
                     "properties": {
-                        "age": {"type": "integer"},
-                        "email": {"type": "string"},
+                        "age": {
+                            "type": "integer",
+                        },
+                        "email": {
+                            "type": "string",
+                        },
                     },
-                    "required": ["email", "age"],
+                    "required": [
+                        "email",
+                        "age",
+                    ],
                     "type": "object",
                 },
             },
@@ -1304,7 +1355,72 @@ def test_pipeline_schema__openapi():
                             "my_security": [],
                         },
                     ],
-                    "tags": ["example"],
+                    "tags": [
+                        "example",
+                    ],
+                },
+            },
+            "/api/example/deprecated": {
+                "post": {
+                    "deprecated": True,
+                    "description": "Example Input",
+                    "operationId": "createDeprecatedInput",
+                    "parameters": [],
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeprecatedInput",
+                                },
+                            },
+                            "application/x-www-form-urlencoded": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeprecatedInput",
+                                }
+                            },
+                            "multipart/form-data": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeprecatedInput",
+                                },
+                            },
+                        },
+                    },
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/DeprecatedOutput",
+                                    },
+                                },
+                            },
+                            "description": "Example Output",
+                        },
+                        "401": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "detail": {
+                                                "default": "error message",
+                                                "type": "string",
+                                            },
+                                        },
+                                        "type": "object",
+                                    },
+                                },
+                            },
+                            "description": "Unauthenticated.",
+                        },
+                    },
+                    "security": [
+                        {
+                            "my_security": [],
+                        },
+                    ],
+                    "tags": [
+                        "example",
+                    ],
                 },
             },
             "/api/example/private": {
@@ -1329,7 +1445,7 @@ def test_pipeline_schema__openapi():
                                     "$ref": "#/components/schemas/Input",
                                 },
                             },
-                        }
+                        },
                     },
                     "responses": {
                         "200": {
@@ -1380,8 +1496,10 @@ def test_pipeline_schema__openapi():
                             "another": [],
                         },
                     ],
-                    "tags": ["example"],
-                }
+                    "tags": [
+                        "example",
+                    ],
+                },
             },
             "/api/example/{age}": {
                 "patch": {
@@ -1407,9 +1525,11 @@ def test_pipeline_schema__openapi():
                                             "type": "string",
                                         },
                                     },
-                                    "required": ["name"],
+                                    "required": [
+                                        "name",
+                                    ],
                                     "type": "object",
-                                }
+                                },
                             },
                             "application/x-www-form-urlencoded": {
                                 "schema": {
@@ -1418,7 +1538,9 @@ def test_pipeline_schema__openapi():
                                             "type": "string",
                                         },
                                     },
-                                    "required": ["name"],
+                                    "required": [
+                                        "name",
+                                    ],
                                     "type": "object",
                                 },
                             },
@@ -1429,7 +1551,9 @@ def test_pipeline_schema__openapi():
                                             "type": "string",
                                         },
                                     },
-                                    "required": ["name"],
+                                    "required": [
+                                        "name",
+                                    ],
                                     "type": "object",
                                 },
                             },
@@ -1468,27 +1592,33 @@ def test_pipeline_schema__openapi():
                             "my_security": [],
                         },
                     ],
-                    "tags": ["example"],
+                    "tags": [
+                        "example",
+                    ],
                 },
             },
             "/api/pydantic": {
                 "get": {
                     "description": "Pydantic View",
-                    "operationId": "listPydanticinputs",
+                    "operationId": "listDeprecatedPydanticinputs",
                     "parameters": [
                         {
                             "description": "",
                             "in": "query",
                             "name": "name",
                             "required": True,
-                            "schema": {"type": "string"},
+                            "schema": {
+                                "type": "string",
+                            },
                         },
                         {
                             "description": "",
                             "in": "query",
                             "name": "age",
                             "required": True,
-                            "schema": {"type": "integer"},
+                            "schema": {
+                                "type": "integer",
+                            },
                         },
                     ],
                     "responses": {
@@ -1497,10 +1627,17 @@ def test_pipeline_schema__openapi():
                                 "application/json": {
                                     "schema": {
                                         "properties": {
-                                            "age": {"type": "integer"},
-                                            "email": {"type": "string"},
+                                            "age": {
+                                                "type": "integer",
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                            },
                                         },
-                                        "required": ["email", "age"],
+                                        "required": [
+                                            "email",
+                                            "age",
+                                        ],
                                         "type": "object",
                                     },
                                 },
@@ -1529,7 +1666,9 @@ def test_pipeline_schema__openapi():
                             "my_security": [],
                         },
                     ],
-                    "tags": ["pydantic"],
+                    "tags": [
+                        "pydantic",
+                    ],
                 },
             },
         },

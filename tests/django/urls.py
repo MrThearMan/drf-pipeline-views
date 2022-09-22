@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.schemas import get_schema_view
 
-from pipeline_views.schema import PipelineSchema, PipelineSchemaGenerator
+from pipeline_views.schema import PipelineSchema, PipelineSchemaGenerator, deprecate
 from pipeline_views.views import BasePipelineView
 
 
@@ -87,6 +87,7 @@ class ExamplePrivateView(BasePipelineView):
     )
 
 
+@deprecate(methods=["PATCH"])
 class PydanticView(BasePipelineView):
     """Pydantic View"""
 
@@ -101,6 +102,7 @@ class PydanticView(BasePipelineView):
 
 urlpatterns = [
     path("api/example/", ExampleView.as_view(), name="test_view"),
+    path("api/example/deprecated", deprecate(ExampleView).as_view(), name="test_view_deprecated"),
     path("api/example/<int:age>", ExamplePathView.as_view(), name="test_path_view"),
     path("api/example/private", ExamplePrivateView.as_view(), name="test_private_view"),
     path("api/pydantic", PydanticView.as_view(), name="test_pydantic_view"),
