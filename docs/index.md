@@ -59,9 +59,6 @@ class SomeView(BasePipelineView):
     }
 ```
 
-> **New in 0.6.0**, mixin classes were removed, BasePiplineView adds
-> view methods automatically based on pipeline definitions!
-
 [clean]: https://archive.org/details/pyvideo_2840___The_Clean_Architecture_in_Python
 [drf]: https://www.django-rest-framework.org/
 [pipeline]: https://java-design-patterns.com/patterns/pipeline/
@@ -75,7 +72,7 @@ class SomeView(BasePipelineView):
 [version-badge]: https://img.shields.io/pypi/pyversions/drf-pipeline-views
 [downloads-badge]: https://img.shields.io/pypi/dm/drf-pipeline-views
 [django-badge]: https://img.shields.io/pypi/djversions/drf-pipeline-views
-[drf-badge]: https://img.shields.io/badge/drf%20versions-3.12%20%7C%203.13-blue
+[drf-badge]: https://img.shields.io/badge/drf%20versions-3.12%20%7C%203.13%20%7C%203.14-blue
 
 [coverage]: https://coveralls.io/github/MrThearMan/drf-pipeline-views?branch=main
 [status]: https://github.com/MrThearMan/drf-pipeline-views/actions/workflows/test.yml
