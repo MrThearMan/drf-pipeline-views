@@ -6,7 +6,15 @@ from rest_framework.test import APIClient
 from pipeline_views import BasePipelineView, MockSerializer
 from pipeline_views.schema import PipelineSchema
 from pipeline_views.serializers import EmptySerializer
-from tests.django.urls import ExamplePathView, ExampleView, InputSerializer, OutputSerializer, example_method
+from tests.django.urls import (
+    ExamplePathView,
+    ExampleView,
+    InputSerializer,
+    OutputSerializer,
+    PydanticInput,
+    PydanticOutput,
+    example_method,
+)
 
 
 def test_pipeline_schema__get_components(drf_request):
@@ -60,6 +68,7 @@ def test_pipeline_schema__get_responses(drf_request):
                 },
             },
             "description": "Example Output",
+            "links": None,
         },
         "401": {
             "content": {
@@ -76,6 +85,7 @@ def test_pipeline_schema__get_responses(drf_request):
                 },
             },
             "description": "Unauthenticated.",
+            "links": None,
         },
     }
 
@@ -237,6 +247,7 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
                 },
             },
             "description": "Example Output",
+            "links": None,
         },
         "400": {
             "content": {
@@ -253,6 +264,7 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
                 },
             },
             "description": "Unavailable",
+            "links": None,
         },
         "401": {
             "content": {
@@ -269,6 +281,7 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
                 },
             },
             "description": "Unauthenticated.",
+            "links": None,
         },
         "404": {
             "content": {
@@ -279,6 +292,7 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
                 },
             },
             "description": "This is the description",
+            "links": None,
         },
     }
 
@@ -304,6 +318,7 @@ def test_pipeline_schema__get_responses__none(drf_request):
                 },
             },
             "description": "Example Output",
+            "links": None,
         },
         "401": {
             "content": {
@@ -320,6 +335,7 @@ def test_pipeline_schema__get_responses__none(drf_request):
                 },
             },
             "description": "Unauthenticated.",
+            "links": None,
         },
     }
 
@@ -374,6 +390,7 @@ def test_pipeline_schema__get_responses__list(drf_request):
                 },
             },
             "description": "Example Output",
+            "links": None,
         },
         "400": {
             "content": {
@@ -390,6 +407,7 @@ def test_pipeline_schema__get_responses__list(drf_request):
                 },
             },
             "description": "Unavailable",
+            "links": None,
         },
         "401": {
             "content": {
@@ -406,6 +424,7 @@ def test_pipeline_schema__get_responses__list(drf_request):
                 },
             },
             "description": "Unauthenticated.",
+            "links": None,
         },
         "404": {
             "content": {
@@ -419,6 +438,7 @@ def test_pipeline_schema__get_responses__list(drf_request):
                 },
             },
             "description": "This is the description",
+            "links": None,
         },
     }
 
@@ -483,6 +503,7 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
                 },
             },
             "description": "This is the response",
+            "links": None,
         },
         "400": {
             "content": {
@@ -499,6 +520,7 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
                 },
             },
             "description": "Unavailable",
+            "links": None,
         },
         "401": {
             "content": {
@@ -515,6 +537,7 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
                 },
             },
             "description": "Unauthenticated.",
+            "links": None,
         },
         "404": {
             "content": {
@@ -528,6 +551,7 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
                 },
             },
             "description": "This is the description",
+            "links": None,
         },
     }
 
@@ -570,6 +594,7 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
                 },
             },
             "description": "This is the description",
+            "links": None,
         },
         "204": {
             "content": {
@@ -579,6 +604,7 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
                 },
             },
             "description": "no results",
+            "links": None,
         },
         "401": {
             "content": {
@@ -595,6 +621,7 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
                 },
             },
             "description": "Unauthenticated.",
+            "links": None,
         },
     }
 
@@ -634,6 +661,7 @@ def test_pipeline_schema__get_responses__204_if_output_is_emptyserializer(drf_re
                 },
             },
             "description": "This is the description",
+            "links": None,
         },
         "401": {
             "content": {
@@ -650,6 +678,7 @@ def test_pipeline_schema__get_responses__204_if_output_is_emptyserializer(drf_re
                 },
             },
             "description": "Unauthenticated.",
+            "links": None,
         },
     }
 
@@ -671,6 +700,19 @@ def test_pipeline_schema__get_operation(drf_request):
                     404: CustomSerializer,
                 },
             },
+            links={
+                "PATCH": {
+                    200: {
+                        "Title": {
+                            "description": "Description",
+                            "operationId": "createInput",
+                            "parameters": {
+                                "age": "$request.body#/age",
+                            },
+                        },
+                    },
+                },
+            },
             deprecated=["PATCH"],
             security={
                 "PATCH": {"foo": ["bar"]},
@@ -679,6 +721,24 @@ def test_pipeline_schema__get_operation(drf_request):
                 "PATCH": {"description": "foo", "url": "bar"},
             },
             query_parameters={"PATCH": ["name"]},
+            callbacks={
+                "event_name": {
+                    "callback_url": {
+                        "POST": {
+                            "request_body": InputSerializer,
+                            "responses": {
+                                200: OutputSerializer,
+                            },
+                        },
+                        "PUT": {
+                            "request_body": PydanticInput,
+                            "responses": {
+                                200: PydanticOutput,
+                            },
+                        },
+                    },
+                },
+            },
         )
 
     view = CustomView()
@@ -752,6 +812,15 @@ def test_pipeline_schema__get_operation(drf_request):
                     },
                 },
                 "description": "Example Output",
+                "links": {
+                    "Title": {
+                        "description": "Description",
+                        "operationId": "createInput",
+                        "parameters": {
+                            "age": "$request.body#/age",
+                        },
+                    },
+                },
             },
             "400": {
                 "content": {
@@ -768,6 +837,7 @@ def test_pipeline_schema__get_operation(drf_request):
                     },
                 },
                 "description": "Unavailable",
+                "links": None,
             },
             "401": {
                 "content": {
@@ -784,6 +854,7 @@ def test_pipeline_schema__get_operation(drf_request):
                     },
                 },
                 "description": "Unauthenticated.",
+                "links": None,
             },
             "404": {
                 "content": {
@@ -794,6 +865,7 @@ def test_pipeline_schema__get_operation(drf_request):
                     },
                 },
                 "description": "This is the description",
+                "links": None,
             },
         },
         "security": [
@@ -802,6 +874,93 @@ def test_pipeline_schema__get_operation(drf_request):
             },
         ],
         "tags": [""],
+        "callbacks": {
+            "event_name": {
+                "callback_url": {
+                    "POST": {
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "age": {
+                                                "type": "integer",
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                            },
+                                        },
+                                        "required": ["name", "age"],
+                                        "type": "object",
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            200: {
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "properties": {
+                                                "age": {
+                                                    "type": "integer",
+                                                },
+                                                "email": {
+                                                    "format": "email",
+                                                    "type": "string",
+                                                },
+                                            },
+                                            "required": ["email", "age"],
+                                            "type": "object",
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                    },
+                    "PUT": {
+                        "requestBody": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "age": {
+                                                "type": "integer",
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                            },
+                                        },
+                                        "required": ["name", "age"],
+                                        "type": "object",
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            200: {
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "properties": {
+                                                "age": {
+                                                    "type": "integer",
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                },
+                                            },
+                                            "required": ["email", "age"],
+                                            "type": "object",
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                    },
+                }
+            }
+        },
     }
 
 
@@ -1332,6 +1491,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Example Output",
+                            "links": None,
                         },
                         "401": {
                             "content": {
@@ -1348,6 +1508,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Unauthenticated.",
+                            "links": None,
                         },
                     },
                     "security": [
@@ -1395,6 +1556,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Example Output",
+                            "links": None,
                         },
                         "401": {
                             "content": {
@@ -1411,6 +1573,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Unauthenticated.",
+                            "links": None,
                         },
                     },
                     "security": [
@@ -1457,6 +1620,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Example Output",
+                            "links": None,
                         },
                         "401": {
                             "content": {
@@ -1473,6 +1637,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Unauthenticated.",
+                            "links": None,
                         },
                         "403": {
                             "content": {
@@ -1489,6 +1654,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Permission Denied.",
+                            "links": None,
                         },
                     },
                     "security": [
@@ -1569,6 +1735,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Example Output",
+                            "links": None,
                         },
                         "401": {
                             "content": {
@@ -1585,6 +1752,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Unauthenticated.",
+                            "links": None,
                         },
                     },
                     "security": [
@@ -1643,6 +1811,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "",
+                            "links": None,
                         },
                         "401": {
                             "content": {
@@ -1659,6 +1828,7 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Unauthenticated.",
+                            "links": None,
                         },
                     },
                     "security": [

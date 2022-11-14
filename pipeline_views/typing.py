@@ -48,10 +48,12 @@ if TYPE_CHECKING:
 __all__ = [
     "Any",
     "AnyAuth",
+    "APICallbackData",
     "APIContact",
     "APIInfo",
     "ApiKeyAuth",
     "APILicense",
+    "APILinks",
     "APISchema",
     "AuthOrPerm",
     "BasicAuth",
@@ -125,6 +127,17 @@ class ViewContext(TypedDict):
 class ExternalDocs(TypedDict):
     description: str
     url: str
+
+
+class APILinks(TypedDict):
+    description: str
+    operationId: str
+    parameters: Dict[str, str]
+
+
+class APICallbackData(TypedDict):
+    request_body: SerializerType
+    responses: Dict[int, SerializerType]
 
 
 class APIContact(TypedDict, total=False):

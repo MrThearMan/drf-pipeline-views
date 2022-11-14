@@ -13,14 +13,17 @@ from rest_framework.schemas.openapi import AutoSchema, SchemaGenerator
 from rest_framework.serializers import BaseSerializer, Serializer
 from rest_framework.utils import formatting
 
+from .inference import serializer_from_callable
 from .serializers import EmptySerializer, MockSerializer
 from .typing import (
     TYPE_CHECKING,
     Any,
     AnyAuth,
+    APICallbackData,
     APIContact,
     APIInfo,
     APILicense,
+    APILinks,
     APISchema,
     Dict,
     ExternalDocs,
@@ -112,6 +115,8 @@ def convert_to_schema(schema: Union[List[Any], Dict[str, Any], Any]) -> Dict[str
 class PipelineSchemaMixin:
 
     responses: Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]] = {}
+    callbacks: Dict[str, Dict[str, Dict[HTTPMethod, APICallbackData]]] = {}
+    links: Dict[HTTPMethod, Dict[int, Dict[str, APILinks]]] = {}
     query_parameters: Dict[HTTPMethod, List[str]] = {}
     deprecated: List[HTTPMethod] = []
     security: Dict[HTTPMethod, Dict[str, List[str]]] = {}
@@ -134,6 +139,10 @@ class PipelineSchemaMixin:
         request_body = self.get_request_body(path, method)
         if request_body:
             operation["requestBody"] = request_body
+
+        callbacks = self.get_callbacks(path, method)
+        if callbacks:
+            operation["callbacks"] = callbacks
 
         operation["responses"] = self.get_responses(path, method)
         operation["tags"] = self.get_tags(path, method)
@@ -212,6 +221,52 @@ class PipelineSchemaMixin:
 
         return {"content": {content_type: item_schema for content_type in request_media_types}}
 
+    def get_callbacks(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
+        if not self.callbacks:
+            return {}
+
+        callback_data = {}
+
+        for event, callbacks in self.callbacks.items():
+            callback_data.setdefault(event, {})
+            for callback_url, methods in callbacks.items():
+                callback_data[event].setdefault(callback_url, {})
+                for method_name, data in methods.items():
+                    callback_data[event][callback_url].setdefault(method_name, {})
+
+                    request_body = data["request_body"]
+                    if not is_serializer_class(request_body):
+                        request_body = serializer_from_callable(request_body)
+
+                    callback_data[event][callback_url][method_name]["requestBody"] = {
+                        "content": {
+                            "application/json": {
+                                "schema": self.map_serializer(
+                                    self.view.initialize_serializer(serializer_class=request_body),
+                                ),
+                            },
+                        },
+                    }
+
+                    output_serializers = {}
+                    for status_code, response in data["responses"].items():
+                        if not is_serializer_class(response):
+                            response = serializer_from_callable(response)
+
+                        output_serializers[status_code] = {
+                            "content": {
+                                "application/json": {
+                                    "schema": self.map_serializer(
+                                        self.view.initialize_serializer(serializer_class=response),
+                                    ),
+                                },
+                            },
+                        }
+
+                    callback_data[event][callback_url][method_name]["responses"] = output_serializers
+
+        return callback_data
+
     def get_responses(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
         data = {}
 
@@ -219,6 +274,7 @@ class PipelineSchemaMixin:
         if not responses and method not in self.view.pipelines:
             return data
 
+        method_links = self.links.get(method, {})
         response_media_types = self.map_renderers(path, method)
         authentication_classes = self.view.authentication_classes
         permission_classes = self.view.permission_classes
@@ -256,9 +312,12 @@ class PipelineSchemaMixin:
             else:
                 response_schema = {"schema": self._get_error_message_schema()}
 
+            links = method_links.get(status_code, None)
+
             data[str(status_code)] = {
                 "content": {content_type: response_schema for content_type in response_media_types},
                 "description": info,
+                "links": links,
             }
 
         return data
@@ -332,7 +391,15 @@ class PipelineSchemaMixin:
                 response_schema = {"schema": convert_to_schema(serializer._example)}  # pylint: disable=protected-access
 
         elif isinstance(serializer, EmptySerializer):
-            response_schema = self._get_no_result_schema()
+            response_schema = {
+                "content": {
+                    "application/json": {
+                        "type": "string",
+                        "default": "",
+                    },
+                },
+                "description": "no results",
+            }
 
         elif getattr(serializer, "many", False):
             response_schema = {
@@ -360,6 +427,7 @@ class PipelineSchemaMixin:
         return {
             "content": {"application/json": {"type": "string", "default": ""}},
             "description": description,
+            "links": None,
         }
 
     @staticmethod
@@ -376,11 +444,13 @@ class PipelineSchemaMixin:
         return self.view.get_serializer(output=True)
 
 
-class PipelineSchema(PipelineSchemaMixin, AutoSchema):
+class PipelineSchema(PipelineSchemaMixin, AutoSchema):  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         *,
         responses: Optional[Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]]] = None,
+        callbacks: Optional[Dict[str, Dict[str, Dict[HTTPMethod, APICallbackData]]]] = None,
+        links: Optional[Dict[HTTPMethod, Dict[int, Dict[str, APILinks]]]] = None,
         query_parameters: Optional[Dict[HTTPMethod, List[str]]] = None,
         deprecated: Optional[List[HTTPMethod]] = None,
         security: Optional[Dict[HTTPMethod, Dict[str, List[str]]]] = None,
@@ -392,6 +462,8 @@ class PipelineSchema(PipelineSchemaMixin, AutoSchema):
         component_name: Optional[str] = None,
     ):
         self.responses = responses or self.responses
+        self.callbacks = callbacks or self.callbacks
+        self.links = links or self.links
         self.query_parameters = query_parameters or self.query_parameters
         self.deprecated = deprecated or self.deprecated
         self.security = security or self.security

@@ -1,3 +1,7 @@
+from contextlib import suppress
+
+from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.urls import path
 from django.views.generic import TemplateView
 from pydantic import BaseModel
@@ -7,6 +11,13 @@ from rest_framework.schemas import get_schema_view
 
 from pipeline_views.schema import PipelineSchema, PipelineSchemaGenerator, deprecate
 from pipeline_views.views import BasePipelineView
+
+
+with suppress(Exception):
+    call_command("makemigrations")
+    call_command("migrate")
+    if not User.objects.filter(username="x", email="user@user.com").exists():
+        User.objects.create_superuser(username="x", email="user@user.com", password="x")
 
 
 class InputSerializer(serializers.Serializer):
