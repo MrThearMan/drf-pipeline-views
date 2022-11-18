@@ -18,11 +18,14 @@ from tests.django.urls import (
 
 
 def test_pipeline_schema__get_components(drf_request):
-    view = ExampleView()
+    class CustomView(ExampleView):
+        """Custom View"""
+
+    view = CustomView()
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    components = view.schema.get_components("", "")
+    components = view.schema.get_components("", "POST")
     assert components == {
         "Input": {
             "properties": {
@@ -52,6 +55,52 @@ def test_pipeline_schema__get_components(drf_request):
     }
 
 
+def test_pipeline_schema__get_components__webhook(drf_request):
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        schema = PipelineSchema(
+            webhook={
+                "POST": True,
+            },
+        )
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    components = view.schema.get_components("foo", "POST")
+    assert components == {
+        "_webhook_Custom": {
+            "path": "foo",
+            "POST": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "age": {
+                                        "type": "integer",
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                    },
+                                },
+                                "required": ["name", "age"],
+                                "type": "object",
+                            }
+                        }
+                    },
+                    "description": "Example Input",
+                },
+                "responses": {
+                    "200": "Example Output",
+                },
+            },
+        }
+    }
+
+
 def test_pipeline_schema__get_responses(drf_request):
     view = ExampleView()
     view.request = drf_request
@@ -68,7 +117,6 @@ def test_pipeline_schema__get_responses(drf_request):
                 },
             },
             "description": "Example Output",
-            "links": None,
         },
         "401": {
             "content": {
@@ -85,7 +133,6 @@ def test_pipeline_schema__get_responses(drf_request):
                 },
             },
             "description": "Unauthenticated.",
-            "links": None,
         },
     }
 
@@ -247,7 +294,6 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
                 },
             },
             "description": "Example Output",
-            "links": None,
         },
         "400": {
             "content": {
@@ -264,7 +310,6 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
                 },
             },
             "description": "Unavailable",
-            "links": None,
         },
         "401": {
             "content": {
@@ -281,7 +326,6 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
                 },
             },
             "description": "Unauthenticated.",
-            "links": None,
         },
         "404": {
             "content": {
@@ -292,7 +336,6 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
                 },
             },
             "description": "This is the description",
-            "links": None,
         },
     }
 
@@ -318,7 +361,6 @@ def test_pipeline_schema__get_responses__none(drf_request):
                 },
             },
             "description": "Example Output",
-            "links": None,
         },
         "401": {
             "content": {
@@ -335,7 +377,6 @@ def test_pipeline_schema__get_responses__none(drf_request):
                 },
             },
             "description": "Unauthenticated.",
-            "links": None,
         },
     }
 
@@ -390,7 +431,6 @@ def test_pipeline_schema__get_responses__list(drf_request):
                 },
             },
             "description": "Example Output",
-            "links": None,
         },
         "400": {
             "content": {
@@ -407,7 +447,6 @@ def test_pipeline_schema__get_responses__list(drf_request):
                 },
             },
             "description": "Unavailable",
-            "links": None,
         },
         "401": {
             "content": {
@@ -424,7 +463,6 @@ def test_pipeline_schema__get_responses__list(drf_request):
                 },
             },
             "description": "Unauthenticated.",
-            "links": None,
         },
         "404": {
             "content": {
@@ -438,7 +476,6 @@ def test_pipeline_schema__get_responses__list(drf_request):
                 },
             },
             "description": "This is the description",
-            "links": None,
         },
     }
 
@@ -503,7 +540,6 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
                 },
             },
             "description": "This is the response",
-            "links": None,
         },
         "400": {
             "content": {
@@ -520,7 +556,6 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
                 },
             },
             "description": "Unavailable",
-            "links": None,
         },
         "401": {
             "content": {
@@ -537,7 +572,6 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
                 },
             },
             "description": "Unauthenticated.",
-            "links": None,
         },
         "404": {
             "content": {
@@ -551,7 +585,6 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
                 },
             },
             "description": "This is the description",
-            "links": None,
         },
     }
 
@@ -594,7 +627,6 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
                 },
             },
             "description": "This is the description",
-            "links": None,
         },
         "204": {
             "content": {
@@ -604,7 +636,6 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
                 },
             },
             "description": "no results",
-            "links": None,
         },
         "401": {
             "content": {
@@ -621,7 +652,6 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
                 },
             },
             "description": "Unauthenticated.",
-            "links": None,
         },
     }
 
@@ -661,7 +691,6 @@ def test_pipeline_schema__get_responses__204_if_output_is_emptyserializer(drf_re
                 },
             },
             "description": "This is the description",
-            "links": None,
         },
         "401": {
             "content": {
@@ -678,7 +707,6 @@ def test_pipeline_schema__get_responses__204_if_output_is_emptyserializer(drf_re
                 },
             },
             "description": "Unauthenticated.",
-            "links": None,
         },
     }
 
@@ -837,7 +865,6 @@ def test_pipeline_schema__get_operation(drf_request):
                     },
                 },
                 "description": "Unavailable",
-                "links": None,
             },
             "401": {
                 "content": {
@@ -854,7 +881,6 @@ def test_pipeline_schema__get_operation(drf_request):
                     },
                 },
                 "description": "Unauthenticated.",
-                "links": None,
             },
             "404": {
                 "content": {
@@ -865,7 +891,6 @@ def test_pipeline_schema__get_operation(drf_request):
                     },
                 },
                 "description": "This is the description",
-                "links": None,
             },
         },
         "security": [
@@ -962,6 +987,24 @@ def test_pipeline_schema__get_operation(drf_request):
             }
         },
     }
+
+
+def test_pipeline_schema__get_operation__webhook(drf_request):
+    class CustomView(ExamplePathView):
+        """Custom View"""
+
+        schema = PipelineSchema(
+            webhook={
+                "PATCH": True,
+            }
+        )
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "PATCH"
+    view.format_kwarg = None
+    operation = view.schema.get_operation("", "PATCH")
+    assert operation == {}
 
 
 def test_pipeline_schema__get_request_serializer(drf_request):
@@ -1491,7 +1534,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Example Output",
-                            "links": None,
                         },
                         "401": {
                             "content": {
@@ -1508,7 +1550,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Unauthenticated.",
-                            "links": None,
                         },
                     },
                     "security": [
@@ -1556,7 +1597,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Example Output",
-                            "links": None,
                         },
                         "401": {
                             "content": {
@@ -1573,7 +1613,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Unauthenticated.",
-                            "links": None,
                         },
                     },
                     "security": [
@@ -1620,7 +1659,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Example Output",
-                            "links": None,
                         },
                         "401": {
                             "content": {
@@ -1637,7 +1675,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Unauthenticated.",
-                            "links": None,
                         },
                         "403": {
                             "content": {
@@ -1654,7 +1691,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Permission Denied.",
-                            "links": None,
                         },
                     },
                     "security": [
@@ -1735,7 +1771,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Example Output",
-                            "links": None,
                         },
                         "401": {
                             "content": {
@@ -1752,7 +1787,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Unauthenticated.",
-                            "links": None,
                         },
                     },
                     "security": [
@@ -1811,7 +1845,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "",
-                            "links": None,
                         },
                         "401": {
                             "content": {
@@ -1828,7 +1861,6 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Unauthenticated.",
-                            "links": None,
                         },
                     },
                     "security": [

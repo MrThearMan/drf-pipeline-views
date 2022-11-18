@@ -165,6 +165,7 @@ class APISchema(TypedDict, total=False):
     info: APIInfo
     paths: Dict[str, Dict[str, Any]]
     components: Dict[str, Dict[str, Any]]
+    webhooks: Dict[str, Dict[str, Any]]
     security: List[Dict[str, List[Any]]]
     tags: List[Dict[str, Any]]
     externalDocs: ExternalDocs

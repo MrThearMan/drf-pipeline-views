@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from functools import partial
+from urllib.parse import urljoin
 
 import uritemplate
 from django.utils.encoding import smart_str
@@ -69,13 +70,13 @@ def deprecate(__view: Optional[T] = None, *, methods: Optional[List[HTTPMethod]]
             def inner(self, output: bool = False):
                 serializer = old_method.__get__(self, new_view)(output)  # pylint: disable=unnecessary-dunder-call
                 new_serializer = type(f"Deprecated{serializer.__name__}", (serializer,), {})
-                new_serializer.__doc__ = serializer.__doc__
+                new_serializer.__doc__ = serializer.__doc__ or ""
                 return new_serializer
 
             return inner
 
         new_view: T = type(f"Deprecated{_view.__name__}", (_view,), {})  # type: ignore
-        new_view.__doc__ = _view.__doc__
+        new_view.__doc__ = _view.__doc__ or ""
         new_view.get_serializer_class = new_get_serializer_class(new_view.get_serializer_class)
 
         if _methods is None:
@@ -114,9 +115,11 @@ def convert_to_schema(schema: Union[List[Any], Dict[str, Any], Any]) -> Dict[str
 
 class PipelineSchemaMixin:
 
+    view: "BasePipelineView"
     responses: Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]] = {}
     callbacks: Dict[str, Dict[str, Dict[HTTPMethod, APICallbackData]]] = {}
     links: Dict[HTTPMethod, Dict[int, Dict[str, APILinks]]] = {}
+    webhook: Dict[HTTPMethod, bool] = {}
     query_parameters: Dict[HTTPMethod, List[str]] = {}
     deprecated: List[HTTPMethod] = []
     security: Dict[HTTPMethod, Dict[str, List[str]]] = {}
@@ -125,6 +128,10 @@ class PipelineSchemaMixin:
     prefix: str = ""
 
     def get_operation(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
+        webhook = self.webhook.get(method, False)
+        if webhook:
+            return {}
+
         operation = {}
 
         operation["operationId"] = self.get_operation_id(path, method)
@@ -166,6 +173,10 @@ class PipelineSchemaMixin:
         return self._get_description_section(self.view, method, formatting.dedent(smart_str(description)))
 
     def get_components(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
+        webhook = self.webhook.get(method, False)
+        if webhook:
+            return self.get_webhook(path, method)
+
         request_serializer_class = self.view.get_serializer_class()
         response_serializer_class = self.view.get_serializer_class(output=True)
 
@@ -196,6 +207,41 @@ class PipelineSchemaMixin:
                 components.setdefault(component_name, content)
 
         return components
+
+    def get_webhook(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
+        input_serializer_class = self.view.get_serializer_class()
+        input_serializer = self.view.initialize_serializer(serializer_class=input_serializer_class)
+        if getattr(input_serializer, "many", False):
+            input_serializer = getattr(input_serializer, "child", input_serializer)
+
+        responses = {
+            "200": self.view.get_serializer_class(output=True).__doc__ or "",
+        }
+
+        for method_responses in self.responses.values():
+            for status_code, response_model in method_responses.items():
+                if hasattr(response_model, "__doc__"):
+                    responses[str(status_code)] = {"description": response_model.__doc__ or ""}
+                    continue
+
+                responses[str(status_code)] = {"description": response_model}
+
+        return {
+            f"_webhook_{self.view.get_view_name()}": {
+                "path": path,
+                method: {
+                    "requestBody": {
+                        "description": input_serializer_class.__doc__ or "",
+                        "content": {
+                            "application/json": {
+                                "schema": self.map_serializer(input_serializer),
+                            },
+                        },
+                    },
+                    "responses": responses,
+                },
+            },
+        }
 
     def get_request_body(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
         if method not in {"POST", "PUT", "PATCH", "DELETE"}:
@@ -312,13 +358,14 @@ class PipelineSchemaMixin:
             else:
                 response_schema = {"schema": self._get_error_message_schema()}
 
-            links = method_links.get(status_code, None)
-
             data[str(status_code)] = {
                 "content": {content_type: response_schema for content_type in response_media_types},
                 "description": info,
-                "links": links,
             }
+
+            links = method_links.get(status_code, None)
+            if links is not None:
+                data[str(status_code)]["links"] = links
 
         return data
 
@@ -391,15 +438,7 @@ class PipelineSchemaMixin:
                 response_schema = {"schema": convert_to_schema(serializer._example)}  # pylint: disable=protected-access
 
         elif isinstance(serializer, EmptySerializer):
-            response_schema = {
-                "content": {
-                    "application/json": {
-                        "type": "string",
-                        "default": "",
-                    },
-                },
-                "description": "no results",
-            }
+            response_schema = self._get_no_result_schema()
 
         elif getattr(serializer, "many", False):
             response_schema = {
@@ -427,7 +466,6 @@ class PipelineSchemaMixin:
         return {
             "content": {"application/json": {"type": "string", "default": ""}},
             "description": description,
-            "links": None,
         }
 
     @staticmethod
@@ -451,6 +489,7 @@ class PipelineSchema(PipelineSchemaMixin, AutoSchema):  # pylint: disable=too-ma
         responses: Optional[Dict[HTTPMethod, Dict[int, Union[str, Type[BaseSerializer]]]]] = None,
         callbacks: Optional[Dict[str, Dict[str, Dict[HTTPMethod, APICallbackData]]]] = None,
         links: Optional[Dict[HTTPMethod, Dict[int, Dict[str, APILinks]]]] = None,
+        webhook: Optional[Dict[HTTPMethod, bool]] = None,
         query_parameters: Optional[Dict[HTTPMethod, List[str]]] = None,
         deprecated: Optional[List[HTTPMethod]] = None,
         security: Optional[Dict[HTTPMethod, Dict[str, List[str]]]] = None,
@@ -464,6 +503,7 @@ class PipelineSchema(PipelineSchemaMixin, AutoSchema):  # pylint: disable=too-ma
         self.responses = responses or self.responses
         self.callbacks = callbacks or self.callbacks
         self.links = links or self.links
+        self.webhook = webhook or self.webhook
         self.query_parameters = query_parameters or self.query_parameters
         self.deprecated = deprecated or self.deprecated
         self.security = security or self.security
@@ -548,11 +588,30 @@ class PipelineSchemaGeneratorMixin:
             info["termsOfService"] = self.terms_of_service
         return info
 
+    def get_normalized_path(self, path: str) -> str:
+        if path.startswith("/"):
+            path = path[1:]
+        return urljoin(self.url or "/", path)
+
     def get_schema(self, request: Optional[Request] = None, public: bool = False) -> APISchema:
         schema: APISchema = super().get_schema(request, public)  # type: ignore
 
         if self.security_schemes:
+            schema.setdefault("components", {})
             schema["components"]["securitySchemes"] = self.security_schemes
+
+        to_remove = []
+        for component_name, component_data in schema.get("components", {}).get("schemas", {}).items():
+            if not component_name.startswith("_webhook_"):
+                continue
+
+            to_remove.append(component_name)
+            schema.setdefault("webhooks", {})
+            schema["paths"].pop(self.get_normalized_path(component_data.pop("path")), None)
+            schema["webhooks"][component_name.removeprefix("_webhook_")] = component_data
+
+        for component_name in to_remove:
+            schema["components"]["schemas"].pop(component_name)
 
         sorted_paths = {}
         for path, operations in schema["paths"].items():
