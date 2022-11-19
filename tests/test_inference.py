@@ -8,10 +8,11 @@ from pipeline_views import MockSerializer
 from pipeline_views.inference import (
     _parameter_types,
     _return_types,
-    _snake_case_to_pascal_case,
     _to_comparable_dict,
     inline_serializer,
     serializer_from_callable,
+    snake_case_to_camel_case,
+    snake_case_to_pascal_case,
 )
 from pipeline_views.typing import ForwardRef, Optional, Union
 from tests.arg_spec_functions import *
@@ -375,4 +376,19 @@ def test_inline_serializer__set_attributes():
     ],
 )
 def test_snake_case_to_pascal_case(name, result):
-    assert _snake_case_to_pascal_case(name) == result
+    assert snake_case_to_pascal_case(name) == result
+
+
+@pytest.mark.parametrize(
+    "name,result",
+    [
+        ["logic_method", "logicMethod"],
+        ["logic_method_", "logicMethod"],
+        ["logic_method_too", "logicMethodToo"],
+        ["LogicMethod", "LogicMethod"],
+        ["__logic_method__", "logicMethod"],
+        ["logic__method", "logicMethod"],
+    ],
+)
+def test_snake_case_to_camel_case(name, result):
+    assert snake_case_to_camel_case(name) == result

@@ -10,6 +10,7 @@ from rest_framework import serializers
 from rest_framework.schemas import get_schema_view
 
 from pipeline_views.views import BasePipelineView
+from pipeline_views.schema import PipelineSchemaGenerator
 
 
 class InputSerializer(serializers.Serializer):
@@ -50,6 +51,8 @@ urlpatterns = [
             title="Your Project",
             description="API for all things",
             version="1.0.0",
+            # Must use this generator class!
+            generator_class=PipelineSchemaGenerator,
         ),
         name="openapi-schema",
     ),
@@ -563,3 +566,230 @@ class ExampleView(BasePipelineView):
 
 [drf-schema]: https://www.django-rest-framework.org/api-guide/schemas/#install-dependencies
 [scopes]: https://swagger.io/docs/specification/authentication/#scopes
+
+## Links
+
+Using [links], you can describe how various values returned
+by one operation can be used as input for other operations.
+
+```python
+from pipeline_views import BasePipelineView
+from pipeline_views.schema import PipelineSchema
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        links={
+            "POST": {
+                200: {
+                    "LinkTitle": {
+                        "description": "Description",
+                        "operationId": "partialUpdateInput",
+                        "parameters": {
+                            "age": "$request.body#/age",
+                        },
+                    }
+                },
+            },
+        },
+    )
+```
+```yaml
+# ...
+paths:
+  /example/:
+    post:
+      # ...
+      responses:
+        '200':
+          # ...
+          links:
+            LinkTitle:
+              description: Description
+              operationId: partialUpdateInput
+              parameters:
+                age: $request.body#/age
+# ...
+```
+
+## Callbacks
+
+[Callbacks] are asynchronous, out-of-band requests that your
+service will send to some other service in response to
+certain events.
+
+```python
+from rest_framework import serializers
+from pipeline_views import BasePipelineView
+from pipeline_views.schema import PipelineSchema
+
+class InputSerializer(serializers.Serializer):
+    """Example Input"""
+
+    name = serializers.CharField()
+    age = serializers.IntegerField()
+
+class OutputSerializer(serializers.Serializer):
+    """Example Output"""
+
+    email = serializers.EmailField()
+    age = serializers.IntegerField()
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        callbacks={
+            "EventName": {
+                "CallbackUrl": {
+                    "POST": {
+                        "request_body": InputSerializer,
+                        "responses": {
+                            200: OutputSerializer,
+                        },
+                    },
+                },
+            },
+        },
+    )  
+```
+```yaml
+# ...
+paths:
+  /example/:
+    post:
+      # ...
+      callbacks:
+        EventName:
+          CallbackUrl:
+            post:
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        age:
+                          type: integer
+                      required:
+                      - name
+                      - age
+              responses:
+                200:
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          email:
+                            type: string
+                            format: email
+                          age:
+                            type: integer
+                        required:
+                        - email
+                        - age
+# ...
+```
+
+## Webhooks
+
+[Webhooks] describe requests initiated other than
+by an API call, for example by an out-of-band registration.
+You can define them in the PipelineSchemaGenerator.
+
+```python
+from django.urls import path
+from rest_framework import serializers
+from rest_framework.schemas import get_schema_view
+from pipeline_views.schema import PipelineSchemaGenerator
+
+class InputSerializer(serializers.Serializer):
+    """Example Input"""
+
+    name = serializers.CharField()
+    age = serializers.IntegerField()
+
+class OutputSerializer(serializers.Serializer):
+    """Example Output"""
+
+    email = serializers.EmailField()
+    age = serializers.IntegerField()
+
+urlpatterns = [
+    path(
+        "openapi/",
+        get_schema_view(
+            title="Your Project",
+            description="API for all things",
+            version="1.0.0",
+            generator_class=PipelineSchemaGenerator.configure(
+                webhooks={
+                    "ExampleWebhook": {
+                        "method": "POST",
+                        "request_data": InputSerializer,
+                        "responses": {
+                            200: OutputSerializer,
+                            400: "Failure",
+                        },
+                    },
+                },
+            ),
+        ),
+        name="openapi-schema",
+    ),
+]
+```
+```yaml
+# ...
+webhooks:
+  ExampleWebhook:
+    POST:
+      requestBody:
+        description: Example Input
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                age:
+                  type: integer
+              required:
+              - name
+              - age
+      responses:
+        '200':
+          description: Example Output
+          content:
+            application/json:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                age:
+                  type: integer
+              required:
+              - email
+              - age
+        '400':
+          description: Failure
+# ...
+```
+
+[links]: https://swagger.io/docs/specification/links/
+[callbacks]: https://swagger.io/docs/specification/callbacks/
+[webhooks]: https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#oasWebhooks:~:text=for%20the%20API.-,webhooks,-Map%5Bstring

@@ -40,6 +40,8 @@ from .typing import (
 __all__ = [
     "inline_serializer",
     "serializer_from_callable",
+    "snake_case_to_camel_case",
+    "snake_case_to_pascal_case",
 ]
 
 
@@ -52,7 +54,7 @@ def serializer_from_callable(func: Callable[..., Any], output: bool = False) -> 
     types = _return_types(func) if output else _parameter_types(func)
     is_list = isinstance(types, list)
     fields: Dict[str, Field] = _get_fields(types[0]) if is_list else _get_fields(types)
-    serializer_name = _snake_case_to_pascal_case(f"{func.__name__}_serializer")
+    serializer_name = snake_case_to_pascal_case(f"{func.__name__}_serializer")
     serializer = inline_serializer(serializer_name, super_class=MockSerializer, fields=fields)
     serializer.many = is_list
     return serializer
@@ -257,10 +259,6 @@ def _get_globals(func: Callable[..., Any]) -> Dict[str, Any]:
     return getattr(_unwrap_function(func), "__globals__", {})
 
 
-def _snake_case_to_pascal_case(string: str) -> str:
-    return "".join([s.capitalize() for s in string.split("_")])
-
-
 def _to_comparable_dict(serializer: Serializer) -> Dict[str, Any]:
     dct = {}
     is_list = isinstance(serializer, ListSerializer)
@@ -273,3 +271,12 @@ def _to_comparable_dict(serializer: Serializer) -> Dict[str, Any]:
         else:
             dct[name] = str(field)
     return [dct] if is_list else dct
+
+
+def snake_case_to_pascal_case(string: str) -> str:
+    return "".join([s.capitalize() for s in string.split("_")])
+
+
+def snake_case_to_camel_case(string: str) -> str:
+    words = [s for s in string.split("_") if s]
+    return words[0] + "".join(x.title() for x in words[1:])

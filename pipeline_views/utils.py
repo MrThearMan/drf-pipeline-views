@@ -1,4 +1,5 @@
 import asyncio
+import re
 from contextlib import contextmanager
 from functools import wraps
 from itertools import chain
@@ -42,6 +43,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "get_language",
+    "get_path_parameters",
     "get_view_method",
     "is_pydantic_model",
     "is_serializer_class",
@@ -53,6 +55,7 @@ __all__ = [
 
 T = TypeVar("T")
 P = ParamSpec("P")
+url_variables_pattern = re.compile("{([^}]+)}")
 
 
 class Sentinel:
@@ -139,3 +142,8 @@ def get_view_method(method: HTTPMethod) -> ViewMethod:
         return self.process_request(data=kwargs)
 
     return inner  # type: ignore
+
+
+def get_path_parameters(path: str) -> Generator[str, Any, None]:
+    for match in url_variables_pattern.finditer(path):
+        yield match.groups()[0]

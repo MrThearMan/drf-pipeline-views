@@ -55,6 +55,7 @@ __all__ = [
     "APILicense",
     "APILinks",
     "APISchema",
+    "APIWebhook",
     "AuthOrPerm",
     "BasicAuth",
     "BearerAuth",
@@ -129,6 +130,12 @@ class ExternalDocs(TypedDict):
     url: str
 
 
+class APIWebhook(TypedDict):
+    method: HTTPMethod
+    request_data: SerializerType
+    responses: Dict[int, Union[str, SerializerType]]
+
+
 class APILinks(TypedDict):
     description: str
     operationId: str
@@ -151,18 +158,36 @@ class APILicense(TypedDict, total=False):
     url: str
 
 
-class APIInfo(TypedDict, total=False):
+class _APIInfo(TypedDict):
     title: str
     version: str
+
+
+class APIInfo(_APIInfo, total=False):
     description: str
     contact: APIContact
     license: APILicense
     termsOfService: str
 
 
-class APISchema(TypedDict, total=False):
+APIParameter = TypedDict(
+    "APIParameter",
+    {
+        "name": str,
+        "in": Literal["path"],
+        "required": bool,
+        "description": str,
+        "schema": Dict[str, Any],
+    },
+)
+
+
+class _APISchema(TypedDict):
     openapi: str
     info: APIInfo
+
+
+class APISchema(_APISchema, total=False):
     paths: Dict[str, Dict[str, Any]]
     components: Dict[str, Dict[str, Any]]
     webhooks: Dict[str, Dict[str, Any]]

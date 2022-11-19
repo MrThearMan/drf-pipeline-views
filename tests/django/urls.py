@@ -60,6 +60,17 @@ class ExampleView(BasePipelineView):
     }
 
 
+class ExampleWebhook(BasePipelineView):
+    """Example Webhook"""
+
+    pipelines = {
+        "POST": [
+            InputSerializer,
+            OutputSerializer,
+        ],
+    }
+
+
 class ExamplePathView(BasePipelineView):
     """Example View"""
 
@@ -125,6 +136,15 @@ urlpatterns = [
             version="1.0.0",
             url="api",
             generator_class=PipelineSchemaGenerator.configure(
+                webhooks={
+                    "ExampleWebhook": {
+                        "method": "POST",
+                        "request_data": InputSerializer,
+                        "responses": {
+                            200: OutputSerializer,
+                        },
+                    },
+                },
                 contact={"email": "user@example.com"},
                 license={"name": "MIT"},
                 terms_of_service="example.com",

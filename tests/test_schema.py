@@ -1,10 +1,11 @@
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.fields import CharField, IntegerField
+from rest_framework.reverse import reverse
 from rest_framework.serializers import Serializer
 from rest_framework.test import APIClient
 
 from pipeline_views import BasePipelineView, MockSerializer
-from pipeline_views.schema import PipelineSchema
+from pipeline_views.schema import PipelineSchema, PipelineSchemaGenerator
 from pipeline_views.serializers import EmptySerializer
 from tests.django.urls import (
     ExamplePathView,
@@ -55,24 +56,24 @@ def test_pipeline_schema__get_components(drf_request):
     }
 
 
-def test_pipeline_schema__get_components__webhook(drf_request):
-    class CustomView(ExampleView):
-        """Custom View"""
+def test_pipeline_schema__get_webhook(drf_request):
+    schema = PipelineSchemaGenerator(
+        url="api",
+        webhooks={
+            "Example": {
+                "method": "POST",
+                "request_data": InputSerializer,
+                "responses": {
+                    200: OutputSerializer,
+                    400: "Other Output",
+                },
+            }
+        },
+    )
 
-        schema = PipelineSchema(
-            webhook={
-                "POST": True,
-            },
-        )
-
-    view = CustomView()
-    view.request = drf_request
-    view.request.method = "POST"
-    view.format_kwarg = None
-    components = view.schema.get_components("foo", "POST")
-    assert components == {
-        "_webhook_Custom": {
-            "path": "foo",
+    webhook = schema.get_webhook()
+    assert webhook == {
+        "Example": {
             "POST": {
                 "requestBody": {
                     "content": {
@@ -94,7 +95,27 @@ def test_pipeline_schema__get_components__webhook(drf_request):
                     "description": "Example Input",
                 },
                 "responses": {
-                    "200": "Example Output",
+                    "200": {
+                        "description": "Example Output",
+                        "content": {
+                            "application/json": {
+                                "properties": {
+                                    "age": {
+                                        "type": "integer",
+                                    },
+                                    "email": {
+                                        "format": "email",
+                                        "type": "string",
+                                    },
+                                },
+                                "required": ["email", "age"],
+                                "type": "object",
+                            }
+                        },
+                    },
+                    "400": {
+                        "description": "Other Output",
+                    },
                 },
             },
         }
@@ -240,22 +261,28 @@ def test_pipeline_schema__get_components__list(drf_request):
     components = view.schema.get_components("", "POST")
     assert components == {
         "Custom": {
-            "properties": {
-                "data": {
-                    "type": "string",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "string",
+                    },
                 },
+                "required": ["data"],
             },
-            "required": ["data"],
-            "type": "object",
+            "type": "array",
         },
         "Example": {
-            "properties": {
-                "data": {
-                    "type": "integer",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "integer",
+                    },
                 },
+                "required": ["data"],
             },
-            "required": ["data"],
-            "type": "object",
+            "type": "array",
         },
     }
 
@@ -748,7 +775,9 @@ def test_pipeline_schema__get_operation(drf_request):
             external_docs={
                 "PATCH": {"description": "foo", "url": "bar"},
             },
-            query_parameters={"PATCH": ["name"]},
+            query_parameters={
+                "PATCH": ["name"],
+            },
             callbacks={
                 "event_name": {
                     "callback_url": {
@@ -767,6 +796,7 @@ def test_pipeline_schema__get_operation(drf_request):
                     },
                 },
             },
+            operation_id_base="BaseOpId",
         )
 
     view = CustomView()
@@ -781,7 +811,7 @@ def test_pipeline_schema__get_operation(drf_request):
             "description": "foo",
             "url": "bar",
         },
-        "operationId": "partialUpdateInput",
+        "operationId": "partialUpdateBaseOpId",
         "parameters": [
             {
                 "description": "",
@@ -902,7 +932,7 @@ def test_pipeline_schema__get_operation(drf_request):
         "callbacks": {
             "event_name": {
                 "callback_url": {
-                    "POST": {
+                    "post": {
                         "requestBody": {
                             "content": {
                                 "application/json": {
@@ -943,7 +973,7 @@ def test_pipeline_schema__get_operation(drf_request):
                             }
                         },
                     },
-                    "PUT": {
+                    "put": {
                         "requestBody": {
                             "content": {
                                 "application/json": {
@@ -987,42 +1017,6 @@ def test_pipeline_schema__get_operation(drf_request):
             }
         },
     }
-
-
-def test_pipeline_schema__get_operation__webhook(drf_request):
-    class CustomView(ExamplePathView):
-        """Custom View"""
-
-        schema = PipelineSchema(
-            webhook={
-                "PATCH": True,
-            }
-        )
-
-    view = CustomView()
-    view.request = drf_request
-    view.request.method = "PATCH"
-    view.format_kwarg = None
-    operation = view.schema.get_operation("", "PATCH")
-    assert operation == {}
-
-
-def test_pipeline_schema__get_request_serializer(drf_request):
-    view = ExampleView()
-    view.request = drf_request
-    view.request.method = "POST"
-    view.format_kwarg = None
-    serializer = view.schema.get_request_serializer("", "POST")
-    assert serializer.__class__ == InputSerializer
-
-
-def test_pipeline_schema__get_response_serializer(drf_request):
-    view = ExampleView()
-    view.request = drf_request
-    view.request.method = "POST"
-    view.format_kwarg = None
-    serializer = view.schema.get_response_serializer("", "POST")
-    assert serializer.__class__ == OutputSerializer
 
 
 def test_pipeline_schema__get_filter_parameters__get(drf_request):
@@ -1376,7 +1370,7 @@ def test_pipeline_schema__openapi():
 
     client.force_authenticate(user=MockUser())
 
-    response = client.get("/openapi/", content_type="application/vnd.oai.openapi")
+    response = client.get(reverse("openapi-schema"), content_type="application/vnd.oai.openapi")
 
     assert response.data == {
         "components": {
@@ -1802,7 +1796,7 @@ def test_pipeline_schema__openapi():
             "/api/pydantic": {
                 "get": {
                     "description": "Pydantic View",
-                    "operationId": "listDeprecatedPydanticinputs",
+                    "operationId": "retrieveDeprecatedPydanticinput",
                     "parameters": [
                         {
                             "description": "",
@@ -1873,5 +1867,50 @@ def test_pipeline_schema__openapi():
                     ],
                 },
             },
+        },
+        "webhooks": {
+            "ExampleWebhook": {
+                "POST": {
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "age": {
+                                            "type": "integer",
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                        },
+                                    },
+                                    "required": ["name", "age"],
+                                    "type": "object",
+                                }
+                            }
+                        },
+                        "description": "Example Input",
+                    },
+                    "responses": {
+                        "200": {
+                            "description": "Example Output",
+                            "content": {
+                                "application/json": {
+                                    "properties": {
+                                        "age": {
+                                            "type": "integer",
+                                        },
+                                        "email": {
+                                            "format": "email",
+                                            "type": "string",
+                                        },
+                                    },
+                                    "required": ["email", "age"],
+                                    "type": "object",
+                                }
+                            },
+                        },
+                    },
+                }
+            }
         },
     }
