@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 from pipeline_views import BasePipelineView, MockSerializer
 from pipeline_views.schema import PipelineSchema, PipelineSchemaGenerator
-from pipeline_views.serializers import EmptySerializer
+from pipeline_views.serializers import EmptySerializer, HeaderAndCookieSerializer
 from tests.django.urls import (
     ExamplePathView,
     ExampleView,
@@ -1019,34 +1019,31 @@ def test_pipeline_schema__get_operation(drf_request):
     }
 
 
-def test_pipeline_schema__get_filter_parameters__get(drf_request):
+def test_pipeline_schema__get_parameters__query(drf_request):
     class CustomView(BasePipelineView):
         """Custom View"""
 
         pipelines = {
-            "GET": [
+            "POST": [
                 InputSerializer,
                 example_method,
                 OutputSerializer,
             ],
         }
 
+        schema = PipelineSchema(
+            query_parameters={
+                "POST": ["name", "age"],
+            },
+        )
+
     view = CustomView()
     view.request = drf_request
-    view.request.method = "GET"
+    view.request.method = "POST"
     view.format_kwarg = None
-    parameters = view.schema.get_filter_parameters("", "GET")
-    assert parameters == {
-        "age": {
-            "description": "",
-            "in": "query",
-            "name": "age",
-            "required": True,
-            "schema": {
-                "type": "integer",
-            },
-        },
-        "name": {
+    parameters = view.schema.get_parameters("", "POST")
+    assert parameters == [
+        {
             "description": "",
             "in": "query",
             "name": "name",
@@ -1055,28 +1052,19 @@ def test_pipeline_schema__get_filter_parameters__get(drf_request):
                 "type": "string",
             },
         },
-    }
-
-
-def test_pipeline_schema__get_filter_parameters__post(drf_request):
-    class CustomView(ExampleView):
-        """Custom View"""
-
-        schema = PipelineSchema(
-            query_parameters={
-                "POST": ["name", "age"],  # POST cannot have query parameters, even if defined
+        {
+            "description": "",
+            "in": "query",
+            "name": "age",
+            "required": True,
+            "schema": {
+                "type": "integer",
             },
-        )
-
-    view = CustomView()
-    view.request = drf_request
-    view.request.method = "POST"
-    view.format_kwarg = None
-    parameters = view.schema.get_filter_parameters("", "POST")
-    assert parameters == {}
+        },
+    ]
 
 
-def test_pipeline_schema__get_filter_parameters__put__not_defined(drf_request):
+def test_pipeline_schema__get_parameters__query__not_defined(drf_request):
     class CustomView(BasePipelineView):
         """Custom View"""
 
@@ -1092,11 +1080,50 @@ def test_pipeline_schema__get_filter_parameters__put__not_defined(drf_request):
     view.request = drf_request
     view.request.method = "PUT"
     view.format_kwarg = None
-    parameters = view.schema.get_filter_parameters("", "PUT")
-    assert parameters == {}
+    parameters = view.schema.get_parameters("", "PUT")
+    assert parameters == []
 
 
-def test_pipeline_schema__get_filter_parameters__put__partial(drf_request):
+def test_pipeline_schema__get_parameters__query__default_for_get(drf_request):
+    class CustomView(BasePipelineView):
+        """Custom View"""
+
+        pipelines = {
+            "GET": [
+                InputSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "GET"
+    view.format_kwarg = None
+    parameters = view.schema.get_parameters("", "GET")
+    assert parameters == [
+        {
+            "description": "",
+            "in": "query",
+            "name": "name",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+        {
+            "description": "",
+            "in": "query",
+            "name": "age",
+            "required": True,
+            "schema": {
+                "type": "integer",
+            },
+        },
+    ]
+
+
+def test_pipeline_schema__get_parameters__query__partial(drf_request):
     class CustomView(BasePipelineView):
         """Custom View"""
 
@@ -1118,9 +1145,9 @@ def test_pipeline_schema__get_filter_parameters__put__partial(drf_request):
     view.request = drf_request
     view.request.method = "PUT"
     view.format_kwarg = None
-    parameters = view.schema.get_filter_parameters("", "PUT")
-    assert parameters == {
-        "name": {
+    parameters = view.schema.get_parameters("", "PUT")
+    assert parameters == [
+        {
             "description": "",
             "in": "query",
             "name": "name",
@@ -1129,10 +1156,10 @@ def test_pipeline_schema__get_filter_parameters__put__partial(drf_request):
                 "type": "string",
             },
         },
-    }
+    ]
 
 
-def test_pipeline_schema__get_filter_parameters__list(drf_request):
+def test_pipeline_schema__get__parameters__query__list(drf_request):
     class CustomSerializer(InputSerializer):
         many = True
 
@@ -1140,20 +1167,35 @@ def test_pipeline_schema__get_filter_parameters__list(drf_request):
         """Custom View"""
 
         pipelines = {
-            "GET": [
+            "POST": [
                 CustomSerializer,
                 example_method,
                 OutputSerializer,
             ],
         }
 
+        schema = PipelineSchema(
+            query_parameters={
+                "POST": ["name", "age"],
+            },
+        )
+
     view = CustomView()
     view.request = drf_request
-    view.request.method = "GET"
+    view.request.method = "POST"
     view.format_kwarg = None
-    parameters = view.schema.get_filter_parameters("", "GET")
-    assert parameters == {
-        "age": {
+    parameters = view.schema.get_parameters("", "POST")
+    assert parameters == [
+        {
+            "description": "",
+            "in": "query",
+            "name": "name",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+        {
             "description": "",
             "in": "query",
             "name": "age",
@@ -1162,26 +1204,17 @@ def test_pipeline_schema__get_filter_parameters__list(drf_request):
                 "type": "integer",
             },
         },
-        "name": {
-            "description": "",
-            "in": "query",
-            "name": "name",
-            "required": True,
-            "schema": {
-                "type": "string",
-            },
-        },
-    }
+    ]
 
 
-def test_pipeline_scheme__get_path_parameters(drf_request):
+def test_pipeline_scheme__get_parameters__path(drf_request):
     view = ExamplePathView()
     view.request = drf_request
     view.request.method = "PATCH"
     view.format_kwarg = None
-    parameters = view.schema.get_path_parameters("/{age}", "PATCH")
-    assert parameters == {
-        "age": {
+    parameters = view.schema.get_parameters("/{age}", "PATCH")
+    assert parameters == [
+        {
             "description": "",
             "in": "path",
             "name": "age",
@@ -1190,10 +1223,48 @@ def test_pipeline_scheme__get_path_parameters(drf_request):
                 "type": "integer",
             },
         },
-    }
+    ]
 
 
-def test_pipeline_scheme__get_path_parameters__list(drf_request):
+def test_pipeline_scheme__get_parameters__path__partial(drf_request):
+    class CustomSerializer(Serializer):
+        """This is the description"""
+
+        many = True
+
+        data = CharField(help_text="This is the data")
+        name = CharField(help_text="This is the name")
+
+    class CustomPathView(ExamplePathView):
+        """Custom View"""
+
+        pipelines = {
+            "PATCH": [
+                CustomSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+    view = CustomPathView()
+    view.request = drf_request
+    view.request.method = "PATCH"
+    view.format_kwarg = None
+    parameters = view.schema.get_parameters("/{data}", "PATCH")
+    assert parameters == [
+        {
+            "description": "This is the data",
+            "in": "path",
+            "name": "data",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+    ]
+
+
+def test_pipeline_scheme__get_parameters__path__list(drf_request):
     class CustomSerializer(Serializer):
         """This is the description"""
 
@@ -1216,9 +1287,9 @@ def test_pipeline_scheme__get_path_parameters__list(drf_request):
     view.request = drf_request
     view.request.method = "PATCH"
     view.format_kwarg = None
-    parameters = view.schema.get_path_parameters("/{data}", "PATCH")
-    assert parameters == {
-        "data": {
+    parameters = view.schema.get_parameters("/{data}", "PATCH")
+    assert parameters == [
+        {
             "description": "This is the data",
             "in": "path",
             "name": "data",
@@ -1227,7 +1298,329 @@ def test_pipeline_scheme__get_path_parameters__list(drf_request):
                 "type": "string",
             },
         },
-    }
+    ]
+
+
+def test_pipeline_schema__get_parameters__header(drf_request):
+    class CustomView(BasePipelineView):
+        """Custom View"""
+
+        pipelines = {
+            "POST": [
+                InputSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+        schema = PipelineSchema(
+            header_parameters={
+                "POST": ["name", "age"],
+            },
+        )
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    parameters = view.schema.get_parameters("", "POST")
+    assert parameters == [
+        {
+            "description": "",
+            "in": "header",
+            "name": "name",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+        {
+            "description": "",
+            "in": "header",
+            "name": "age",
+            "required": True,
+            "schema": {
+                "type": "integer",
+            },
+        },
+    ]
+
+
+def test_pipeline_schema__get_parameters__header__partial(drf_request):
+    class CustomView(BasePipelineView):
+        """Custom View"""
+
+        pipelines = {
+            "POST": [
+                InputSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+        schema = PipelineSchema(
+            header_parameters={
+                "POST": ["name"],
+            },
+        )
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    parameters = view.schema.get_parameters("", "POST")
+    assert parameters == [
+        {
+            "description": "",
+            "in": "header",
+            "name": "name",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+    ]
+
+
+def test_pipeline_scheme__get_parameters__header__list(drf_request):
+    class CustomSerializer(Serializer):
+        """This is the description"""
+
+        many = True
+
+        data = CharField(help_text="This is the data")
+
+    class CustomPathView(ExamplePathView):
+        """Custom View"""
+
+        pipelines = {
+            "PATCH": [
+                CustomSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+        schema = PipelineSchema(
+            header_parameters={
+                "PATCH": ["data"],
+            },
+        )
+
+    view = CustomPathView()
+    view.request = drf_request
+    view.request.method = "PATCH"
+    view.format_kwarg = None
+    parameters = view.schema.get_parameters("", "PATCH")
+    assert parameters == [
+        {
+            "description": "This is the data",
+            "in": "header",
+            "name": "data",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+    ]
+
+
+def test_pipeline_schema__get_parameters__header__special_serializer(drf_request):
+    class CustomSerializer(HeaderAndCookieSerializer):
+        """This is the description"""
+
+        take_from_headers = ["name"]
+
+        data = CharField(help_text="This is the data")
+
+    class CustomView(BasePipelineView):
+        """Custom View"""
+
+        pipelines = {
+            "POST": [
+                CustomSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    parameters = view.schema.get_parameters("", "POST")
+    assert parameters == [
+        {
+            "description": "",
+            "in": "header",
+            "name": "name",
+            "required": False,
+            "schema": {
+                "type": "string",
+            },
+        },
+    ]
+
+
+def test_pipeline_schema__get_parameters__cookie(drf_request):
+    class CustomView(BasePipelineView):
+        """Custom View"""
+
+        pipelines = {
+            "POST": [
+                InputSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+        schema = PipelineSchema(
+            cookie_parameters={
+                "POST": ["name", "age"],
+            },
+        )
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    parameters = view.schema.get_parameters("", "POST")
+    assert parameters == [
+        {
+            "description": "",
+            "in": "cookie",
+            "name": "name",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+        {
+            "description": "",
+            "in": "cookie",
+            "name": "age",
+            "required": True,
+            "schema": {
+                "type": "integer",
+            },
+        },
+    ]
+
+
+def test_pipeline_schema__get_parameters__cookie__partial(drf_request):
+    class CustomView(BasePipelineView):
+        """Custom View"""
+
+        pipelines = {
+            "POST": [
+                InputSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+        schema = PipelineSchema(
+            cookie_parameters={
+                "POST": ["name"],
+            },
+        )
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    parameters = view.schema.get_parameters("", "POST")
+    assert parameters == [
+        {
+            "description": "",
+            "in": "cookie",
+            "name": "name",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+    ]
+
+
+def test_pipeline_scheme__get_parameters__cookie__list(drf_request):
+    class CustomSerializer(Serializer):
+        """This is the description"""
+
+        many = True
+
+        data = CharField(help_text="This is the data")
+
+    class CustomPathView(ExamplePathView):
+        """Custom View"""
+
+        pipelines = {
+            "PATCH": [
+                CustomSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+        schema = PipelineSchema(
+            cookie_parameters={
+                "PATCH": ["data"],
+            },
+        )
+
+    view = CustomPathView()
+    view.request = drf_request
+    view.request.method = "PATCH"
+    view.format_kwarg = None
+    parameters = view.schema.get_parameters("", "PATCH")
+    assert parameters == [
+        {
+            "description": "This is the data",
+            "in": "cookie",
+            "name": "data",
+            "required": True,
+            "schema": {
+                "type": "string",
+            },
+        },
+    ]
+
+
+def test_pipeline_schema__get_parameters__cookie__special_serializer(drf_request):
+    class CustomSerializer(HeaderAndCookieSerializer):
+        """This is the description"""
+
+        take_from_cookies = ["name"]
+
+        data = CharField(help_text="This is the data")
+
+    class CustomView(BasePipelineView):
+        """Custom View"""
+
+        pipelines = {
+            "POST": [
+                CustomSerializer,
+                example_method,
+                OutputSerializer,
+            ],
+        }
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    parameters = view.schema.get_parameters("", "POST")
+    assert parameters == [
+        {
+            "description": "",
+            "in": "cookie",
+            "name": "name",
+            "required": False,
+            "schema": {
+                "type": "string",
+            },
+        },
+    ]
 
 
 def test_pipeline_schema__get_request_body(drf_request):

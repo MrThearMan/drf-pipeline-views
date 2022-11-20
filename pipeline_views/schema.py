@@ -21,29 +21,41 @@ from rest_framework.settings import api_settings
 from rest_framework.utils import formatting
 
 from .inference import serializer_from_callable, snake_case_to_camel_case
-from .serializers import EmptySerializer, MockSerializer
+from .serializers import EmptySerializer, HeaderAndCookieSerializer, MockSerializer
 from .typing import (
     TYPE_CHECKING,
     Any,
-    AnyAuth,
-    APICallbackData,
-    APIContact,
-    APIInfo,
-    APILicense,
-    APILinks,
-    APISchema,
-    APIWebhook,
     Dict,
-    ExternalDocs,
     HTTPMethod,
     List,
+    Literal,
     Optional,
+    PathAndMethod,
+    SchemaCallbackData,
+    SchemaWebhook,
     SecurityRules,
     SerializerType,
+    Set,
     Tuple,
     Type,
     TypeVar,
     Union,
+)
+from .typing.openapi import (
+    APIContact,
+    APIExternalDocumentation,
+    APIInfo,
+    APILicense,
+    APILinks,
+    APIOperation,
+    APIParameter,
+    APIPathItem,
+    APIRequestBody,
+    APIResponses,
+    APISchema,
+    APISecurityScheme,
+    APIType,
+    OpenAPI,
 )
 from .utils import get_path_parameters, is_serializer_class
 
@@ -100,37 +112,36 @@ def deprecate(__view: Optional[T] = None, *, methods: Optional[List[HTTPMethod]]
     return partial(view, _methods=methods)  # type: ignore
 
 
-def convert_to_schema(schema: Union[List[Any], Dict[str, Any], Any]) -> Dict[str, Any]:
+def convert_to_schema(schema: Union[List[Any], Dict[str, Any], Any]) -> APISchema:
     """Recursively convert a json-like object to OpenAPI example response."""
-
     if isinstance(schema, list):
-        return {
-            "type": "array",
-            "items": convert_to_schema(schema[0] if len(schema) > 0 else "???"),
-        }
+        return APISchema(
+            type="array",
+            items=convert_to_schema(schema[0] if len(schema) > 0 else "???"),
+        )
 
     if isinstance(schema, dict):
-        return {
-            "type": "object",
-            "properties": {str(key): convert_to_schema(value) for key, value in schema.items()},
-        }
+        return APISchema(
+            type="object",
+            properties={str(key): convert_to_schema(value) for key, value in schema.items()},
+        )
 
-    return {
-        "type": "string",
-        "default": str(schema),
-    }
+    return APISchema(
+        type="string",
+        default=str(schema),
+    )
 
 
-def map_field(field: serializers.Field) -> Dict[str, Any]:  # pylint: disable=R0911,R0912,R0915
-    if isinstance(field, serializers.ListSerializer):  # pragma: no cover
-        return {"type": "array", "items": map_serializer(field.child)}
+def map_field(field: serializers.Field) -> APISchema:  # pragma: no cover pylint: disable=R0911,R0912,R0915
+    if isinstance(field, serializers.ListSerializer):
+        return APISchema(type="array", items=map_serializer(field.child))
 
-    if isinstance(field, serializers.Serializer):  # pragma: no cover
+    if isinstance(field, serializers.Serializer):
         return map_serializer(field)
 
-    if isinstance(field, serializers.ChoiceField):  # pragma: no cover
+    if isinstance(field, serializers.ChoiceField):
         choices = list(dict.fromkeys(field.choices))
-        type_: Optional[str] = None
+        type_: Optional[APIType] = None
 
         if all(isinstance(choice, bool) for choice in choices):
             type_ = "boolean"
@@ -141,46 +152,46 @@ def map_field(field: serializers.Field) -> Dict[str, Any]:  # pylint: disable=R0
         elif all(isinstance(choice, str) for choice in choices):
             type_ = "string"
 
-        mapping = {"enum": choices}
+        mapping = APISchema(enum=choices)
         if type_ is not None:
             mapping["type"] = type_
 
         if isinstance(field, serializers.MultipleChoiceField):
-            return {"type": "array", "items": mapping}
+            return APISchema(type="array", items=mapping)
         return mapping
 
-    if isinstance(field, serializers.ListField):  # pragma: no cover
-        mapping = {"type": "array", "items": {}}
+    if isinstance(field, serializers.ListField):
+        mapping = APISchema(type="array", items={})
         if not isinstance(field.child, _UnvalidatedField):
             mapping["items"] = map_field(field.child)
         return mapping
 
-    if isinstance(field, serializers.DateField):  # pragma: no cover
-        return {"type": "string", "format": "date"}
+    if isinstance(field, serializers.DateField):
+        return APISchema(type="string", format="date")
 
-    if isinstance(field, serializers.DateTimeField):  # pragma: no cover
-        return {"type": "string", "format": "date-time"}
+    if isinstance(field, serializers.DateTimeField):
+        return APISchema(type="string", format="date-time")
 
-    if isinstance(field, serializers.EmailField):  # pragma: no cover
-        return {"type": "string", "format": "email"}
+    if isinstance(field, serializers.EmailField):
+        return APISchema(type="string", format="email")
 
-    if isinstance(field, serializers.URLField):  # pragma: no cover
-        return {"type": "string", "format": "uri"}
+    if isinstance(field, serializers.URLField):
+        return APISchema(type="string", format="uri")
 
-    if isinstance(field, serializers.UUIDField):  # pragma: no cover
-        return {"type": "string", "format": "uuid"}
+    if isinstance(field, serializers.UUIDField):
+        return APISchema(type="string", format="uuid")
 
-    if isinstance(field, serializers.IPAddressField):  # pragma: no cover
-        content = {"type": "string"}
+    if isinstance(field, serializers.IPAddressField):
+        content = APISchema(type="string")
         if field.protocol != "both":
-            content["format"] = field.protocol
+            content["format"] = field.protocol  # type: ignore
         return content
 
-    if isinstance(field, serializers.DecimalField):  # pragma: no cover
+    if isinstance(field, serializers.DecimalField):
         if getattr(field, "coerce_to_string", api_settings.COERCE_DECIMAL_TO_STRING):
-            content = {"type": "string", "format": "decimal"}
+            content = APISchema(type="string", format="decimal")
         else:
-            content = {"type": "number"}
+            content = APISchema(type="number")
 
         if field.decimal_places:
             content["multipleOf"] = float("." + (field.decimal_places - 1) * "0" + "1")
@@ -194,16 +205,16 @@ def map_field(field: serializers.Field) -> Dict[str, Any]:  # pylint: disable=R0
 
         return content
 
-    if isinstance(field, serializers.FloatField):  # pragma: no cover
-        content = {"type": "number"}
+    if isinstance(field, serializers.FloatField):
+        content = APISchema(type="number")
         if field.max_value:
             content["maximum"] = field.max_value
         if field.min_value:
             content["minimum"] = field.min_value
         return content
 
-    if isinstance(field, serializers.IntegerField):  # pragma: no cover
-        content = {"type": "integer"}
+    if isinstance(field, serializers.IntegerField):
+        content = APISchema(type="integer")
         if field.max_value:
             content["maximum"] = field.max_value
             if field.max_value > 2_147_483_647:
@@ -214,35 +225,33 @@ def map_field(field: serializers.Field) -> Dict[str, Any]:  # pylint: disable=R0
                 content["format"] = "int64"
         return content
 
-    if isinstance(field, serializers.FileField):  # pragma: no cover
-        return {"type": "string", "format": "binary"}
+    if isinstance(field, serializers.FileField):
+        return APISchema(type="string", format="binary")
 
-    if isinstance(field, serializers.BooleanField):  # pragma: no cover
-        return {"type": "boolean"}
+    if isinstance(field, serializers.BooleanField):
+        return APISchema(type="boolean")
 
-    if isinstance(field, serializers.JSONField):  # pragma: no cover
-        return {"type": "object"}
+    if isinstance(field, serializers.JSONField):
+        return APISchema(type="object")
 
-    if isinstance(field, serializers.DictField):  # pragma: no cover
-        return {"type": "object"}
+    if isinstance(field, serializers.DictField):
+        return APISchema(type="object")
 
-    if isinstance(field, serializers.HStoreField):  # pragma: no cover
-        return {"type": "object"}
+    if isinstance(field, serializers.HStoreField):
+        return APISchema(type="object")
 
-    return {"type": "string"}
+    return APISchema(type="string")
 
 
-def map_serializer(serializer: SerializerOrSerializerType) -> Dict[str, Any]:  # pylint: disable=too-many-branches
-    properties = {}
+def map_serializer(serializer: SerializerOrSerializerType) -> APISchema:  # pylint: disable=too-many-branches
     required = []
-    result = {"type": "object", "properties": {}}
+    result = APISchema(type="object", properties={})
 
     if is_serializer_class(serializer):
         serializer = serializer(many=getattr(serializer, "many", False))
 
     if isinstance(serializer, serializers.ListSerializer):
-        result = {"type": "array", "items": {"type": "object", "properties": {}}}
-        serializer: serializers.Serializer = getattr(serializer, "child", serializer)
+        return APISchema(type="array", items=map_serializer(getattr(serializer, "child", serializer)))
 
     for field in serializer.fields.values():  # pragma: no cover
         if isinstance(field, serializers.HiddenField):
@@ -266,23 +275,15 @@ def map_serializer(serializer: SerializerOrSerializerType) -> Dict[str, Any]:  #
 
         map_field_validators(field, schema)
 
-        properties[field.field_name] = schema
+        result["properties"][field.field_name] = schema
 
     if required:
-        if result["type"] == "object":
-            result["required"] = required
-        else:
-            result["items"]["required"] = required
-
-    if result["type"] == "object":
-        result["properties"] = properties
-    else:
-        result["items"]["properties"] = properties
+        result["required"] = required
 
     return result
 
 
-def map_field_validators(field: serializers.Field, schema: Dict[str, Any]) -> None:  # pragma: no cover
+def map_field_validators(field: serializers.Field, schema: APISchema) -> None:  # pragma: no cover
     for validator in field.validators:
         if isinstance(validator, validators.EmailValidator):
             schema["format"] = "email"
@@ -328,12 +329,14 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
         self,
         *,
         responses: Optional[Dict[HTTPMethod, Dict[int, Union[str, Type[serializers.BaseSerializer]]]]] = None,
-        callbacks: Optional[Dict[str, Dict[str, Dict[HTTPMethod, APICallbackData]]]] = None,
+        callbacks: Optional[Dict[str, Dict[str, Dict[HTTPMethod, SchemaCallbackData]]]] = None,
         links: Optional[Dict[HTTPMethod, Dict[int, Dict[str, APILinks]]]] = None,
         query_parameters: Optional[Dict[HTTPMethod, List[str]]] = None,
+        header_parameters: Optional[Dict[HTTPMethod, List[str]]] = None,
+        cookie_parameters: Optional[Dict[HTTPMethod, List[str]]] = None,
         deprecated: Optional[List[HTTPMethod]] = None,
         security: Optional[Dict[HTTPMethod, Dict[str, List[str]]]] = None,
-        external_docs: Optional[Dict[HTTPMethod, ExternalDocs]] = None,
+        external_docs: Optional[Dict[HTTPMethod, APIExternalDocumentation]] = None,
         public: Optional[Dict[HTTPMethod, bool]] = None,
         prefix: Optional[str] = None,
         tags: Optional[List[str]] = None,
@@ -347,6 +350,8 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
         :param links: Describes how the endpoints relate to other endpoints.
                       https://swagger.io/docs/specification/links/
         :param query_parameters: Which parameters in the input serializer are query parameters?
+        :param header_parameters: Which parameters in the input serializer are header parameters?
+        :param cookie_parameters: Which parameters in the input serializer are cookie parameters?
         :param deprecated: Is this endpoint deprecated?
         :param security: Which security schemes the endpoints use.
         :param external_docs: External docs for the endpoints.
@@ -356,11 +361,12 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
         :param operation_id_base: User-defined operation ID for the endpoint.
                                   If not set, it will be deducted from the input serializer.
         """
-
         self.responses = responses or {}
         self.callbacks = callbacks or {}
         self.links = links or {}
         self.query_parameters = query_parameters or {}
+        self.header_parameters = header_parameters or {}
+        self.cookie_parameters = cookie_parameters or {}
         self.deprecated = deprecated or {}
         self.security = security or {}
         self.external_docs = external_docs or {}
@@ -394,25 +400,21 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
         serializer_class_name = self.view.get_serializer_class().__name__
         operation_id_base = serializer_pattern.sub("", serializer_class_name)
 
-        if operation_id_base == "":  # pragma: no cover
-            raise ValueError(
+        if operation_id_base == "":
+            raise ValueError(  # pragma: no cover
                 f'"{serializer_class_name}" is an invalid class name for schema generation. '
                 f'Serializer\'s class name should be unique and explicit. e.g., "ItemSerializer"'
             )
 
         return action + operation_id_base
 
-    def get_operation(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
-        operation = {}
+    def get_operation(self, path: str, method: HTTPMethod) -> APIOperation:
+        operation: APIOperation = {}
 
         operation["operationId"] = self.get_operation_id(path, method)
         operation["description"] = self.get_description(path, method)
 
-        parameters: Dict[str, Dict[str, Any]] = self.get_path_parameters(path, method)
-        for name, params in self.get_filter_parameters(path, method).items():
-            parameters.setdefault(name, params)
-
-        operation["parameters"] = list(parameters.values())
+        operation["parameters"] = self.get_parameters(path, method)
 
         request_body = self.get_request_body(path, method)
         if request_body:
@@ -448,16 +450,16 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
         serializer_class_name = serializer.__name__
         component_name = serializer_pattern.sub("", serializer_class_name)
 
-        if component_name == "":  # pragma: no cover
-            raise ValueError(
+        if component_name == "":
+            raise ValueError(  # pragma: no cover
                 f"{serializer_class_name!r} is an invalid class name for schema generation. "
                 f"Serializer's class name should be unique and explicit. e.g., 'ItemSerializer'"
             )
 
         return component_name
 
-    def get_components(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
-        components = {}
+    def get_components(self, path: str, method: HTTPMethod) -> Dict[str, APISchema]:
+        components: Dict[str, APISchema] = {}
 
         request_serializer_class = self.view.get_serializer_class()
         response_serializer_class = self.view.get_serializer_class(output=True)
@@ -480,7 +482,7 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
 
         return components
 
-    def get_callbacks(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
+    def get_callbacks(self, path: str, method: HTTPMethod) -> Dict[str, Dict[str, APIPathItem]]:
         if not self.callbacks:
             return {}
 
@@ -522,52 +524,49 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
 
         return callback_data
 
-    def get_path_parameters(self, path: str, method: HTTPMethod) -> Dict[str, Dict[str, Any]]:
-        parameters: Dict[str, Dict[str, Any]] = {}
-
+    def get_parameters(self, path: str, method: HTTPMethod) -> List[APIParameter]:  # pylint: disable=R0912
         serializer = self.view.get_serializer()
-        if getattr(serializer, "many", False):
+        if isinstance(serializer, serializers.ListSerializer):
             serializer = getattr(serializer, "child", serializer)
 
-        for variable in get_path_parameters(path):
-            description = ""
-            schema = {"type": "string"}
+        parameters: List[APIParameter] = []
+        path_parameters = list(get_path_parameters(path))
+        query_parameters = self.query_parameters.get(method, [])
+        header_parameters = self.header_parameters.get(method, [])
+        cookie_parameters = self.cookie_parameters.get(method, [])
 
-            field: Optional[serializers.Field] = serializer.fields.get(variable)
-            if field is not None:
-                description = str(field.help_text) if field.help_text is not None else ""
-                schema = map_field(field)
+        if isinstance(serializer, HeaderAndCookieSerializer):
+            for header_name in serializer.take_from_headers:
+                if header_name not in header_parameters:
+                    header_parameters.append(header_name)
 
-            parameters[variable] = {
-                "name": variable,
-                "in": "path",
-                "required": True,
-                "description": description,
-                "schema": schema,
-            }
-
-        return parameters
-
-    def get_filter_parameters(self, path: str, method: HTTPMethod) -> Dict[str, Dict[str, Any]]:
-        parameters: Dict[str, Dict[str, Any]] = {}
-        if method not in {"GET", "PUT", "PATCH", "DELETE"}:
-            return parameters
-
-        serializer = self.view.get_serializer()
-        if getattr(serializer, "many", False):
-            serializer = getattr(serializer, "child", serializer)
+            for cookie_name in serializer.take_from_cookies:
+                if cookie_name not in cookie_parameters:
+                    cookie_parameters.append(cookie_name)
 
         for field_name, field in serializer.fields.items():
-            if method != "GET" and field_name not in self.query_parameters.get(method, []):
+            parameter = APIParameter(
+                name=field_name,
+                required=field.required,
+                description=str(field.help_text) if field.help_text is not None else "",
+                schema=map_field(field),
+            )
+
+            if field_name in path_parameters:
+                parameter["in"] = "path"
+                parameter["required"] = True
+            elif field_name in query_parameters:
+                parameter["in"] = "query"
+            elif field_name in header_parameters:
+                parameter["in"] = "header"
+            elif field_name in cookie_parameters:
+                parameter["in"] = "cookie"
+            elif method == "GET":
+                parameter["in"] = "query"
+            else:
                 continue
 
-            parameters[field_name] = {
-                "name": field_name,
-                "required": field.required,
-                "in": "query",
-                "description": str(field.help_text) if field.help_text is not None else "",
-                "schema": map_field(field),
-            }
+            parameters.append(parameter)
 
         return parameters
 
@@ -581,7 +580,7 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
             if not issubclass(renderer, BrowsableAPIRenderer)
         ]
 
-    def get_reference(self, serializer: serializers.Serializer) -> Dict[str, Any]:
+    def get_reference(self, serializer: serializers.Serializer) -> Dict[Literal["schema"], APISchema]:
         if isinstance(serializer, MockSerializer):
             if serializer.fields:
                 return {"schema": map_serializer(serializer)}
@@ -592,22 +591,22 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
 
         if isinstance(serializer, serializers.ListSerializer):
             return {
-                "schema": {
-                    "type": "array",
-                    "items": {
+                "schema": APISchema(
+                    type="array",
+                    items={
                         "$ref": (
                             f"#/components/schemas/"
                             f"{self.get_component_name(getattr(serializer, 'child', serializer))}"
                         )
                     },
-                },
+                ),
             }
 
-        return {
-            "schema": {
+        return APISchema(
+            schema={
                 "$ref": f"#/components/schemas/{self.get_component_name(serializer)}",
             },
-        }
+        )
 
     def get_tags(self, path: str, method: HTTPMethod) -> List[str]:
         if self.tags:
@@ -621,38 +620,37 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
 
         return [path.split("/")[0].replace("_", "-")]
 
-    def get_request_body(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
+    def get_request_body(self, path: str, method: HTTPMethod) -> APIRequestBody:
         if method not in {"POST", "PUT", "PATCH", "DELETE"}:
             return {}
 
         input_serializer = self.view.get_serializer()
 
-        query_params = self.query_parameters.get(method, {})
-        params = list(query_params) + list(get_path_parameters(path))
+        params: Set[str] = {param["name"] for param in self.get_parameters(path, method)}
 
         if params:
             is_list_serializer = isinstance(input_serializer, serializers.ListSerializer)
             child_serializer = getattr(input_serializer, "child", input_serializer)
 
-            new_serializer_class = type(
-                input_serializer.__class__.__name__,
-                (MockSerializer,),
-                {key: value for key, value in child_serializer.fields.items() if key not in params},
-            )
-            if is_list_serializer:  # pragma: no cover
-                new_serializer_class.many = True
+            fields = {key: value for key, value in child_serializer.fields.items() if key not in params}
+            new_serializer_class = type(input_serializer.__class__.__name__, (MockSerializer,), fields)
+            if is_list_serializer:
+                new_serializer_class.many = True  # pragma: no cover
 
             new_serializer_class.__doc__ = input_serializer.__class__.__doc__
             input_serializer = self.view.initialize_serializer(serializer_class=new_serializer_class)
 
         item_schema = self.get_reference(input_serializer)
 
+        if not item_schema["schema"].get("properties", True):
+            return {}  # pragma: no cover
+
         return {
             "content": {content_type: item_schema for content_type in self.get_parsers()},
         }
 
-    def get_responses(self, path: str, method: HTTPMethod) -> Dict[str, Any]:
-        data = {}
+    def get_responses(self, path: str, method: HTTPMethod) -> APIResponses:
+        data = APIResponses()
 
         responses = self.responses.get(method, {})
         if not responses and method not in self.view.pipelines:
@@ -706,17 +704,17 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
 
         return data
 
-    def get_no_result_schema(self, description: str = "no results") -> Dict[str, Any]:
-        return {
-            "content": {"application/json": {"type": "string", "default": ""}},
-            "description": description,
-        }
+    def get_no_result_schema(self, description: str = "no results") -> APIParameter:
+        return APIParameter(
+            content={"application/json": APISchema(type="string", default="")},
+            description=description,
+        )
 
-    def get_error_message_schema(self, error_message: str = "error message") -> Dict[str, Any]:
-        return {
-            "type": "object",
-            "properties": {"detail": {"type": "string", "default": error_message}},
-        }
+    def get_error_message_schema(self, error_message: str = "error message") -> APISchema:
+        return APISchema(
+            type="object",
+            properties={"detail": APISchema(type="string", default=error_message)},
+        )
 
 
 class PipelineEndpointEnumerator(EndpointEnumerator):
@@ -740,13 +738,13 @@ class PipelineEndpointEnumerator(EndpointEnumerator):
 
 class PipelineSchemaGenerator(BaseSchemaGenerator):
 
-    openapi = "3.0.2"
-    webhooks: Dict[str, APIWebhook] = {}
+    openapi: Literal["3.0.2"] = "3.0.2"
+    webhooks: Dict[str, SchemaWebhook] = {}
     contact: APIContact = {}
     license: APILicense = {}
     terms_of_service: str = ""
     public: bool = True
-    security_schemes: Dict[str, AnyAuth] = {}
+    security_schemes: Dict[str, APISecurityScheme] = {}
     security_rules: SecurityRules = {}
 
     endpoint_inspector_cls = PipelineEndpointEnumerator
@@ -760,12 +758,12 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         patterns: Optional[List[str]] = None,
         urlconf: Optional[str] = None,
         version: Optional[str] = None,
-        webhooks: Optional[Dict[str, APIWebhook]] = None,
+        webhooks: Optional[Dict[str, SchemaWebhook]] = None,
         contact: Optional[APIContact] = None,
         license: Optional[APILicense] = None,  # pylint: disable=redefined-builtin
         terms_of_service: Optional[str] = None,
         public: Optional[bool] = None,
-        security_schemes: Optional[Dict[str, AnyAuth]] = None,
+        security_schemes: Optional[Dict[str, APISecurityScheme]] = None,
         security_rules: Optional[SecurityRules] = None,
     ):
         """Custom Schema Generator for Pipeline Views.
@@ -788,7 +786,6 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         :param security_rules: Security schemes to apply if defined authentication or
                                permission class(es) exist on an endpoint.
         """
-
         if url and not url.startswith("/"):
             url = f"/{url}"
 
@@ -814,12 +811,12 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
     def configure(
         cls,
         *,
-        webhooks: Optional[Dict[str, APIWebhook]] = None,
+        webhooks: Optional[Dict[str, SchemaWebhook]] = None,
         contact: Optional[APIContact] = None,
         license: Optional[APILicense] = None,  # pylint: disable=redefined-builtin
         terms_of_service: Optional[str] = None,
         public: Optional[bool] = None,
-        security_schemes: Optional[Dict[str, AnyAuth]] = None,
+        security_schemes: Optional[Dict[str, APISecurityScheme]] = None,
         security_rules: Optional[SecurityRules] = None,
     ) -> Type[PipelineSchemaGenerator]:
         """Configure API with additional options
@@ -864,31 +861,25 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         return info
 
     def get_normalized_path(self, path: str) -> str:
-        if path.startswith("/"):  # pragma: no cover
-            path = path[1:]
+        if path.startswith("/"):
+            path = path[1:]  # pragma: no cover
         return urljoin(self.url or "/", path)
 
-    def get_schema(self, request: Optional[Request] = None, public: bool = False) -> APISchema:  # pylint: disable=R0914
-        schema = APISchema(
+    def get_schema(self, request: Optional[Request] = None, public: bool = False) -> OpenAPI:  # pylint: disable=R0914
+        schema = OpenAPI(
             openapi=self.openapi,
             info=self.get_info(),
         )
 
         self._initialise_endpoints()
-        operation_ids: Dict[str, Dict[str, str]] = {}
+        operation_ids: Dict[str, PathAndMethod] = {}
 
         view_endpoints: List[Tuple[str, HTTPMethod, "BasePipelineView"]]
         _, view_endpoints = self._get_paths_and_endpoints(None if public else request)
 
         for path, method, view in view_endpoints:
-            if not self.has_view_permissions(path, method, view):  # pragma: no cover
-                continue
-
-            new_components = self.get_components(path, method, view)
-            if new_components:
-                schema.setdefault("components", {}).setdefault("schemas", {})
-                self.check_components(new_components, schema["components"]["schemas"])
-                schema["components"]["schemas"].update(new_components)
+            if not self.has_view_permissions(path, method, view):
+                continue  # pragma: no cover
 
             new_operation = self.get_operation(path, method, view)
             if new_operation:
@@ -896,6 +887,12 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
                 self.check_operation_id(path, method, new_operation["operationId"], operation_ids)
                 schema.setdefault("paths", {}).setdefault(path, {})
                 schema["paths"][path][method.lower()] = new_operation
+
+            new_components = self.get_components(path, method, view)
+            if new_components:
+                schema.setdefault("components", {}).setdefault("schemas", {})
+                self.check_components(new_components, schema["components"]["schemas"])
+                schema["components"]["schemas"].update(new_components)
 
         webhooks = self.get_webhook()
         if webhooks:
@@ -920,23 +917,23 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
 
         return schema
 
-    def get_components(self, path: str, method: HTTPMethod, view: "BasePipelineView") -> Dict[str, Any]:
+    def get_components(self, path: str, method: HTTPMethod, view: "BasePipelineView") -> Dict[str, APISchema]:
         return view.schema.get_components(path, method)
 
-    def get_operation(self, path: str, method: HTTPMethod, view: "BasePipelineView") -> Dict[str, Any]:
+    def get_operation(self, path: str, method: HTTPMethod, view: "BasePipelineView") -> APIOperation:
         return view.schema.get_operation(path, method)
 
-    def get_webhook(self) -> Dict[str, Any]:
-        webhooks = {}
+    def get_webhook(self) -> Dict[str, APIPathItem]:
+        webhooks: Dict[str, APIPathItem] = {}
 
         for webhook_name, webhook in self.webhooks.items():
             input_serializer = webhook["request_data"](many=getattr(webhook["request_data"], "many", False))
             if isinstance(input_serializer, serializers.ListSerializer):  # pragma: no cover
                 input_serializer = getattr(input_serializer, "child", input_serializer)
 
-            webhooks[webhook_name] = {
-                webhook["method"]: {
-                    "requestBody": {
+            webhooks[webhook_name] = {  # type: ignore
+                webhook["method"]: APIOperation(
+                    requestBody={
                         "description": input_serializer.__class__.__doc__ or "",
                         "content": {
                             "application/json": {
@@ -944,7 +941,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
                             },
                         },
                     },
-                    "responses": {
+                    responses={  # type: ignore
                         str(status_code): {
                             "description": response.__doc__ or "",
                             "content": {"application/json": map_serializer(response)},
@@ -953,12 +950,12 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
                         else {"description": response or ""}
                         for status_code, response in webhook["responses"].items()
                     },
-                },
+                ),
             }
 
         return webhooks
 
-    def check_components(self, new_components: Dict[str, Any], old_components: Dict[str, Any]) -> None:
+    def check_components(self, new_components: Dict[str, APISchema], old_components: Dict[str, APISchema]) -> None:
         for name, component in new_components.items():
             if name not in old_components:
                 continue
@@ -971,10 +968,10 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         path: str,
         method: HTTPMethod,
         operation_id: str,
-        operation_ids: Dict[str, Any],
+        operation_ids: Dict[str, PathAndMethod],
     ) -> None:
-        if operation_id in operation_ids:  # pragma: no cover
-            warnings.warn(
+        if operation_id in operation_ids:
+            warnings.warn(  # pragma: no cover
                 f"""
                 You have a duplicated operationId in your OpenAPI schema: {operation_id}
                     Route: {operation_ids[operation_id]["path"]}, Method: {operation_ids[operation_id]["method"]}
@@ -983,7 +980,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
                 Your schema may not work in other tools.
                 """
             )
-        operation_ids[operation_id] = {"path": path, "method": method}
+        operation_ids[operation_id] = PathAndMethod(path=path, method=method)
 
     def has_view_permissions(self, path: str, method: HTTPMethod, view: BasePipelineView) -> bool:
         self.set_security_schemes(method, view)
@@ -999,9 +996,9 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         return super().has_view_permissions(path, method, view)
 
     def set_security_schemes(self, method: HTTPMethod, view: BasePipelineView) -> None:
-        security = getattr(view.schema, "security")
-        if security is None:  # pragma: no cover
-            return
+        security = view.schema.security
+        if security is None:
+            return  # pragma: no cover
 
         for classes, rules in self.security_rules.items():
             if not isinstance(classes, tuple):

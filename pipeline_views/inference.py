@@ -76,7 +76,7 @@ def _parameter_types(func: Callable[..., Any]) -> TypesDict:
     types.pop("return", None)
 
     # Get types based on argument default values
-    defaults: Tuple[Any, ...] = args_spec.defaults or tuple()
+    defaults: Tuple[Any, ...] = args_spec.defaults or ()
     for name, value in zip(reversed(args_spec.args), reversed(defaults)):
         if name in types:
             continue
@@ -134,7 +134,6 @@ _type_to_serializer_field: Dict[Optional[Type], Type[Field]] = {
 
 def _get_fields(types: TypesDict) -> Dict[str, Field]:
     """Convert types to serializer fields.
-
     TypedDicts and other classes with __annotations__ dicts
     are recursively converted to serializers based on their types.
     """
@@ -174,7 +173,6 @@ def _unwrap_types(
     globalns: Dict[str, Any],
 ) -> Union[Type, TypesDict, List[TypesDict]]:
     """Recurively unwrap types from the given item."""
-
     typ = _forward_refs_to_types(types, globalns)
 
     if hasattr(typ, "__origin__"):
@@ -195,7 +193,6 @@ def _forward_refs_to_types(
     globalns: Dict[str, Any],
 ) -> Union[Type, TypesDict, List[TypesDict]]:
     """Convert strings and forward references to types."""
-
     if isinstance(types, str):
         types = ForwardRef(types)
 
@@ -216,7 +213,6 @@ def _forward_refs_to_types(
 
 def _unwrap_generic(type_: Type, globalns: Dict[str, Any]) -> Union[List[TypesDict], Dict[str, List[TypesDict]], Type]:
     """Ungrap the arguments of generics like list and dicts into proper types."""
-
     origin_type: Type = get_origin(type_)
     origin_args: Tuple[Type, ...] = get_args(type_)
 

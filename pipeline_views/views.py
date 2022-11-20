@@ -53,7 +53,6 @@ class BasePipelineView(APIView):
 
     def process_request(self, data: DataDict) -> Response:
         """Process request in a pipeline-fashion."""
-
         pipeline = self.get_pipeline_for_current_request_method()
 
         with translate(self.request):
@@ -70,7 +69,7 @@ class BasePipelineView(APIView):
         except KeyError as missing_method:
             raise KeyError(f"Pipeline not configured for HTTP method '{self.request.method}'") from missing_method
 
-    def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:  # pylint: disable=too-many-branches
+    def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:  # noqa: C901
         """Run pipeline logic recursively."""
         if callable(logic):
             if asyncio.iscoroutinefunction(logic):

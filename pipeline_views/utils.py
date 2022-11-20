@@ -92,7 +92,6 @@ def translate(item: Union[Callable[P, T], Request]) -> Union[Generator[Any, Any,
     Can be used as a context manager or a decorator. If a function is decorated,
     one of the parameters for the function must be a `rest_framework.Request` object.
     """
-
     if not isinstance(item, Request):
 
         @wraps(item)

@@ -86,6 +86,9 @@ class ExamplePathView(BasePipelineView):
         public={
             "PATCH": True,
         },
+        header_parameters={
+            "PATCH": ["auth"],
+        },
     )
 
 
