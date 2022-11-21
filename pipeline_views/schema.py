@@ -996,7 +996,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         return super().has_view_permissions(path, method, view)
 
     def set_security_schemes(self, method: HTTPMethod, view: BasePipelineView) -> None:
-        security = view.schema.security
+        security = getattr(view.schema, "security", None)
         if security is None:
             return  # pragma: no cover
 

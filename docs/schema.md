@@ -472,14 +472,14 @@ components:
 # ...
 ```
 
-## Query and path parameters
+## Query, path, header, and cookie parameters
 
 For pipelines using the GET method, input serializer fields are interpreted automatically
 as query parameters. If the endpoint has path parameters, those are used in the
 schema instead, but with the documentation from the input serializer.
 
-For other HTTP methods, you need to explicitly state that a field in the
-input serializer should be given as a query parameter. This is just for schema definition,
+For other HTTP methods, you need to explicitly state that if a value is given as
+a parameter instead of in the request body. This is just for schema definition,
 the endpoints will actually accept the input from both places.
 
 ```python hl_lines="9 10 11"
@@ -495,6 +495,40 @@ class ExampleView(BasePipelineView):
             "POST": ["name"],
         },
     )
+```
+
+You can also declare a parameter as a header or as cookie parameter.
+
+```python hl_lines="9 10 11 12 13 14"
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        header_parameters={
+            "POST": ["name"],
+        },
+        cookie_parameters={
+            "POST": ["name"],
+        },
+    )
+```
+
+However, you'll need to handle getting the parameter from cookies in
+the input serializer separately. You can use `HeaderAndCookieSerializer`
+for this. This will ass fields to the serializer to accept the defined
+headers and cookies from the incoming request as strings, or None if
+they were not given.
+
+```python
+from pipeline_views.serializers import HeaderAndCookieSerializer
+
+class TestSerialzer(HeaderAndCookieSerializer):
+    take_from_headers = ["foo"]
+    take_from_cookies = ["bar"]
 ```
 
 ## External docs
@@ -563,16 +597,12 @@ class ExampleView(BasePipelineView):
     )
 ```
 
-
-[drf-schema]: https://www.django-rest-framework.org/api-guide/schemas/#install-dependencies
-[scopes]: https://swagger.io/docs/specification/authentication/#scopes
-
 ## Links
 
 Using [links], you can describe how various values returned
 by one operation can be used as input for other operations.
 
-```python
+```python hl_lines="12 13 14 15 16 17 18 19 20 21 22 23 24"
 from pipeline_views import BasePipelineView
 from pipeline_views.schema import PipelineSchema
 
@@ -623,7 +653,7 @@ paths:
 service will send to some other service in response to
 certain events.
 
-```python
+```python hl_lines="25 26 27 28 29 30 31 32 33 34 35 36"
 from rest_framework import serializers
 from pipeline_views import BasePipelineView
 from pipeline_views.schema import PipelineSchema
@@ -709,7 +739,7 @@ paths:
 by an API call, for example by an out-of-band registration.
 You can define them in the PipelineSchemaGenerator.
 
-```python
+```python hl_lines="25 26 27 28 29 30 31 32 33 34 35 36"
 from django.urls import path
 from rest_framework import serializers
 from rest_framework.schemas import get_schema_view
@@ -790,6 +820,8 @@ webhooks:
 # ...
 ```
 
+[drf-schema]: https://www.django-rest-framework.org/api-guide/schemas/#install-dependencies
+[scopes]: https://swagger.io/docs/specification/authentication/#scopes
 [links]: https://swagger.io/docs/specification/links/
 [callbacks]: https://swagger.io/docs/specification/callbacks/
 [webhooks]: https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#oasWebhooks:~:text=for%20the%20API.-,webhooks,-Map%5Bstring
