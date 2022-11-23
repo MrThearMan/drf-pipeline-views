@@ -744,6 +744,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
     license: APILicense = {}
     terms_of_service: str = ""
     public: bool = True
+    prefix: str = ""
     security_schemes: Dict[str, APISecurityScheme] = {}
     security_rules: SecurityRules = {}
 
@@ -763,6 +764,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         license: Optional[APILicense] = None,  # pylint: disable=redefined-builtin
         terms_of_service: Optional[str] = None,
         public: Optional[bool] = None,
+        prefix: Optional[str] = None,
         security_schemes: Optional[Dict[str, APISecurityScheme]] = None,
         security_rules: Optional[SecurityRules] = None,
     ):
@@ -782,6 +784,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         :param license: API license information.
         :param terms_of_service: API terms of service link.
         :param public: If False, hide endpoint schema if the user does not have permissions to view it.
+        :param prefix: Version prefix for versioned API.
         :param security_schemes: Mapping of security scheme name to its definition.
         :param security_rules: Security schemes to apply if defined authentication or
                                permission class(es) exist on an endpoint.
@@ -804,6 +807,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         self.license = license or self.license
         self.terms_of_service = terms_of_service or self.terms_of_service
         self.public = public if public is not None else self.public
+        self.prefix = prefix if prefix is not None else self.prefix
         self.security_schemes = security_schemes or self.security_schemes
         self.security_rules = security_rules or self.security_rules
 
@@ -816,6 +820,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         license: Optional[APILicense] = None,  # pylint: disable=redefined-builtin
         terms_of_service: Optional[str] = None,
         public: Optional[bool] = None,
+        prefix: Optional[str] = None,
         security_schemes: Optional[Dict[str, APISecurityScheme]] = None,
         security_rules: Optional[SecurityRules] = None,
     ) -> Type[PipelineSchemaGenerator]:
@@ -826,6 +831,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         :param license: API license information.
         :param terms_of_service: API terms of service link.
         :param public: If False, hide endpoint schema if the user does not have permissions to view it.
+        :param prefix: Version prefix for versioned API.
         :param security_schemes: Mapping of security scheme name to its definition.
         :param security_rules: Security schemes to apply if defined authentication or
                                permission class(es) exist on an endpoint.
@@ -840,10 +846,16 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
                 "license": license or cls.license,
                 "terms_of_service": terms_of_service or cls.terms_of_service,
                 "public": public if public is not None else cls.public,
+                "prefix": prefix if prefix is not None else cls.prefix,
                 "security_schemes": security_schemes or cls.security_schemes,
                 "security_rules": security_rules or cls.security_rules,
             },
         )
+
+    def _initialise_endpoints(self) -> None:
+        if self.endpoints is None:
+            inspector = self.endpoint_inspector_cls(self.patterns, self.urlconf)
+            self.endpoints = inspector.get_api_endpoints(prefix=self.prefix)
 
     def get_info(self) -> APIInfo:
         info = APIInfo(
@@ -878,17 +890,19 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         _, view_endpoints = self._get_paths_and_endpoints(None if public else request)
 
         for path, method, view in view_endpoints:
-            if not self.has_view_permissions(path, method, view):
+            local_path = path[len(self.prefix) :]
+
+            if not self.has_view_permissions(local_path, method, view):
                 continue  # pragma: no cover
 
-            new_operation = self.get_operation(path, method, view)
+            new_operation = self.get_operation(local_path, method, view)
             if new_operation:
                 path = self.get_normalized_path(path)
-                self.check_operation_id(path, method, new_operation["operationId"], operation_ids)
+                self.check_operation_id(local_path, method, new_operation["operationId"], operation_ids)
                 schema.setdefault("paths", {}).setdefault(path, {})
                 schema["paths"][path][method.lower()] = new_operation
 
-            new_components = self.get_components(path, method, view)
+            new_components = self.get_components(local_path, method, view)
             if new_components:
                 schema.setdefault("components", {}).setdefault("schemas", {})
                 self.check_components(new_components, schema["components"]["schemas"])
