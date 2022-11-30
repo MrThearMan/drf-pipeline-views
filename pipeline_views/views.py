@@ -12,6 +12,7 @@ from .meta import PipelineMetadata
 from .schema import PipelineSchema
 from .typing import (
     Any,
+    ClassVar,
     DataDict,
     DataReturn,
     Iterable,
@@ -19,6 +20,7 @@ from .typing import (
     PipelineLogic,
     PipelinesDict,
     SerializerType,
+    Set,
     Tuple,
     ViewContext,
 )
@@ -32,17 +34,17 @@ __all__ = [
 
 class BasePipelineView(APIView):
 
-    pipelines: PipelinesDict = {}
+    pipelines: ClassVar[PipelinesDict] = {}
     """Dictionary describing the HTTP method pipelines."""
 
     schema = PipelineSchema()
     metadata_class = PipelineMetadata
 
-    ignored_get_params = {"lang", "format"}
-    ignored_post_params = {"csrfmiddlewaretoken", "lang", "format"}
-    ignored_put_params = {"lang", "format"}
-    ignored_patch_params = {"lang", "format"}
-    ignored_delete_params = {"lang", "format"}
+    ignored_get_params: ClassVar[Set[str]] = {"lang", "format"}
+    ignored_post_params: ClassVar[Set[str]] = {"csrfmiddlewaretoken", "lang", "format"}
+    ignored_put_params: ClassVar[Set[str]] = {"lang", "format"}
+    ignored_patch_params: ClassVar[Set[str]] = {"lang", "format"}
+    ignored_delete_params: ClassVar[Set[str]] = {"lang", "format"}
 
     def __new__(cls, *args, **kwargs):
         for key in cls.pipelines:

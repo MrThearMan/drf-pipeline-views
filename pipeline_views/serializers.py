@@ -4,11 +4,12 @@ from rest_framework.exceptions import ErrorDetail, ValidationError
 from rest_framework.request import Request
 from rest_framework.settings import api_settings
 
-from .typing import Any, Dict, List, Optional, Type, Union
+from .typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
 
 __all__ = [
     "EmptySerializer",
+    "HeaderAndCookieMixin",
     "HeaderAndCookieSerializer",
     "MockSerializer",
 ]
@@ -38,20 +39,16 @@ class MockSerializer(serializers.Serializer):
         return self.initial_data  # type: ignore
 
 
-class HeaderAndCookieSerializer(serializers.Serializer):
-    """Serializer that adds the specified headers and cookies from request to the serializer data.
-    Serializer must have the incoming request object in its context dictionary.
-    If the specified header or cookie is not found in the request, the value will be None.
-    """
+class HeaderAndCookieMixin(serializers.Serializer):
 
-    take_from_headers: List[str] = []
+    take_from_headers: ClassVar[List[str]] = []
     """Headers to take values from.
-    Header names will be coverted to snake_case.
+    Header names will be converted to snake_case.
     """
 
-    take_from_cookies: List[str] = []
+    take_from_cookies: ClassVar[List[str]] = []
     """Cookies to take values from.
-    Cookie names will be coverted to snake_case.
+    Cookie names will be converted to snake_case.
     """
 
     @cached_property
@@ -101,3 +98,10 @@ class HeaderAndCookieSerializer(serializers.Serializer):
         ret = super().to_representation(instance)
         ret = self.add_headers_and_cookies(ret)
         return ret
+
+
+class HeaderAndCookieSerializer(HeaderAndCookieMixin, serializers.Serializer):
+    """Serializer that adds the specified headers and cookies from request to the serializer data.
+    Serializer must have the incoming request object in its context dictionary.
+    If the specified header or cookie is not found in the request, the value will be None.
+    """

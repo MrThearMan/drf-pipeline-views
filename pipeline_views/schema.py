@@ -21,7 +21,7 @@ from rest_framework.settings import api_settings
 from rest_framework.utils import formatting
 
 from .inference import serializer_from_callable, snake_case_to_camel_case
-from .serializers import EmptySerializer, HeaderAndCookieSerializer, MockSerializer
+from .serializers import EmptySerializer, MockSerializer
 from .typing import (
     TYPE_CHECKING,
     Any,
@@ -535,11 +535,12 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
         header_parameters = self.header_parameters.get(method, [])
         cookie_parameters = self.cookie_parameters.get(method, [])
 
-        if isinstance(serializer, HeaderAndCookieSerializer):
+        if hasattr(serializer, "take_from_headers") and isinstance(serializer.take_from_headers, list):
             for header_name in serializer.take_from_headers:
                 if header_name not in header_parameters:
                     header_parameters.append(header_name)
 
+        if hasattr(serializer, "take_from_cookies") and isinstance(serializer.take_from_cookies, list):
             for cookie_name in serializer.take_from_cookies:
                 if cookie_name not in cookie_parameters:
                     cookie_parameters.append(cookie_name)

@@ -11,7 +11,7 @@ from rest_framework.serializers import (
     Serializer,
 )
 
-from .typing import TYPE_CHECKING, Dict, List, Set, Type, Union
+from .typing import TYPE_CHECKING, ClassVar, Dict, List, Set, Type, Union
 
 
 if TYPE_CHECKING:
@@ -29,9 +29,9 @@ class PipelineMetadata(SimpleMetadata):
     the serializers for that method.
     """
 
-    recognized_methods: Set[str] = {"GET", "POST", "PUT", "PATCH", "DELETE"}
-    skip_fields: Set[Type[Field]] = {ReadOnlyField, HiddenField, SerializerMethodField}
-    used_attrs: List[str] = ["label", "help_text", "min_length", "max_length", "min_value", "max_value"]
+    recognized_methods: ClassVar[Set[str]] = {"GET", "POST", "PUT", "PATCH", "DELETE"}
+    skip_fields: ClassVar[Set[Type[Field]]] = {ReadOnlyField, HiddenField, SerializerMethodField}
+    used_attrs: ClassVar[List[str]] = ["label", "help_text", "min_length", "max_length", "min_value", "max_value"]
 
     def determine_actions(self, request: Request, view: "BasePipelineView"):
         """Return information about the fields that are accepted for methods in self.recognized_methods."""
