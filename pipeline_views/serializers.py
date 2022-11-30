@@ -39,7 +39,23 @@ class MockSerializer(serializers.Serializer):
         return self.initial_data  # type: ignore
 
 
-class HeaderAndCookieMixin(serializers.Serializer):
+class RequestFromContextMixin:
+    @cached_property
+    def request_from_context(self) -> Request:
+        request: Optional[Request] = self.context.get("request")
+        if request is None or not isinstance(request, Request):
+            raise ValidationError(
+                {
+                    api_settings.NON_FIELD_ERRORS_KEY: ErrorDetail(
+                        string="Must include a Request object in the context of the Serializer.",
+                        code="request_missing",
+                    )
+                }
+            )
+        return request
+
+
+class HeaderAndCookieMixin(RequestFromContextMixin):
 
     take_from_headers: ClassVar[List[str]] = []
     """Headers to take values from.
@@ -85,6 +101,12 @@ class HeaderAndCookieMixin(serializers.Serializer):
         return {key.replace("-", "_").lower(): request.COOKIES.get(key, None) for key in self.take_from_cookies}
 
     def add_headers_and_cookies(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        # Remove any values added to original cookie or header names.
+        data = {
+            key: value
+            for key, value in data.items()
+            if key not in self.take_from_cookies and key not in self.take_from_headers
+        }
         data.update(self.header_values)
         data.update(self.cookie_values)
         return data

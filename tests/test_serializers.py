@@ -15,7 +15,7 @@ def test_mock_serializer():
     assert data == {"testing": 1212}
 
 
-def test_mock_serializer__subclass__used_like_reqular_serializer():
+def test_mock_serializer__subclass__used_like_regular_serializer():
     class SubSerializer(MockSerializer):
         name = CharField()
         age = IntegerField()
@@ -44,28 +44,28 @@ def test_mock_serializer__subclass__fields_are_skipped():
 
 
 def test_header_and_cookie_serializer(drf_request):
-    class TestSerialzer(HeaderAndCookieSerializer):
-        take_from_headers = ["foo"]
-        take_from_cookies = ["bar"]
+    class TestSerializer(HeaderAndCookieSerializer):
+        take_from_headers = ["Header-Name"]
+        take_from_cookies = ["Cookie-Name"]
 
-    drf_request.META["HTTP_foo"] = "fizz"
-    drf_request.COOKIES["bar"] = "buzz"
-    serializer = TestSerialzer(data={}, context={"request": drf_request})
+    drf_request.META["HTTP_HEADER_NAME"] = "fizz"
+    drf_request.COOKIES["Cookie-Name"] = "buzz"
+    serializer = TestSerializer(data={}, context={"request": drf_request})
     serializer.is_valid(raise_exception=True)
     validated_data = serializer.validated_data
     data = serializer.data
 
-    assert validated_data == {"foo": "fizz", "bar": "buzz"}
-    assert data == {"foo": "fizz", "bar": "buzz"}
+    assert validated_data == {"header_name": "fizz", "cookie_name": "buzz"}
+    assert data == {"header_name": "fizz", "cookie_name": "buzz"}
 
 
 def test_header_and_cookie_serializer__request_not_found(drf_request):
     class TestSerialzer(HeaderAndCookieSerializer):
-        take_from_headers = ["foo"]
-        take_from_cookies = ["bar"]
+        take_from_headers = ["Header-Name"]
+        take_from_cookies = ["Cookie-Name"]
 
-    drf_request.META["HTTP_foo"] = "fizz"
-    drf_request.COOKIES["bar"] = "buzz"
+    drf_request.META["HTTP_HEADER_NAME"] = "fizz"
+    drf_request.COOKIES["Cookie-Name"] = "buzz"
     serializer = TestSerialzer(data={})
 
     with pytest.raises(ValidationError) as exc_info:

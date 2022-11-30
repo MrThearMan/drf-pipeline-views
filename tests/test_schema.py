@@ -1799,6 +1799,83 @@ def test_pipeline_schema__openapi():
                     ],
                     "type": "object",
                 },
+                "DeprecatedPydanticinput": {
+                    "properties": {
+                        "age": {
+                            "type": "integer",
+                        },
+                        "name": {
+                            "type": "string",
+                        },
+                    },
+                    "required": [
+                        "name",
+                        "age",
+                    ],
+                    "type": "object",
+                },
+                "DeprecatedPydanticoutput": {
+                    "properties": {
+                        "age": {
+                            "type": "integer",
+                        },
+                        "email": {
+                            "type": "string",
+                        },
+                    },
+                    "required": [
+                        "email",
+                        "age",
+                    ],
+                    "type": "object",
+                },
+                "HeaderAndCookieInput": {
+                    "properties": {
+                        "Cookie-Name": {
+                            "nullable": True,
+                            "type": "string",
+                        },
+                        "Header-Name": {
+                            "nullable": True,
+                            "type": "string",
+                        },
+                        "age": {
+                            "type": "integer",
+                        },
+                        "name": {
+                            "type": "string",
+                        },
+                    },
+                    "required": [
+                        "name",
+                        "age",
+                    ],
+                    "type": "object",
+                },
+                "HeaderAndCookieOutput": {
+                    "properties": {
+                        "age": {
+                            "type": "integer",
+                        },
+                        "cookie_name": {
+                            "nullable": True,
+                            "type": "string",
+                        },
+                        "email": {
+                            "format": "email",
+                            "type": "string",
+                        },
+                        "header_name": {
+                            "nullable": True,
+                            "type": "string",
+                        },
+                    },
+                    "required": [
+                        "email",
+                        "age",
+                    ],
+                    "type": "object",
+                },
                 "Input": {
                     "properties": {
                         "age": {
@@ -1821,36 +1898,6 @@ def test_pipeline_schema__openapi():
                         },
                         "email": {
                             "format": "email",
-                            "type": "string",
-                        },
-                    },
-                    "required": [
-                        "email",
-                        "age",
-                    ],
-                    "type": "object",
-                },
-                "DeprecatedPydanticinput": {
-                    "properties": {
-                        "age": {
-                            "type": "integer",
-                        },
-                        "name": {
-                            "type": "string",
-                        },
-                    },
-                    "required": [
-                        "name",
-                        "age",
-                    ],
-                    "type": "object",
-                },
-                "DeprecatedPydanticoutput": {
-                    "properties": {
-                        "age": {
-                            "type": "integer",
-                        },
-                        "email": {
                             "type": "string",
                         },
                     },
@@ -1984,6 +2031,123 @@ def test_pipeline_schema__openapi():
                                 },
                             },
                             "description": "Example Output",
+                        },
+                        "401": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "properties": {
+                                            "detail": {
+                                                "default": "error message",
+                                                "type": "string",
+                                            },
+                                        },
+                                        "type": "object",
+                                    },
+                                },
+                            },
+                            "description": "Unauthenticated.",
+                        },
+                    },
+                    "security": [
+                        {
+                            "my_security": [],
+                        },
+                    ],
+                    "tags": [
+                        "example",
+                    ],
+                },
+            },
+            "/api/example/headers-and-cookies": {
+                "patch": {
+                    "description": "Example Input",
+                    "operationId": "partialUpdateHeaderAndCookieInput",
+                    "parameters": [
+                        {
+                            "description": "",
+                            "in": "header",
+                            "name": "Header-Name",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                            },
+                        },
+                        {
+                            "description": "",
+                            "in": "cookie",
+                            "name": "Cookie-Name",
+                            "required": False,
+                            "schema": {
+                                "type": "string",
+                            },
+                        },
+                    ],
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "age": {
+                                            "type": "integer",
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                        },
+                                    },
+                                    "required": [
+                                        "name",
+                                        "age",
+                                    ],
+                                    "type": "object",
+                                },
+                            },
+                            "application/x-www-form-urlencoded": {
+                                "schema": {
+                                    "properties": {
+                                        "age": {
+                                            "type": "integer",
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                        },
+                                    },
+                                    "required": [
+                                        "name",
+                                        "age",
+                                    ],
+                                    "type": "object",
+                                },
+                            },
+                            "multipart/form-data": {
+                                "schema": {
+                                    "properties": {
+                                        "age": {
+                                            "type": "integer",
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                        },
+                                    },
+                                    "required": [
+                                        "name",
+                                        "age",
+                                    ],
+                                    "type": "object",
+                                },
+                            },
+                        },
+                    },
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/HeaderAndCookieOutput",
+                                    },
+                                },
+                            },
+                            "description": "Example " "Input",
                         },
                         "401": {
                             "content": {
@@ -2276,16 +2440,18 @@ def test_pipeline_schema__openapi():
                                             "type": "string",
                                         },
                                     },
-                                    "required": ["name", "age"],
+                                    "required": [
+                                        "name",
+                                        "age",
+                                    ],
                                     "type": "object",
-                                }
-                            }
+                                },
+                            },
                         },
                         "description": "Example Input",
                     },
                     "responses": {
                         "200": {
-                            "description": "Example Output",
                             "content": {
                                 "application/json": {
                                     "properties": {
@@ -2297,13 +2463,17 @@ def test_pipeline_schema__openapi():
                                             "type": "string",
                                         },
                                     },
-                                    "required": ["email", "age"],
+                                    "required": [
+                                        "email",
+                                        "age",
+                                    ],
                                     "type": "object",
-                                }
+                                },
                             },
+                            "description": "Example Output",
                         },
                     },
-                }
-            }
+                },
+            },
         },
     }

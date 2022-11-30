@@ -10,6 +10,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.schemas import get_schema_view
 
 from pipeline_views.schema import PipelineSchema, PipelineSchemaGenerator, deprecate
+from pipeline_views.serializers import HeaderAndCookieSerializer
+from pipeline_views.typing import Optional
 from pipeline_views.views import BasePipelineView
 
 
@@ -34,6 +36,25 @@ class OutputSerializer(serializers.Serializer):
     age = serializers.IntegerField()
 
 
+class HeaderAndCookieInputSerializer(HeaderAndCookieSerializer):
+    """Example Input"""
+
+    take_from_headers = ["Header-Name"]
+    take_from_cookies = ["Cookie-Name"]
+
+    name = serializers.CharField()
+    age = serializers.IntegerField()
+
+
+class HeaderAndCookieOutputSerializer(serializers.Serializer):
+    """Example Input"""
+
+    email = serializers.EmailField()
+    age = serializers.IntegerField()
+    header_name = serializers.CharField(allow_null=True, required=False, allow_blank=True)
+    cookie_name = serializers.CharField(allow_null=True, required=False, allow_blank=True)
+
+
 class PydanticInput(BaseModel):
     name: str
     age: int
@@ -46,6 +67,10 @@ class PydanticOutput(BaseModel):
 
 def example_method(name: str, age: int):
     return {"email": f"{name.lower()}@email.com", "age": age}
+
+
+def example_header_and_cookie_method(name: str, age: int, header_name: Optional[str], cookie_name: Optional[str]):
+    return {"email": f"{name.lower()}@email.com", "age": age, "header_name": header_name, "cookie_name": cookie_name}
 
 
 class ExampleView(BasePipelineView):
@@ -72,7 +97,7 @@ class ExampleWebhook(BasePipelineView):
 
 
 class ExamplePathView(BasePipelineView):
-    """Example View"""
+    """Example Path View"""
 
     pipelines = {
         "PATCH": [
@@ -86,8 +111,23 @@ class ExamplePathView(BasePipelineView):
         public={
             "PATCH": True,
         },
-        header_parameters={
-            "PATCH": ["auth"],
+    )
+
+
+class ExampleHeaderAndCookieView(BasePipelineView):
+    """Example Header View"""
+
+    pipelines = {
+        "PATCH": [
+            HeaderAndCookieInputSerializer,
+            example_header_and_cookie_method,
+            HeaderAndCookieOutputSerializer,
+        ],
+    }
+
+    schema = PipelineSchema(
+        public={
+            "PATCH": True,
         },
     )
 
@@ -129,6 +169,7 @@ urlpatterns = [
     path("api/example/", ExampleView.as_view(), name="test_view"),
     path("api/example/deprecated", deprecate(ExampleView).as_view(), name="test_view_deprecated"),
     path("api/example/<int:age>", ExamplePathView.as_view(), name="test_path_view"),
+    path("api/example/headers-and-cookies", ExampleHeaderAndCookieView.as_view(), name="test_header_and_cookie_view"),
     path("api/example/private", ExamplePrivateView.as_view(), name="test_private_view"),
     path("api/pydantic", PydanticView.as_view(), name="test_pydantic_view"),
     path(
