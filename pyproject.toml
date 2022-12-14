@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "drf-pipeline-views"
-version = "0.8.3"
+version = "0.8.4"
 description = "Django REST framework views using the pipeline pattern."
 authors = [
     "Matti Lamppu <lamppu.matti.akseli@gmail.com>",
@@ -115,6 +115,9 @@ select = [
     # "ANN",  # flake8-annotations
 ]
 ignore = [
+    "B905",  # `zip()` without an explicit `strict=` parameter
+    "F821",  # Undefined name
+    "F722",  # Syntax error in forward annotation:
 ]
 
 [tool.ruff.per-file-ignores]

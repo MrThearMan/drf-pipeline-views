@@ -495,10 +495,7 @@ def test_pipeline_schema__get_responses__list(drf_request):
             "content": {
                 "application/json": {
                     "schema": {
-                        "items": {
-                            "$ref": "#/components/schemas/Custom",
-                        },
-                        "type": "array",
+                        "$ref": "#/components/schemas/Custom",
                     },
                 },
             },
@@ -604,10 +601,7 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
             "content": {
                 "application/json": {
                     "schema": {
-                        "items": {
-                            "$ref": "#/components/schemas/Custom",
-                        },
-                        "type": "array",
+                        "$ref": "#/components/schemas/Custom",
                     },
                 },
             },
@@ -646,10 +640,7 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
             "content": {
                 "application/json": {
                     "schema": {
-                        "items": {
-                            "$ref": "#/components/schemas/Custom",
-                        },
-                        "type": "array",
+                        "$ref": "#/components/schemas/Custom",
                     },
                 },
             },
@@ -1937,7 +1928,7 @@ def test_pipeline_schema__openapi():
             "/api/example/": {
                 "post": {
                     "description": "Example Input",
-                    "operationId": "createInput",
+                    "operationId": "createInputExample",
                     "parameters": [],
                     "requestBody": {
                         "content": {
@@ -2000,7 +1991,7 @@ def test_pipeline_schema__openapi():
                 "post": {
                     "deprecated": True,
                     "description": "Example Input",
-                    "operationId": "createDeprecatedInput",
+                    "operationId": "createDeprecatedInputExampleDeprecated",
                     "parameters": [],
                     "requestBody": {
                         "content": {
@@ -2062,7 +2053,7 @@ def test_pipeline_schema__openapi():
             "/api/example/headers-and-cookies": {
                 "patch": {
                     "description": "Example Input",
-                    "operationId": "partialUpdateHeaderAndCookieInput",
+                    "operationId": "partialUpdateHeaderAndCookieInputExampleHeadersAndCookies",
                     "parameters": [
                         {
                             "description": "",
@@ -2179,7 +2170,7 @@ def test_pipeline_schema__openapi():
             "/api/example/private": {
                 "put": {
                     "description": "Example Input",
-                    "operationId": "updateInput",
+                    "operationId": "updateInputExamplePrivate",
                     "parameters": [],
                     "requestBody": {
                         "content": {
@@ -2257,7 +2248,7 @@ def test_pipeline_schema__openapi():
             "/api/example/{age}": {
                 "patch": {
                     "description": "Example Input",
-                    "operationId": "partialUpdateInput",
+                    "operationId": "partialUpdateInputExampleAge",
                     "parameters": [
                         {
                             "description": "",
@@ -2353,7 +2344,7 @@ def test_pipeline_schema__openapi():
             "/api/pydantic": {
                 "get": {
                     "description": "Pydantic View",
-                    "operationId": "retrieveDeprecatedPydanticinput",
+                    "operationId": "retrieveDeprecatedPydanticinputPydantic",
                     "parameters": [
                         {
                             "description": "",

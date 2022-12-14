@@ -20,7 +20,7 @@ from rest_framework.schemas.inspectors import ViewInspector
 from rest_framework.settings import api_settings
 from rest_framework.utils import formatting
 
-from .inference import serializer_from_callable, snake_case_to_camel_case
+from .inference import serializer_from_callable, snake_case_to_camel_case, snake_case_to_pascal_case
 from .serializers import EmptySerializer, MockSerializer
 from .typing import (
     TYPE_CHECKING,
@@ -382,6 +382,8 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
         return self._get_description_section(self.view, method, formatting.dedent(smart_str(description)))
 
     def get_operation_id(self, path: str, method: HTTPMethod) -> str:
+        path_part = snake_case_to_pascal_case(re.sub(r"\W", "_", re.sub(r"[{}]", "", path.lower())))
+
         method_mapping = {
             "GET": "retrieve",
             "POST": "create",
@@ -395,7 +397,7 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
             action = method_mapping.get(method) or snake_case_to_camel_case(method.lower())
 
         if self.operation_id_base is not None:
-            return action + self.operation_id_base
+            return action + self.operation_id_base + path_part
 
         serializer_class_name = self.view.get_serializer_class().__name__
         operation_id_base = serializer_pattern.sub("", serializer_class_name)
@@ -406,7 +408,7 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
                 f'Serializer\'s class name should be unique and explicit. e.g., "ItemSerializer"'
             )
 
-        return action + operation_id_base
+        return action + operation_id_base + path_part
 
     def get_operation(self, path: str, method: HTTPMethod) -> APIOperation:
         operation: APIOperation = {}
@@ -591,17 +593,7 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
             return self.get_no_result_schema()
 
         if isinstance(serializer, serializers.ListSerializer):
-            return {
-                "schema": APISchema(
-                    type="array",
-                    items={
-                        "$ref": (
-                            f"#/components/schemas/"
-                            f"{self.get_component_name(getattr(serializer, 'child', serializer))}"
-                        )
-                    },
-                ),
-            }
+            serializer = getattr(serializer, "child", serializer)
 
         return APISchema(
             schema={
@@ -634,11 +626,13 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
             child_serializer = getattr(input_serializer, "child", input_serializer)
 
             fields = {key: value for key, value in child_serializer.fields.items() if key not in params}
-            new_serializer_class = type(input_serializer.__class__.__name__, (MockSerializer,), fields)
+            new_serializer_class = type(child_serializer.__class__.__name__, (MockSerializer,), fields)
             if is_list_serializer:
                 new_serializer_class.many = True  # pragma: no cover
 
-            new_serializer_class.__doc__ = input_serializer.__class__.__doc__
+            new_serializer_class.__doc__ = (
+                input_serializer.__class__.__doc__ or child_serializer.__class__.__doc__ or ""
+            )
             input_serializer = self.view.initialize_serializer(serializer_class=new_serializer_class)
 
         item_schema = self.get_reference(input_serializer)
@@ -646,9 +640,9 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
         if not item_schema["schema"].get("properties", True):
             return {}  # pragma: no cover
 
-        return {
-            "content": {content_type: item_schema for content_type in self.get_parsers()},
-        }
+        return APIRequestBody(
+            content={content_type: item_schema for content_type in self.get_parsers()},
+        )
 
     def get_responses(self, path: str, method: HTTPMethod) -> APIResponses:
         data = APIResponses()
