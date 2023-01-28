@@ -13,7 +13,6 @@ from rest_framework.serializers import (
 
 from .typing import TYPE_CHECKING, ClassVar, Dict, List, Set, Type, Union
 
-
 if TYPE_CHECKING:
     from .views import BasePipelineView
 

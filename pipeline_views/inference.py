@@ -5,6 +5,7 @@ from inspect import getfullargspec
 from rest_framework.fields import (
     BooleanField,
     CharField,
+    ChoiceField,
     DateField,
     DateTimeField,
     DecimalField,
@@ -26,6 +27,7 @@ from .typing import (
     Dict,
     ForwardRef,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
@@ -35,7 +37,6 @@ from .typing import (
     get_args,
     get_origin,
 )
-
 
 __all__ = [
     "inline_serializer",
@@ -53,19 +54,20 @@ def serializer_from_callable(func: Callable[..., Any], output: bool = False) -> 
     """
     types = _return_types(func) if output else _parameter_types(func)
     is_list = isinstance(types, list)
-    fields: Dict[str, Field] = _get_fields(types[0]) if is_list else _get_fields(types)
+    fields = _get_fields(types[0]) if is_list else _get_fields(types)
     serializer_name = snake_case_to_pascal_case(f"{func.__name__}_serializer")
-    serializer = inline_serializer(serializer_name, super_class=MockSerializer, fields=fields)
-    serializer.many = is_list
-    return serializer
+    return inline_serializer(serializer_name, super_class=MockSerializer, fields=fields, many=is_list)
 
 
 def inline_serializer(
     name: str,
     super_class: Type[BaseSerializer] = Serializer,
     fields: Dict[str, Field] = None,
+    many: bool = False,
 ) -> Type[BaseSerializer]:
-    return type(name, (super_class,), fields or {})  # type: ignore
+    serializer: Type[BaseSerializer] = type(name, (super_class,), fields or {})  # type: ignore
+    serializer.many = many
+    return serializer
 
 
 def _parameter_types(func: Callable[..., Any]) -> TypesDict:
@@ -77,7 +79,7 @@ def _parameter_types(func: Callable[..., Any]) -> TypesDict:
 
     # Get types based on argument default values
     defaults: Tuple[Any, ...] = args_spec.defaults or ()
-    for name, value in zip(reversed(args_spec.args), reversed(defaults)):
+    for name, value in zip(reversed(args_spec.args), reversed(defaults)):  # noqa
         if name in types:
             continue
         types[name] = type(value)
@@ -137,6 +139,7 @@ def _get_fields(types: TypesDict) -> Dict[str, Field]:
     TypedDicts and other classes with __annotations__ dicts
     are recursively converted to serializers based on their types.
     """
+
     fields: Dict[str, Field] = {}
     for name, type_ in types.items():
 
@@ -156,6 +159,11 @@ def _get_fields(types: TypesDict) -> Dict[str, Field]:
             else:
                 fields[name] = ListField(child=_type_to_serializer_field.get(type_[0], CharField)())
 
+            continue
+
+        if get_origin(type_) == Literal:
+            choices = [arg.__forward_arg__ for arg in get_args(type_)]
+            fields[name] = ChoiceField(choices=choices)
             continue
 
         field = _type_to_serializer_field.get(type_, CharField)
@@ -215,16 +223,38 @@ def _unwrap_generic(type_: Type, globalns: Dict[str, Any]) -> Union[List[TypesDi
     """Ungrap the arguments of generics like list and dicts into proper types."""
     origin_type: Type = get_origin(type_)
     origin_args: Tuple[Type, ...] = get_args(type_)
+    special_type = origin_type in (Union,)
 
-    if origin_type not in (tuple, list, set, dict):
-        return type_
+    try:
+        if not issubclass(origin_type, (tuple, list, set, dict)):  # pragma: no cover
+            return type_
+    except TypeError:
+        if not special_type:
+            return type_
 
-    arg_types = []
-
-    if issubclass(origin_type, dict):
+    if not special_type and issubclass(origin_type, dict):
         origin_args = origin_args[1:]
 
+    arg_types = get_arg_types(origin_args, globalns)
+
+    if origin_type == Union:
+        return arg_types[0]
+
+    if issubclass(origin_type, dict):
+        return {"str": arg_types[0]}
+
+    return arg_types
+
+
+def get_arg_types(
+    origin_args: Tuple[Type, ...],
+    globalns: Dict[str, Any],
+) -> Union[List[TypesDict], Dict[str, List[TypesDict]], Type]:
+    arg_types = []
+
     for arg_type in origin_args:
+        arg_type = _forward_refs_to_types(arg_type, globalns)
+
         if not hasattr(arg_type, "__annotations__"):
             if hasattr(arg_type, "__origin__"):
                 arg_type = _unwrap_generic(arg_type, globalns)
@@ -237,9 +267,6 @@ def _unwrap_generic(type_: Type, globalns: Dict[str, Any]) -> Union[List[TypesDi
             anns[name] = _unwrap_types(annotation, globalns)
 
         arg_types.append(anns)
-
-    if issubclass(origin_type, dict):
-        return {"str": arg_types[0]}
 
     return arg_types
 

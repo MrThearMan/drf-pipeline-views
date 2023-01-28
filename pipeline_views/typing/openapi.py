@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from .general import Annotated, Any, Dict, List, Literal, Required, TypedDict, Union
 
-
 _APIRefNotRequired = TypedDict("_APIRefNotRequired", {"$ref": str}, total=False)
 _APIRefRequired = TypedDict("_APIRefRequired", {"$ref": str})
 
@@ -940,6 +939,9 @@ class APISchema(_APIRefNotRequired, total=False):
     xml: APIXML
     externalDocs: APIExternalDocumentation
     example: Any
+    oneOf: list[APISchema]
+    anyOf: list[APISchema]
+    allOf: list[APISchema]
 
 
 class APIDiscriminator(TypedDict, total=False):

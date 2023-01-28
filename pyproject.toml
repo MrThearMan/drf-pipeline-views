@@ -105,14 +105,12 @@ exclude = [
 select = [
     "F",  # pyflakes
     "E",  # pycodestyle errors
-    # "D",  # pydocstyle
-    # "N",  # pep8-naming
+    "I",  # isort
     "S",  # flake8-bandit
     "C",  # flake8-comprehensions
     "B",  # flake8-bugbear
     "T",  # flake8-print
     "W",  # pycodestyle warnings
-    # "ANN",  # flake8-annotations
 ]
 ignore = [
     "B905",  # `zip()` without an explicit `strict=` parameter

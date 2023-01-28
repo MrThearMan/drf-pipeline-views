@@ -11,7 +11,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 
-
 try:
     from pydantic import BaseModel
 except ImportError:
@@ -35,7 +34,6 @@ from .typing import (
     Union,
     ViewMethod,
 )
-
 
 if TYPE_CHECKING:
     from .views import BasePipelineView

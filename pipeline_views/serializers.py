@@ -6,7 +6,6 @@ from rest_framework.settings import api_settings
 
 from .typing import Any, ClassVar, Dict, List, Optional, Type, Union
 
-
 __all__ = [
     "CookieSerializerMixin",
     "EmptySerializer",

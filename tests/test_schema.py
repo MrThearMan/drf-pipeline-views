@@ -287,6 +287,67 @@ def test_pipeline_schema__get_components__list(drf_request):
     }
 
 
+def test_pipeline_schema__get_components__union(drf_request):
+    class CustomSerializer(Serializer):
+        """This is the description"""
+
+        data = CharField()
+
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        schema = PipelineSchema(
+            responses={
+                "POST": {
+                    200: ...,
+                    400: ["Unavailable", CustomSerializer],
+                },
+            }
+        )
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    components = view.schema.get_components("", "POST")
+    assert components == {
+        "Custom": {
+            "properties": {
+                "data": {
+                    "type": "string",
+                },
+            },
+            "required": ["data"],
+            "type": "object",
+        },
+        "Input": {
+            "properties": {
+                "age": {
+                    "type": "integer",
+                },
+                "name": {
+                    "type": "string",
+                },
+            },
+            "required": ["name", "age"],
+            "type": "object",
+        },
+        "Output": {
+            "properties": {
+                "age": {
+                    "type": "integer",
+                },
+                "email": {
+                    "format": "email",
+                    "type": "string",
+                },
+            },
+            "required": ["email", "age"],
+            "type": "object",
+        },
+    }
+
+
 def test_pipeline_schema__get_responses__from_schema(drf_request):
     class CustomSerializer(Serializer):
         """This is the description"""
@@ -388,6 +449,82 @@ def test_pipeline_schema__get_responses__none(drf_request):
                 },
             },
             "description": "Example Output",
+        },
+        "401": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "properties": {
+                            "detail": {
+                                "default": "error message",
+                                "type": "string",
+                            },
+                        },
+                        "type": "object",
+                    },
+                },
+            },
+            "description": "Unauthenticated.",
+        },
+    }
+
+
+def test_pipeline_schema__get_responses__union(drf_request):
+    class CustomSerializer(Serializer):
+        """This is the description"""
+
+        data = CharField()
+
+    class CustomView(ExampleView):
+        """Custom View"""
+
+        schema = PipelineSchema(
+            responses={
+                "POST": {
+                    200: ...,
+                    400: ["Unavailable", CustomSerializer],
+                },
+            }
+        )
+
+    view = CustomView()
+    view.request = drf_request
+    view.request.method = "POST"
+    view.format_kwarg = None
+    responses = view.schema.get_responses("", "POST")
+    assert responses == {
+        "200": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "$ref": "#/components/schemas/Output",
+                    },
+                },
+            },
+            "description": "Example Output",
+        },
+        "400": {
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "anyOf": [
+                            {
+                                "properties": {
+                                    "detail": {
+                                        "default": "error message",
+                                        "type": "string",
+                                    },
+                                },
+                                "type": "object",
+                            },
+                            {
+                                "$ref": "#/components/schemas/Custom",
+                            },
+                        ],
+                    },
+                },
+            },
+            "description": "",
         },
         "401": {
             "content": {

@@ -1,4 +1,3 @@
-# pylint: disable=too-many-lines
 from __future__ import annotations
 
 import copy
@@ -59,7 +58,6 @@ from .typing.openapi import (
 )
 from .utils import get_path_parameters, is_serializer_class
 
-
 if TYPE_CHECKING:
     from .views import BasePipelineView
 
@@ -75,6 +73,7 @@ __all__ = [
 
 
 SerializerOrSerializerType = Union[serializers.Serializer, Type[serializers.Serializer]]
+ResponseKind = Union[str, Type[serializers.BaseSerializer]]
 serializer_pattern = re.compile("serializer", re.IGNORECASE)
 
 
@@ -88,7 +87,7 @@ def deprecate(__view: Optional[T] = None, *, methods: Optional[List[HTTPMethod]]
         # Mock the "get_serializer_class" method to change the calculated "operation_id"
         def new_get_serializer_class(old_method):
             def inner(self, output: bool = False):
-                serializer = old_method.__get__(self, new_view)(output)  # pylint: disable=unnecessary-dunder-call
+                serializer = old_method.__get__(self, new_view)(output)
                 new_serializer = type(f"Deprecated{serializer.__name__}", (serializer,), {})
                 new_serializer.__doc__ = serializer.__doc__ or ""
                 return new_serializer
@@ -132,7 +131,7 @@ def convert_to_schema(schema: Union[List[Any], Dict[str, Any], Any]) -> APISchem
     )
 
 
-def map_field(field: serializers.Field) -> APISchema:  # pragma: no cover pylint: disable=R0911,R0912,R0915
+def map_field(field: serializers.Field) -> APISchema:  # pragma: no cover
     if isinstance(field, serializers.ListSerializer):
         return APISchema(type="array", items=map_serializer(field.child))
 
@@ -243,7 +242,7 @@ def map_field(field: serializers.Field) -> APISchema:  # pragma: no cover pylint
     return APISchema(type="string")
 
 
-def map_serializer(serializer: SerializerOrSerializerType) -> APISchema:  # pylint: disable=too-many-branches
+def map_serializer(serializer: SerializerOrSerializerType) -> APISchema:
     required = []
     result = APISchema(type="object", properties={})
 
@@ -321,14 +320,14 @@ def map_field_validators(field: serializers.Field, schema: APISchema) -> None:  
                 schema["minimum"] = -schema["maximum"]
 
 
-class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class PipelineSchema(ViewInspector):
 
     view: "BasePipelineView"
 
     def __init__(
         self,
         *,
-        responses: Optional[Dict[HTTPMethod, Dict[int, Union[str, Type[serializers.BaseSerializer]]]]] = None,
+        responses: Optional[Dict[HTTPMethod, Dict[int, Union[ResponseKind, List[ResponseKind]]]]] = None,
         callbacks: Optional[Dict[str, Dict[str, Dict[HTTPMethod, SchemaCallbackData]]]] = None,
         links: Optional[Dict[HTTPMethod, Dict[int, Dict[str, APILinks]]]] = None,
         query_parameters: Optional[Dict[HTTPMethod, List[str]]] = None,
@@ -467,22 +466,26 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
         response_serializer_class = self.view.get_serializer_class(output=True)
 
         for serializer_class in (request_serializer_class, response_serializer_class):
-            serializer = self.view.initialize_serializer(serializer_class=serializer_class)
-            content = map_serializer(serializer)
-            component_name = self.get_component_name(serializer)
-            components.setdefault(component_name, content)
+            self.add_component_from_serializer_class(components, serializer_class)
 
         for method_responses in self.responses.values():
-            for serializer_class in method_responses.values():
-                if not is_serializer_class(serializer_class):
+            for info in method_responses.values():
+                if isinstance(info, list):
+                    for item in info:
+                        self.add_component_from_serializer_class(components, item)
                     continue
 
-                serializer = self.view.initialize_serializer(serializer_class=serializer_class)
-                content = map_serializer(serializer)
-                component_name = self.get_component_name(serializer)
-                components.setdefault(component_name, content)
+                self.add_component_from_serializer_class(components, info)
 
         return components
+
+    def add_component_from_serializer_class(self, components: Dict[str, APISchema], serializer_class: Any) -> None:
+        if not is_serializer_class(serializer_class):
+            return
+        serializer = self.view.initialize_serializer(serializer_class=serializer_class)
+        content = map_serializer(serializer)
+        component_name = self.get_component_name(serializer)
+        components.setdefault(component_name, content)
 
     def get_callbacks(self, path: str, method: HTTPMethod) -> Dict[str, Dict[str, APIPathItem]]:
         if not self.callbacks:
@@ -526,7 +529,7 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
 
         return callback_data
 
-    def get_parameters(self, path: str, method: HTTPMethod) -> List[APIParameter]:  # pylint: disable=R0912
+    def get_parameters(self, path: str, method: HTTPMethod) -> List[APIParameter]:
         serializer = self.view.get_serializer()
         if isinstance(serializer, serializers.ListSerializer):
             serializer = getattr(serializer, "child", serializer)
@@ -583,23 +586,16 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
             if not issubclass(renderer, BrowsableAPIRenderer)
         ]
 
-    def get_reference(self, serializer: serializers.Serializer) -> Dict[Literal["schema"], APISchema]:
+    def get_reference(self, serializer: serializers.Serializer) -> APISchema:
         if isinstance(serializer, MockSerializer):
             if serializer.fields:
-                return {"schema": map_serializer(serializer)}
-            return {"schema": convert_to_schema(serializer._example)}  # pylint: disable=protected-access
-
-        if isinstance(serializer, EmptySerializer):
-            return self.get_no_result_schema()
+                return map_serializer(serializer)
+            return convert_to_schema(serializer._example)
 
         if isinstance(serializer, serializers.ListSerializer):
             serializer = getattr(serializer, "child", serializer)
 
-        return APISchema(
-            schema={
-                "$ref": f"#/components/schemas/{self.get_component_name(serializer)}",
-            },
-        )
+        return APISchema(**{"$ref": f"#/components/schemas/{self.get_component_name(serializer)}"})
 
     def get_tags(self, path: str, method: HTTPMethod) -> List[str]:
         if self.tags:
@@ -635,7 +631,11 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
             )
             input_serializer = self.view.initialize_serializer(serializer_class=new_serializer_class)
 
-        item_schema = self.get_reference(input_serializer)
+        item_schema = (
+            self.get_no_result_schema()
+            if isinstance(input_serializer, EmptySerializer)
+            else {"schema": self.get_reference(input_serializer)}
+        )
 
         if not item_schema["schema"].get("properties", True):
             return {}  # pragma: no cover
@@ -655,7 +655,7 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
         authentication_classes = self.view.authentication_classes
         permission_classes = self.view.permission_classes
 
-        if ... not in set(responses.values()):
+        if ... not in list(responses.values()):
             responses.setdefault(200, ...)
 
         if authentication_classes:
@@ -671,9 +671,6 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
                 serializer_class = self.view.get_serializer_class(output=True)
                 info = serializer_class.__doc__ or ""
 
-                if getattr(serializer_class, "many", False):
-                    data.setdefault("204", self.get_no_result_schema())
-
             elif is_serializer_class(info):
                 serializer_class = info
                 info = serializer_class.__doc__ or ""
@@ -681,10 +678,28 @@ class PipelineSchema(ViewInspector):  # pylint: disable=too-many-instance-attrib
             if serializer_class is not None:
                 serializer = self.view.initialize_serializer(serializer_class=serializer_class)
 
+                if status_code // 100 == 2 and isinstance(serializer, serializers.ListSerializer):
+                    data.setdefault("204", self.get_no_result_schema())
+
                 if isinstance(serializer, EmptySerializer):
                     status_code = 204
+                    response_schema = self.get_no_result_schema()
+                else:
+                    response_schema = {"schema": self.get_reference(serializer)}
 
-                response_schema = self.get_reference(serializer)
+            elif isinstance(info, list):
+                response_schema = {"schema": APISchema(anyOf=[])}
+
+                for item in info:
+                    if is_serializer_class(item):
+                        serializer = self.view.initialize_serializer(serializer_class=item)
+                        response_schema["schema"]["anyOf"].append(self.get_reference(serializer))
+                        continue
+
+                    response_schema["schema"]["anyOf"].append(self.get_error_message_schema())
+
+                info = ""
+
             else:
                 response_schema = {"schema": self.get_error_message_schema()}
 
@@ -756,7 +771,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         version: Optional[str] = None,
         webhooks: Optional[Dict[str, SchemaWebhook]] = None,
         contact: Optional[APIContact] = None,
-        license: Optional[APILicense] = None,  # pylint: disable=redefined-builtin
+        license: Optional[APILicense] = None,
         terms_of_service: Optional[str] = None,
         public: Optional[bool] = None,
         prefix: Optional[str] = None,
@@ -812,7 +827,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
         *,
         webhooks: Optional[Dict[str, SchemaWebhook]] = None,
         contact: Optional[APIContact] = None,
-        license: Optional[APILicense] = None,  # pylint: disable=redefined-builtin
+        license: Optional[APILicense] = None,
         terms_of_service: Optional[str] = None,
         public: Optional[bool] = None,
         prefix: Optional[str] = None,
@@ -872,7 +887,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
             path = path[1:]  # pragma: no cover
         return urljoin(self.url or "/", path)
 
-    def get_schema(self, request: Optional[Request] = None, public: bool = False) -> OpenAPI:  # pylint: disable=R0914
+    def get_schema(self, request: Optional[Request] = None, public: bool = False) -> OpenAPI:
         schema = OpenAPI(
             openapi=self.openapi,
             info=self.get_info(),
@@ -950,6 +965,7 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
                             },
                         },
                     },
+                    # TODO: Handle unions
                     responses={  # type: ignore
                         str(status_code): {
                             "description": response.__doc__ or "",

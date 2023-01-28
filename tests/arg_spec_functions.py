@@ -6,8 +6,7 @@ from functools import wraps
 
 from pydantic import BaseModel
 
-from pipeline_views.typing import TYPE_CHECKING, Dict, List, Optional, TypedDict, Union
-
+from pipeline_views.typing import TYPE_CHECKING, Dict, List, Literal, Optional, TypedDict, Union
 
 if TYPE_CHECKING:
     from tests.conftest import TestType
@@ -111,6 +110,9 @@ __all__ = [
     "function_95",
     "function_96",
     "function_97",
+    "function_98",
+    "function_99",
+    "function_100",
     "Foo",
     "Bar",
     "Barr",
@@ -163,6 +165,10 @@ class Buzz(TypedDict):
 class TestModel(BaseModel):
     field: int
     other: List[str]
+
+
+class LiteralModel(BaseModel):
+    choice: Literal["foo", "bar"]
 
 
 def function_01(name, age):
@@ -563,4 +569,16 @@ def function_96(foo: TestModel):
 
 
 def function_97() -> TestModel:
+    pass
+
+
+def function_98(foo: Union[str, int]):
+    pass
+
+
+def function_99() -> Union[Foo, Bar]:
+    pass
+
+
+def function_100(foo: LiteralModel):
     pass

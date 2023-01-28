@@ -46,7 +46,6 @@ from .general import (
     get_origin,
 )
 
-
 __all__ = [
     "Any",
     "AuthOrPerm",

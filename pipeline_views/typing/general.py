@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import _eval_type  # type: ignore
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,8 +19,8 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    _eval_type,  # type: ignore
 )
-
 
 # New in version 3.8
 try:
@@ -52,7 +51,7 @@ if TYPE_CHECKING:
     from rest_framework.permissions import BasePermission
     from rest_framework.request import Request
     from rest_framework.response import Response
-    from rest_framework.serializers import BaseSerializer
+    from rest_framework.serializers import Serializer
 
     from ..views import BasePipelineView
 
@@ -110,7 +109,7 @@ __all__ = [
 
 eval_type = _eval_type
 DataDict: TypeAlias = Dict[str, Any]
-SerializerType: TypeAlias = Type["BaseSerializer"]
+SerializerType: TypeAlias = Type["Serializer"]
 DataConditional: TypeAlias = Tuple[Any, DataDict]
 DataReturn: TypeAlias = Union[DataDict, DataConditional, None]
 HTTPMethod: TypeAlias = Literal["GET", "POST", "PUT", "PATCH", "DELETE"]

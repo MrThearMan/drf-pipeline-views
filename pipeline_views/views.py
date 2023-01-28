@@ -3,7 +3,7 @@ import asyncio
 from asgiref.sync import async_to_sync
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.serializers import BaseSerializer
+from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 
 from .exceptions import NextLogicBlock
@@ -25,7 +25,6 @@ from .typing import (
     ViewContext,
 )
 from .utils import Sentinel, get_view_method, is_pydantic_model, is_serializer_class, run_parallel, translate
-
 
 __all__ = [
     "BasePipelineView",
@@ -138,12 +137,12 @@ class BasePipelineView(APIView):
         """Build and validate a pydantic model"""
         return model_class(**data).dict()
 
-    def get_serializer(self, *args: Any, **kwargs: Any) -> BaseSerializer:
+    def get_serializer(self, *args: Any, **kwargs: Any) -> Serializer:
         """Initialize serializer for current request HTTP method."""
         kwargs["serializer_class"] = self.get_serializer_class(output=kwargs.pop("output", False))
         return self.initialize_serializer(*args, **kwargs)
 
-    def initialize_serializer(self, *args: Any, **kwargs: Any) -> BaseSerializer:
+    def initialize_serializer(self, *args: Any, **kwargs: Any) -> Serializer:
         serializer_class: SerializerType = kwargs.pop("serializer_class")
         kwargs.setdefault("context", self.get_serializer_context())
         kwargs.setdefault("many", getattr(serializer_class, "many", False))

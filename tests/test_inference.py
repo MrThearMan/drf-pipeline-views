@@ -1,3 +1,4 @@
+# ruff: noqa
 import sys
 
 import pytest
@@ -93,10 +94,7 @@ def test_parameter_types():
 
     assert _parameter_types(function_78) == {"foo": {"name": str, "age": int}}
     assert _parameter_types(function_79) == {
-        "foo": {
-            "union": Union[int, float],
-            "optional": Optional[str],
-        },
+        "foo": {"optional": str, "union": int},
     }
     assert _parameter_types(function_80) == {
         "foo": {
@@ -136,10 +134,7 @@ def test_return_types():
     }
 
     assert _return_types(function_84) == {"name": str, "age": int}
-    assert _return_types(function_85) == {
-        "union": Union[int, float],
-        "optional": Optional[str],
-    }
+    assert _return_types(function_85) == {"optional": str, "union": int}
     assert _return_types(function_86) == {
         "item": foo,
         "things": [foo],
@@ -183,7 +178,7 @@ def test_serializer_from_callable():
         "foo": {"name": "CharField()", "age": "IntegerField()"}
     }
     assert _to_comparable_dict(serializer_from_callable(function_79)()) == {
-        "foo": {"optional": "CharField()", "union": "CharField()"}
+        "foo": {"optional": "CharField()", "union": "IntegerField()"}
     }
     assert _to_comparable_dict(serializer_from_callable(function_80)()) == {
         "foo": {
@@ -258,6 +253,11 @@ def test_serializer_from_callable():
         }
     }
 
+    assert _to_comparable_dict(serializer_from_callable(function_98)()) == {"foo": "CharField()"}
+    assert _to_comparable_dict(serializer_from_callable(function_100)()) == {
+        "foo": {"choice": "ChoiceField(choices=['foo', 'bar'])"}
+    }
+
 
 def test_serializer_from_callable__output():
     assert _to_comparable_dict(serializer_from_callable(function_84, output=True)()) == {
@@ -266,7 +266,7 @@ def test_serializer_from_callable__output():
     }
     assert _to_comparable_dict(serializer_from_callable(function_85, output=True)()) == {
         "optional": "CharField()",
-        "union": "CharField()",
+        "union": "IntegerField()",
     }
     assert _to_comparable_dict(serializer_from_callable(function_86, output=True)()) == {
         "item": {"age": "IntegerField()", "name": "CharField()"},
@@ -338,6 +338,11 @@ def test_serializer_from_callable__output():
     assert _to_comparable_dict(serializer_from_callable(function_97, output=True)()) == {
         "field": "IntegerField()",
         "other": "ListField(child=CharField())",
+    }
+
+    assert _to_comparable_dict(serializer_from_callable(function_99, output=True)()) == {
+        "age": "IntegerField()",
+        "name": "CharField()",
     }
 
 

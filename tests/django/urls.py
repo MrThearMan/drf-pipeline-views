@@ -14,7 +14,6 @@ from pipeline_views.serializers import HeaderAndCookieSerializer
 from pipeline_views.typing import Optional
 from pipeline_views.views import BasePipelineView
 
-
 with suppress(Exception):
     call_command("makemigrations")
     call_command("migrate")
