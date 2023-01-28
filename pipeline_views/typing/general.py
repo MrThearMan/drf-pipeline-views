@@ -12,21 +12,20 @@ from typing import (
     Generator,
     Iterable,
     List,
+    Literal,
     Optional,
+    Protocol,
     Sequence,
     Set,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
     _eval_type,  # type: ignore
+    get_args,
+    get_origin,
 )
-
-# New in version 3.8
-try:
-    from typing import Literal, Protocol, TypedDict, get_args, get_origin
-except ImportError:
-    from typing_extensions import Literal, Protocol, TypedDict, get_args, get_origin
 
 # New in version 3.9
 try:
