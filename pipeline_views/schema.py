@@ -321,7 +321,6 @@ def map_field_validators(field: serializers.Field, schema: APISchema) -> None:  
 
 
 class PipelineSchema(ViewInspector):
-
     view: "BasePipelineView"
 
     def __init__(
@@ -728,7 +727,6 @@ class PipelineSchema(ViewInspector):
 
 
 class PipelineEndpointEnumerator(EndpointEnumerator):
-
     url: str = ""
 
     def get_path_from_regex(self, path_regex: str) -> str:
@@ -747,7 +745,6 @@ class PipelineEndpointEnumerator(EndpointEnumerator):
 
 
 class PipelineSchemaGenerator(BaseSchemaGenerator):
-
     openapi: Literal["3.0.2"] = "3.0.2"
     webhooks: Dict[str, SchemaWebhook] = {}
     contact: APIContact = {}

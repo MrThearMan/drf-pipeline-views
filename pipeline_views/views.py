@@ -32,7 +32,6 @@ __all__ = [
 
 
 class BasePipelineView(APIView):
-
     pipelines: ClassVar[PipelinesDict] = {}
     """Dictionary describing the HTTP method pipelines."""
 
@@ -80,7 +79,6 @@ class BasePipelineView(APIView):
 
         try:
             for step in logic:
-
                 # Conditional logic path
                 if isinstance(data, tuple):
                     key, data = data
