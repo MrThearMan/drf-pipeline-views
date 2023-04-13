@@ -321,7 +321,6 @@ def map_field_validators(field: serializers.Field, schema: APISchema) -> None:  
 
 
 class PipelineSchema(ViewInspector):
-
     view: "BasePipelineView"
 
     def __init__(
@@ -728,7 +727,6 @@ class PipelineSchema(ViewInspector):
 
 
 class PipelineEndpointEnumerator(EndpointEnumerator):
-
     url: str = ""
 
     def get_path_from_regex(self, path_regex: str) -> str:
@@ -747,7 +745,6 @@ class PipelineEndpointEnumerator(EndpointEnumerator):
 
 
 class PipelineSchemaGenerator(BaseSchemaGenerator):
-
     openapi: Literal["3.0.2"] = "3.0.2"
     webhooks: Dict[str, SchemaWebhook] = {}
     contact: APIContact = {}
@@ -986,7 +983,10 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
                 continue
             if component == old_components[name]:
                 continue
-            warnings.warn(f"Schema component {name!r} has been overriden with a different value.")  # pragma: no cover
+            warnings.warn(  # pragma: no cover
+                f"Schema component {name!r} has been overriden with a different value.",
+                stacklevel=2,
+            )
 
     def check_operation_id(
         self,
@@ -1003,7 +1003,8 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
                     Route: {path}, Method: {method}
                 An operationId has to be unique across your schema.
                 Your schema may not work in other tools.
-                """
+                """,
+                stacklevel=2,
             )
         operation_ids[operation_id] = PathAndMethod(path=path, method=method)
 

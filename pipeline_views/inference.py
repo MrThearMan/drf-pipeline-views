@@ -142,7 +142,6 @@ def _get_fields(types: TypesDict) -> Dict[str, Field]:
 
     fields: Dict[str, Field] = {}
     for name, type_ in types.items():
-
         # Could not determine forward referenced TypedDict
         # from another file. This is the best guess.
         if isinstance(type_, ForwardRef):

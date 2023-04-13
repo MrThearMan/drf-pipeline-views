@@ -215,7 +215,6 @@ def test_BaseAPIView__three_logic_callables__NextLogicBlock__with_output(base_ap
 
 
 def test_BaseAPIView__logic_missing_for_http_method(base_api_view):
-
     base_api_view.request.method = "GET"
 
     with pytest.raises(KeyError):

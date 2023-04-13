@@ -32,7 +32,6 @@ __all__ = [
 
 
 class BasePipelineView(APIView):
-
     pipelines: ClassVar[PipelinesDict] = {}
     """Dictionary describing the HTTP method pipelines."""
 
@@ -80,7 +79,6 @@ class BasePipelineView(APIView):
 
         try:
             for step in logic:
-
                 # Conditional logic path
                 if isinstance(data, tuple):
                     key, data = data
@@ -100,12 +98,9 @@ class BasePipelineView(APIView):
                 # Parallel block
                 elif isinstance(step, tuple):
                     old_kwargs: Optional[DataDict] = None
-                    try:
-                        step.index(...)
+                    if ... in step:
                         step = tuple(task for task in step if task is not ...)
                         old_kwargs = data
-                    except ValueError:
-                        pass
 
                     results: Tuple[DataDict, ...] = async_to_sync(run_parallel)(step, data)
                     data = {key: value for result in results for key, value in result.items()}

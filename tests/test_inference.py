@@ -125,7 +125,6 @@ def test_parameter_types():
 
 
 def test_return_types():
-
     foo = {"age": int, "name": str}
     bar = {
         "item": foo,
