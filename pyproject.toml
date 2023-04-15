@@ -71,8 +71,6 @@ coveralls = "3.3.1"
 [tool.poetry.group.docs.dependencies]
 mkdocs = "1.4.2"
 pymdown-extensions = "9.11"
-mkdocs-material = "8.5.10"
-Pygments = "2.13.0"
 mkdocs-mermaid2-plugin = "0.6.0"
 
 [tool.poetry.group.lint.dependencies]

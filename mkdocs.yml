@@ -1,4 +1,4 @@
-site_name: Django REST Framework Pipeline Views
+site_name: Pipeline Views
 
 nav:
   - Home: index.md
@@ -12,9 +12,12 @@ nav:
   - Miscellaneous: misc.md
 
 theme:
-  name: material
-  palette:
-    - scheme: slate
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:  # https://github.com/highlightjs/highlight.js/blob/main/SUPPORTED_LANGUAGES.md
+    - python
+    - console
+    - json
 
 markdown_extensions:
   pymdownx.highlight:
