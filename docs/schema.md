@@ -7,10 +7,9 @@ Here is an example pipeline.
 ```python
 from django.urls import path
 from rest_framework import serializers
-from rest_framework.schemas import get_schema_view
 
 from pipeline_views.views import BasePipelineView
-from pipeline_views.schema import PipelineSchemaGenerator
+from pipeline_views.schema import get_schema_view
 
 
 class InputSerializer(serializers.Serializer):
@@ -49,10 +48,12 @@ urlpatterns = [
         "openapi/",
         get_schema_view(
             title="Your Project",
+            root_url="api/v1/",
             description="API for all things",
             version="1.0.0",
-            # Must use this generator class!
-            generator_class=PipelineSchemaGenerator,
+            contact={"email": "user@example.com"},
+            license={"name": "MIT"},
+            terms_of_service="example.com",
         ),
         name="openapi-schema",
     ),
@@ -67,8 +68,13 @@ info:
   title: Your Project
   version: 1.0.0
   description: API for all things
+  contact:
+    email: user@example.com
+  license:
+    name: MIT
+  termsOfService: example.com
 paths:
-  /example:
+  /example/:
     post:
       operationId: createInput
       description: Example Input
@@ -121,54 +127,6 @@ components:
       - email
       - age
 ```
-
-The library also includes an optional `PipelineSchemaGenerator` which can be used
-to help create a versioned API while maintaining appropriate tags,
-and add additional information to the API. This will also sort the tags
-and the endpoints under those tags alphabetically.
-
-```python hl_lines="1 11 12 13 14 15 16"
-from pipeline_views.schema import PipelineSchemaGenerator
-
-urlpatterns = [
-    path("api/v1/example/", ExampleView.as_view(), name="test_view"),
-    path(
-        "openapi/",
-        get_schema_view(
-            title="Your Project",
-            description="API for all things",
-            version="1.0.0",
-            url="api/v1/",
-            generator_class=PipelineSchemaGenerator.configure(
-                contact={"email": "user@example.com"},
-                license={"name": "MIT"},
-                terms_of_service="example.com",
-            ),
-        ),
-        name="openapi-schema",
-    ),
-]
-```
-```yaml title="openapi" hl_lines="6 7 8 9 10 12 15 16"
-openapi: 3.0.2
-info:
-  title: Your Project
-  version: 1.0.0
-  description: API for all things
-  contact:
-    email: user@example.com
-  license:
-    name: MIT
-  termsOfService: example.com
-paths:
-  /api/v1/example/:
-    post:
-      # ...
-      tags:
-      - example
-# ...
-```
-
 
 ## Additional responses
 
@@ -364,13 +322,11 @@ class ExampleView(BasePipelineView):
 
 > The value for the security scheme defines its [scopes].
 
-The security scheme also needs to be added to the SchemaGenerator class to actually work.
-This can be done in `rest_framework.schemas.openapi.SchemaGenerator.get_schema`,
-by adding the appropriate configuration to `schema["components"]["securitySchemes"]`.
-`PipelineSchemaGenerator` can do this for you.
+The security scheme also needs to be added to the schema view.
+You can do this by adding the following:
 
-```python hl_lines="11 12 13 14 15 16 17 18 19"
-from pipeline_views.schema import PipelineSchemaGenerator
+```python hl_lines="11 12 13 14 15 16 17"
+from pipeline_views.schema import get_schema_view
 
 urlpatterns = [
     path("example/", ExampleView.as_view(), name="test_view"),
@@ -380,15 +336,13 @@ urlpatterns = [
             title="Your Project",
             description="API for all things",
             version="1.0.0",
-            generator_class=PipelineSchemaGenerator.configure(
-                security_schemes={
-                    "my_security": {
-                        "type": "http",
-                        "scheme": "bearer",
-                        "bearerFormat": "JWT",
-                    },
+            security_schemes={
+                "my_security": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT",
                 },
-            ),
+            },
         ),
         name="openapi-schema",
     ),
@@ -414,9 +368,9 @@ security rules is either a single authentication and permission class, or a
 tuple of them. If the view already has any of the schemas defined for it,
 the view's configuration will take precedence.
 
-```python hl_lines="7 29 30 31 32 33"
+```python hl_lines="7 28 29 30 31 32"
 from rest_framework.permissions import IsAuthenticated
-from pipeline_views.schema import PipelineSchemaGenerator
+from pipeline_views.schema import get_schema_view
 
 class ExampleView(BasePipelineView):
     """Example View"""
@@ -435,20 +389,18 @@ urlpatterns = [
             title="Your Project",
             description="API for all things",
             version="1.0.0",
-            generator_class=PipelineSchemaGenerator.configure(
-                security_schemes={
-                    "my_security": {
-                        "type": "http",
-                        "scheme": "bearer",
-                        "bearerFormat": "JWT",
-                    },
+            security_schemes={
+                "my_security": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT",
                 },
-                security_rules={
-                    IsAuthenticated: {
-                        "my_security": [],
-                    },
+            },
+            security_rules={
+                IsAuthenticated: {
+                    "my_security": [],
                 },
-            ),
+            },
         ),
         name="openapi-schema",
     ),
@@ -559,8 +511,8 @@ Endpoints can be set public/private for the whole API (public by default).
 Private endpoints are not visible to users that do not have the appropriate
 permissions.
 
-```python hl_lines="11 12 13"
-from pipeline_views.schema import PipelineSchemaGenerator
+```python hl_lines="11"
+from pipeline_views.schema import get_schema_view
 
 urlpatterns = [
     path("example/", ExampleView.as_view(), name="test_view"),
@@ -570,9 +522,7 @@ urlpatterns = [
             title="Your Project",
             description="API for all things",
             version="1.0.0",
-            generator_class=PipelineSchemaGenerator.configure(
-                public=False,
-            ),
+            public=False,
         ),
         name="openapi-schema",
     ),
@@ -739,11 +689,10 @@ paths:
 by an API call, for example by an out-of-band registration.
 You can define them in the PipelineSchemaGenerator.
 
-```python hl_lines="25 26 27 28 29 30 31 32 33 34 35 36"
+```python hl_lines="24 25 26 27 28 29 30 31 32 33"
 from django.urls import path
 from rest_framework import serializers
-from rest_framework.schemas import get_schema_view
-from pipeline_views.schema import PipelineSchemaGenerator
+from pipeline_views.schema import get_schema_view
 
 class InputSerializer(serializers.Serializer):
     """Example Input"""
@@ -764,18 +713,16 @@ urlpatterns = [
             title="Your Project",
             description="API for all things",
             version="1.0.0",
-            generator_class=PipelineSchemaGenerator.configure(
-                webhooks={
-                    "ExampleWebhook": {
-                        "method": "POST",
-                        "request_data": InputSerializer,
-                        "responses": {
-                            200: OutputSerializer,
-                            400: "Failure",
-                        },
+            webhooks={
+                "ExampleWebhook": {
+                    "method": "POST",
+                    "request_data": InputSerializer,
+                    "responses": {
+                        200: OutputSerializer,
+                        400: "Failure",
                     },
                 },
-            ),
+            },
         ),
         name="openapi-schema",
     ),

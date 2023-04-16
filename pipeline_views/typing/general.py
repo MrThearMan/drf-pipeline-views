@@ -46,6 +46,8 @@ except ImportError:
     from typing_extensions import NotRequired, Required
 
 if TYPE_CHECKING:
+    from django.http import HttpResponseBase  # noqa
+    from django.urls import URLPattern, URLResolver  # noqa
     from rest_framework.authentication import BaseAuthentication
     from rest_framework.permissions import BasePermission
     from rest_framework.request import Request
@@ -58,6 +60,7 @@ if TYPE_CHECKING:
 __all__ = [
     "Annotated",
     "Any",
+    "AsView",
     "AuthOrPerm",
     "Callable",
     "ClassVar",
@@ -70,6 +73,7 @@ __all__ = [
     "eval_type",
     "ForwardRef",
     "Generator",
+    "GenericView",
     "get_args",
     "get_origin",
     "http_method",
@@ -82,6 +86,7 @@ __all__ = [
     "Optional",
     "ParamSpec",
     "PathAndMethod",
+    "Patterns",
     "PipelineLogic",
     "PipelinesDict",
     "Protocol",
@@ -102,7 +107,6 @@ __all__ = [
     "TypeVar",
     "Union",
     "ViewContext",
-    "ViewMethod",
 ]
 
 
@@ -119,9 +123,20 @@ PipelinesDict: TypeAlias = Dict[HTTPMethod, PipelineLogic]  # type: ignore
 TypesDict: TypeAlias = Dict[str, Union[Optional[Type], "TypesDict"]]  # type: ignore
 AuthOrPerm: TypeAlias = Union[Type["BasePermission"], Type["BaseAuthentication"]]
 SecurityRules: TypeAlias = Dict[Union[Tuple[AuthOrPerm, ...], AuthOrPerm], Dict[str, List[str]]]
+Patterns = Union["URLPattern", "URLResolver"]
+_View = TypeVar("_View", bound=Callable[..., "HttpResponseBase"])
 
 
-class ViewMethod(Protocol):
+class AsView(Protocol[_View]):
+    cls: type[BasePipelineView]
+    view_class: type[BasePipelineView]
+    view_initkwargs: Dict[str, Any]
+    initkwargs: Dict[str, Any]
+    csrf_exempt: bool
+    __call__: _View
+
+
+class GenericView(Protocol):
     def __call__(self: BasePipelineView, request: Request, *args: Any, **kwargs: Any) -> Response:
         """..."""
 

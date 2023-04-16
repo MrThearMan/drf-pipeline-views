@@ -7,9 +7,8 @@ from django.views.generic import TemplateView
 from pydantic import BaseModel
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.schemas import get_schema_view
 
-from pipeline_views.schema import PipelineSchema, PipelineSchemaGenerator, deprecate
+from pipeline_views.schema import PipelineSchema, deprecate, get_schema_view
 from pipeline_views.serializers import HeaderAndCookieSerializer
 from pipeline_views.typing import Optional
 from pipeline_views.views import BasePipelineView
@@ -175,42 +174,40 @@ urlpatterns = [
         "openapi/",
         get_schema_view(
             title="Your Project",
+            root_url="api",
             description="API for all things",
             version="1.0.0",
-            url="api",
-            generator_class=PipelineSchemaGenerator.configure(
-                webhooks={
-                    "ExampleWebhook": {
-                        "method": "POST",
-                        "request_data": InputSerializer,
-                        "responses": {
-                            200: OutputSerializer,
-                        },
+            webhooks={
+                "ExampleWebhook": {
+                    "method": "POST",
+                    "request_data": InputSerializer,
+                    "responses": {
+                        200: OutputSerializer,
                     },
                 },
-                contact={"email": "user@example.com"},
-                license={"name": "MIT"},
-                terms_of_service="example.com",
-                security_schemes={
-                    "my_security": {
-                        "type": "http",
-                        "scheme": "bearer",
-                        "bearerFormat": "JWT",
-                    },
-                    "another": {
-                        "type": "http",
-                        "scheme": "basic",
-                    },
+            },
+            contact={"email": "user@example.com"},
+            license={"name": "MIT"},
+            terms_of_service="example.com",
+            security_schemes={
+                "my_security": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT",
                 },
-                security_rules={
-                    AllowAny: {
-                        "my_security": [],
-                    },
-                    (IsAuthenticated,): {
-                        "another": [],
-                    },
+                "another": {
+                    "type": "http",
+                    "scheme": "basic",
                 },
-            ),
+            },
+            security_rules={
+                AllowAny: {
+                    "my_security": [],
+                },
+                (IsAuthenticated,): {
+                    "another": [],
+                },
+            },
         ),
         name="openapi-schema",
     ),

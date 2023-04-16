@@ -22,6 +22,7 @@ from .typing import (
     Callable,
     DataDict,
     Generator,
+    GenericView,
     HTTPMethod,
     List,
     LogicCallable,
@@ -32,7 +33,6 @@ from .typing import (
     TypeGuard,
     TypeVar,
     Union,
-    ViewMethod,
 )
 
 if TYPE_CHECKING:
@@ -65,8 +65,8 @@ def is_serializer_class(obj: Any) -> TypeGuard[BaseSerializer]:
 
 
 def is_pydantic_model(obj: Any):
-    if BaseModel is None:
-        return False  # pragma: no cover
+    if BaseModel is None:  # pragma: no cover
+        return False
 
     return isinstance(obj, type) and issubclass(obj, BaseModel)
 
@@ -120,7 +120,7 @@ async def run_parallel(step: Tuple[Union[LogicCallable, SerializerType], ...], d
     return await asyncio.gather(*(task(**data) for task in step))  # noqa
 
 
-def get_view_method(method: HTTPMethod) -> ViewMethod:
+def get_view_method(method: HTTPMethod) -> GenericView:
     source = "query_params" if method == "GET" else "data"
 
     def inner(

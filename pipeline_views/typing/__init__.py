@@ -1,6 +1,7 @@
 from .general import (
     TYPE_CHECKING,
     Any,
+    AsView,
     AuthOrPerm,
     Callable,
     ClassVar,
@@ -12,6 +13,7 @@ from .general import (
     Dict,
     ForwardRef,
     Generator,
+    GenericView,
     HTTPMethod,
     Iterable,
     List,
@@ -21,6 +23,7 @@ from .general import (
     Optional,
     ParamSpec,
     PathAndMethod,
+    Patterns,
     PipelineLogic,
     PipelinesDict,
     Protocol,
@@ -40,7 +43,6 @@ from .general import (
     TypeVar,
     Union,
     ViewContext,
-    ViewMethod,
     eval_type,
     get_args,
     get_origin,
@@ -48,6 +50,7 @@ from .general import (
 
 __all__ = [
     "Any",
+    "AsView",
     "AuthOrPerm",
     "Callable",
     "ClassVar",
@@ -60,6 +63,7 @@ __all__ = [
     "eval_type",
     "ForwardRef",
     "Generator",
+    "GenericView",
     "get_args",
     "get_origin",
     "HTTPMethod",
@@ -71,6 +75,7 @@ __all__ = [
     "Optional",
     "ParamSpec",
     "PathAndMethod",
+    "Patterns",
     "PipelineLogic",
     "PipelinesDict",
     "Protocol",
@@ -91,5 +96,4 @@ __all__ = [
     "TypeVar",
     "Union",
     "ViewContext",
-    "ViewMethod",
 ]

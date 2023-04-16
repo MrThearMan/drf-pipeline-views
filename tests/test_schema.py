@@ -26,7 +26,7 @@ def test_pipeline_schema__get_components(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    components = view.schema.get_components("", "POST")
+    components = view.schema.get_components()
     assert components == {
         "Input": {
             "properties": {
@@ -58,7 +58,7 @@ def test_pipeline_schema__get_components(drf_request):
 
 def test_pipeline_schema__get_webhook(drf_request):
     schema = PipelineSchemaGenerator(
-        url="api",
+        root_url="api",
         webhooks={
             "Example": {
                 "method": "POST",
@@ -127,7 +127,7 @@ def test_pipeline_schema__get_responses(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    responses = view.schema.get_responses("", "POST")
+    responses = view.schema.get_responses("POST")
     assert responses == {
         "200": {
             "content": {
@@ -181,7 +181,7 @@ def test_pipeline_schema__get_components__from_schema(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    components = view.schema.get_components("", "POST")
+    components = view.schema.get_components()
     assert components == {
         "Custom": {
             "properties": {
@@ -258,7 +258,7 @@ def test_pipeline_schema__get_components__list(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    components = view.schema.get_components("", "POST")
+    components = view.schema.get_components()
     assert components == {
         "Custom": {
             "items": {
@@ -309,7 +309,7 @@ def test_pipeline_schema__get_components__union(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    components = view.schema.get_components("", "POST")
+    components = view.schema.get_components()
     assert components == {
         "Custom": {
             "properties": {
@@ -371,7 +371,7 @@ def test_pipeline_schema__get_responses__from_schema(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    responses = view.schema.get_responses("", "POST")
+    responses = view.schema.get_responses("POST")
     assert responses == {
         "200": {
             "content": {
@@ -438,7 +438,7 @@ def test_pipeline_schema__get_responses__none(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    responses = view.schema.get_responses("", "POST")
+    responses = view.schema.get_responses("POST")
     assert responses == {
         "200": {
             "content": {
@@ -491,7 +491,7 @@ def test_pipeline_schema__get_responses__union(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    responses = view.schema.get_responses("", "POST")
+    responses = view.schema.get_responses("POST")
     assert responses == {
         "200": {
             "content": {
@@ -555,7 +555,7 @@ def test_pipeline_schema__get_responses__wrong_method(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    responses = view.schema.get_responses("", "GET")
+    responses = view.schema.get_responses("GET")
     assert responses == {}
 
 
@@ -584,7 +584,7 @@ def test_pipeline_schema__get_responses__list(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    responses = view.schema.get_responses("", "POST")
+    responses = view.schema.get_responses("POST")
     assert responses == {
         "200": {
             "content": {
@@ -676,7 +676,7 @@ def test_pipeline_schema__get_responses__mock_serializer(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    responses = view.schema.get_responses("", "POST")
+    responses = view.schema.get_responses("POST")
     assert responses == {
         "200": {
             "content": {
@@ -771,7 +771,7 @@ def test_pipeline_schema__get_responses__add_204_if_output_is_list(drf_request):
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    responses = view.schema.get_responses("", "POST")
+    responses = view.schema.get_responses("POST")
     assert responses == {
         "200": {
             "content": {
@@ -831,7 +831,7 @@ def test_pipeline_schema__get_responses__204_if_output_is_emptyserializer(drf_re
     view.request = drf_request
     view.request.method = "POST"
     view.format_kwarg = None
-    responses = view.schema.get_responses("", "POST")
+    responses = view.schema.get_responses("POST")
     assert responses == {
         "204": {
             "content": {
@@ -1795,7 +1795,7 @@ def test_pipeline_schema__get_request_body__get(drf_request):
     view.request.method = "GET"
     view.format_kwarg = None
     request_body = view.schema.get_request_body("", "GET")
-    assert request_body == {}
+    assert request_body is None
 
 
 def test_pipeline_schema__get_request_body__query_parameters(drf_request):
@@ -1861,9 +1861,8 @@ def test_pipeline_schema__get_request_body__query_parameters(drf_request):
 def test_pipeline_schema__get_tags(drf_request):
     view = ExampleView()
     view.request = drf_request
-    view.request.method = "POST"
     view.format_kwarg = None
-    tags = view.schema.get_tags("/foo/", "POST")
+    tags = view.schema.get_tags("foo/")
     assert tags == ["foo"]
 
 
@@ -1875,9 +1874,8 @@ def test_pipeline_schema__get_tags__predefined(drf_request):
 
     view = CustomView()
     view.request = drf_request
-    view.request.method = "GET"
     view.format_kwarg = None
-    tags = view.schema.get_tags("", "GET")
+    tags = view.schema.get_tags("")
     assert tags == ["foo", "bar"]
 
 
@@ -2124,7 +2122,7 @@ def test_pipeline_schema__openapi():
                     ],
                 },
             },
-            "/api/example/deprecated": {
+            "/api/example/deprecated/": {
                 "post": {
                     "deprecated": True,
                     "description": "Example Input",
@@ -2187,7 +2185,7 @@ def test_pipeline_schema__openapi():
                     ],
                 },
             },
-            "/api/example/headers-and-cookies": {
+            "/api/example/headers-and-cookies/": {
                 "patch": {
                     "description": "Example Input",
                     "operationId": "partialUpdateHeaderAndCookieInputExampleHeadersAndCookies",
@@ -2304,7 +2302,7 @@ def test_pipeline_schema__openapi():
                     ],
                 },
             },
-            "/api/example/private": {
+            "/api/example/private/": {
                 "put": {
                     "description": "Example Input",
                     "operationId": "updateInputExamplePrivate",
@@ -2382,7 +2380,7 @@ def test_pipeline_schema__openapi():
                     ],
                 },
             },
-            "/api/example/{age}": {
+            "/api/example/{age}/": {
                 "patch": {
                     "description": "Example Input",
                     "operationId": "partialUpdateInputExampleAge",
@@ -2478,7 +2476,7 @@ def test_pipeline_schema__openapi():
                     ],
                 },
             },
-            "/api/pydantic": {
+            "/api/pydantic/": {
                 "get": {
                     "description": "Pydantic View",
                     "operationId": "retrieveDeprecatedPydanticinputPydantic",

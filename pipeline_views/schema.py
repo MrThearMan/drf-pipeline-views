@@ -5,31 +5,41 @@ import re
 import warnings
 from decimal import Decimal
 from functools import partial
-from urllib.parse import urljoin
+from importlib import import_module
+from inspect import cleandoc
+from types import ModuleType
 
+from django.conf import settings
+from django.contrib.admindocs.views import simplify_regex
 from django.core import validators
+from django.http import Http404
+from django.urls import URLPattern, URLResolver
 from django.utils.encoding import smart_str
 from rest_framework import serializers
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.fields import _UnvalidatedField, empty
-from rest_framework.permissions import AllowAny
-from rest_framework.renderers import BrowsableAPIRenderer
-from rest_framework.request import Request
-from rest_framework.schemas.generators import BaseSchemaGenerator, EndpointEnumerator
-from rest_framework.schemas.inspectors import ViewInspector
+from rest_framework.permissions import AllowAny, BasePermission
+from rest_framework.renderers import BrowsableAPIRenderer, JSONOpenAPIRenderer, OpenAPIRenderer
+from rest_framework.request import Request, clone_request
+from rest_framework.response import Response
 from rest_framework.settings import api_settings
-from rest_framework.utils import formatting
+from rest_framework.views import APIView
 
 from .inference import serializer_from_callable, snake_case_to_camel_case, snake_case_to_pascal_case
 from .serializers import EmptySerializer, MockSerializer
 from .typing import (
     TYPE_CHECKING,
     Any,
+    AsView,
     Dict,
+    GenericView,
     HTTPMethod,
     List,
     Literal,
     Optional,
     PathAndMethod,
+    Patterns,
     SchemaCallbackData,
     SchemaWebhook,
     SecurityRules,
@@ -49,6 +59,7 @@ from .typing.openapi import (
     APIOperation,
     APIParameter,
     APIPathItem,
+    APIPaths,
     APIRequestBody,
     APIResponses,
     APISchema,
@@ -69,8 +80,9 @@ __all__ = [
     "deprecate",
     "PipelineSchema",
     "PipelineSchemaGenerator",
+    "PipelineSchemaView",
+    "get_schema_view",
 ]
-
 
 SerializerOrSerializerType = Union[serializers.Serializer, Type[serializers.Serializer]]
 ResponseKind = Union[str, Type[serializers.BaseSerializer]]
@@ -320,9 +332,83 @@ def map_field_validators(field: serializers.Field, schema: APISchema) -> None:  
                 schema["minimum"] = -schema["maximum"]
 
 
-class PipelineSchema(ViewInspector):
-    view: "BasePipelineView"
+def get_api_endpoints(
+    patterns: List[Patterns],
+    root: str,
+    request: Optional[Request],
+) -> List[Tuple[str, HTTPMethod, BasePipelineView]]:
+    api_endpoints: List[Tuple[str, HTTPMethod, BasePipelineView]] = []
 
+    for pattern in patterns:
+        path = simplify_regex(str(pattern.pattern))
+        if not path.endswith("/"):
+            path += "/"
+        if not path.startswith(root):
+            path = root + path
+
+        if isinstance(pattern, URLPattern):
+            path = re.sub(r"<[^>:]*:?(?P<parameter>\w+)>", r"{\g<parameter>}", path)
+            callback: AsView = pattern.callback
+
+            if should_include_endpoint(path, callback):
+                for method in callback.cls.pipelines:
+                    view = create_view(callback, method, request)
+                    api_endpoints.append((path, method, view))
+
+        elif isinstance(pattern, URLResolver):  # pragma: no cover
+            api_endpoints += get_api_endpoints(
+                patterns=pattern.url_patterns,
+                root=path.removesuffix("/"),
+                request=request,
+            )
+
+    return sorted(api_endpoints, key=endpoint_ordering)
+
+
+def should_include_endpoint(path: str, callback: AsView) -> bool:  # pragma: no cover
+    if not hasattr(callback, "cls"):
+        return False
+
+    from .views import BasePipelineView
+
+    if not issubclass(callback.cls, BasePipelineView):
+        return False
+
+    if not isinstance(callback.cls.schema, PipelineSchema):
+        return False
+
+    if "schema" in callback.initkwargs and not isinstance(callback.initkwargs["schema"], PipelineSchema):
+        return False
+
+    if path.endswith(".{format}/"):
+        return False
+
+    return True
+
+
+def create_view(callback: AsView, method: HTTPMethod, request: Optional[Request]) -> BasePipelineView:
+    view = callback.cls(**callback.initkwargs)
+    view.args = ()
+    view.kwargs = {}
+    view.format_kwarg = None
+    view.request = clone_request(request, method) if request is not None else None
+    return view
+
+
+def endpoint_ordering(endpoint: Tuple[str, HTTPMethod, BasePipelineView]) -> Tuple[int]:
+    method_priority = {"GET": 0, "POST": 1, "PUT": 2, "PATCH": 3, "DELETE": 4}.get(endpoint[1], 5)
+    return (method_priority,)
+
+
+def get_local_path(path: str, root_url: str) -> str:
+    path = path.removeprefix("/")
+    root_url = root_url.removeprefix("/")
+    path = path.removeprefix(root_url)
+    path = path.removeprefix("/")
+    return path
+
+
+class PipelineSchema:
     def __init__(
         self,
         *,
@@ -336,7 +422,6 @@ class PipelineSchema(ViewInspector):
         security: Optional[Dict[HTTPMethod, Dict[str, List[str]]]] = None,
         external_docs: Optional[Dict[HTTPMethod, APIExternalDocumentation]] = None,
         public: Optional[Dict[HTTPMethod, bool]] = None,
-        prefix: Optional[str] = None,
         tags: Optional[List[str]] = None,
         operation_id_base: Optional[str] = None,
     ):
@@ -354,7 +439,6 @@ class PipelineSchema(ViewInspector):
         :param security: Which security schemes the endpoints use.
         :param external_docs: External docs for the endpoints.
         :param public: Is the endpoint public or not?
-        :param prefix: Prefix to remove from the tags.
         :param tags: User-defined tags for the endpoint. If not set, will be deducted from the path.
         :param operation_id_base: User-defined operation ID for the endpoint.
                                   If not set, it will be deducted from the input serializer.
@@ -369,15 +453,33 @@ class PipelineSchema(ViewInspector):
         self.security = security or {}
         self.external_docs = external_docs or {}
         self.public = public or {}
-        self.prefix = prefix or ""
         self.operation_id_base = operation_id_base
         self.tags = tags
-        super().__init__()
 
-    def get_description(self, path: str, method: HTTPMethod) -> str:
+        self.__view: Optional[BasePipelineView] = None
+
+    def __get__(self, instance: Optional[BasePipelineView], owner: Type[BasePipelineView]) -> PipelineSchema:
+        from .views import BasePipelineView
+
+        if instance is not None and not isinstance(instance, BasePipelineView):  # pragma: no cover
+            raise TypeError("PipelineSchema needs to be a descriptor of a BasePipelineView class.")
+
+        self.__view = instance
+        return self
+
+    @property
+    def view(self) -> BasePipelineView:
+        if self.__view is None:  # pragma: no cover
+            raise AttributeError(
+                "View has not been set. "
+                "Schema accessed on a view class and not an instance, or not used as a descriptor."
+            )
+        return self.__view
+
+    def get_description(self) -> str:
         serializer_class = self.view.get_serializer_class()
         description = serializer_class.__doc__ or (self.view.__class__.__doc__ or "")
-        return self._get_description_section(self.view, method, formatting.dedent(smart_str(description)))
+        return cleandoc(smart_str(description))
 
     def get_operation_id(self, path: str, method: HTTPMethod) -> str:
         path_part = snake_case_to_pascal_case(re.sub(r"\W", "_", re.sub(r"[{}]", "", path.lower())))
@@ -402,30 +504,35 @@ class PipelineSchema(ViewInspector):
 
         if operation_id_base == "":
             raise ValueError(  # pragma: no cover
-                f'"{serializer_class_name}" is an invalid class name for schema generation. '
-                f'Serializer\'s class name should be unique and explicit. e.g., "ItemSerializer"'
+                f"{serializer_class_name!r} is an invalid class name for schema generation. "
+                f"Serializer's class name should be unique and explicit. e.g., 'ItemSerializer'."
             )
 
         return action + operation_id_base + path_part
+
+    def get_tags(self, path: str) -> List[str]:
+        if self.tags:
+            return self.tags
+
+        return [path.split("/")[0].replace("_", "-")]
 
     def get_operation(self, path: str, method: HTTPMethod) -> APIOperation:
         operation: APIOperation = {}
 
         operation["operationId"] = self.get_operation_id(path, method)
-        operation["description"] = self.get_description(path, method)
-
+        operation["tags"] = self.get_tags(path)
+        operation["description"] = self.get_description()
         operation["parameters"] = self.get_parameters(path, method)
 
         request_body = self.get_request_body(path, method)
-        if request_body:
+        if request_body is not None:
             operation["requestBody"] = request_body
 
-        callbacks = self.get_callbacks(path, method)
+        callbacks = self.get_callbacks()
         if callbacks:
             operation["callbacks"] = callbacks
 
-        operation["responses"] = self.get_responses(path, method)
-        operation["tags"] = self.get_tags(path, method)
+        operation["responses"] = self.get_responses(method)
 
         if method in self.deprecated:
             operation["deprecated"] = True
@@ -458,7 +565,7 @@ class PipelineSchema(ViewInspector):
 
         return component_name
 
-    def get_components(self, path: str, method: HTTPMethod) -> Dict[str, APISchema]:
+    def get_components(self) -> Dict[str, APISchema]:
         components: Dict[str, APISchema] = {}
 
         request_serializer_class = self.view.get_serializer_class()
@@ -486,7 +593,7 @@ class PipelineSchema(ViewInspector):
         component_name = self.get_component_name(serializer)
         components.setdefault(component_name, content)
 
-    def get_callbacks(self, path: str, method: HTTPMethod) -> Dict[str, Dict[str, APIPathItem]]:
+    def get_callbacks(self) -> Dict[str, Dict[str, APIPathItem]]:
         if not self.callbacks:
             return {}
 
@@ -596,21 +703,9 @@ class PipelineSchema(ViewInspector):
 
         return APISchema(**{"$ref": f"#/components/schemas/{self.get_component_name(serializer)}"})
 
-    def get_tags(self, path: str, method: HTTPMethod) -> List[str]:
-        if self.tags:
-            return self.tags
-
-        if path.startswith("/"):
-            path = path[1:]
-
-        if path.startswith(self.prefix):
-            path = path[len(self.prefix) :]
-
-        return [path.split("/")[0].replace("_", "-")]
-
-    def get_request_body(self, path: str, method: HTTPMethod) -> APIRequestBody:
+    def get_request_body(self, path: str, method: HTTPMethod) -> Optional[APIRequestBody]:
         if method not in {"POST", "PUT", "PATCH", "DELETE"}:
-            return {}
+            return None
 
         input_serializer = self.view.get_serializer()
 
@@ -637,13 +732,13 @@ class PipelineSchema(ViewInspector):
         )
 
         if not item_schema["schema"].get("properties", True):
-            return {}  # pragma: no cover
+            return None  # pragma: no cover
 
         return APIRequestBody(
             content={content_type: item_schema for content_type in self.get_parsers()},
         )
 
-    def get_responses(self, path: str, method: HTTPMethod) -> APIResponses:
+    def get_responses(self, method: HTTPMethod) -> APIResponses:
         data = APIResponses()
 
         responses = self.responses.get(method, {})
@@ -726,143 +821,128 @@ class PipelineSchema(ViewInspector):
         )
 
 
-class PipelineEndpointEnumerator(EndpointEnumerator):
-    url: str = ""
-
-    def get_path_from_regex(self, path_regex: str) -> str:
-        reg = super().get_path_from_regex(path_regex)
-        url = self.url
-
-        if reg.startswith("/"):
-            reg = reg[1:]
-        if url.startswith("/"):
-            url = url[1:]
-
-        if reg[: len(url)] == url:
-            return reg[len(url) :]
-
-        return reg
-
-
-class PipelineSchemaGenerator(BaseSchemaGenerator):
+class PipelineSchemaGenerator:
     openapi: Literal["3.0.2"] = "3.0.2"
     webhooks: Dict[str, SchemaWebhook] = {}
     contact: APIContact = {}
     license: APILicense = {}
     terms_of_service: str = ""
-    public: bool = True
-    prefix: str = ""
     security_schemes: Dict[str, APISecurityScheme] = {}
     security_rules: SecurityRules = {}
-
-    endpoint_inspector_cls = PipelineEndpointEnumerator
 
     def __init__(
         self,
         *,
         title: Optional[str] = None,
-        url: Optional[str] = None,
+        root_url: Optional[str] = None,
         description: Optional[str] = None,
-        patterns: Optional[List[str]] = None,
-        urlconf: Optional[str] = None,
+        patterns: Optional[List[Union[URLPattern, URLResolver]]] = None,
+        urlconf: Optional[Union[str, ModuleType]] = None,
         version: Optional[str] = None,
         webhooks: Optional[Dict[str, SchemaWebhook]] = None,
         contact: Optional[APIContact] = None,
         license: Optional[APILicense] = None,
         terms_of_service: Optional[str] = None,
-        public: Optional[bool] = None,
-        prefix: Optional[str] = None,
         security_schemes: Optional[Dict[str, APISecurityScheme]] = None,
         security_rules: Optional[SecurityRules] = None,
     ):
         """Custom Schema Generator for Pipeline Views.
 
         :param title: The name of the API (required).
-        :param url: The root URL of the API schema. This option is not required unless
-                    the schema is included under path prefix.
+        :param root_url: The root URL prefix of the API schema. Useful for defining versioned API.
         :param description: Longer descriptive text.
         :param patterns: A list of URLs to inspect when generating the schema.
                          Defaults to the project's URL conf.
-        :param urlconf: A URL conf module name to use when generating the schema.
+        :param urlconf: A URL conf module to use when generating the schema.
                         Defaults to settings.ROOT_URLCONF.
         :param version: The version of the API. Defaults to 0.1.0.
         :param webhooks: Webhooks defined in the API.
         :param contact: API developer contact information.
         :param license: API license information.
         :param terms_of_service: API terms of service link.
-        :param public: If False, hide endpoint schema if the user does not have permissions to view it.
-        :param prefix: Version prefix for versioned API.
         :param security_schemes: Mapping of security scheme name to its definition.
         :param security_rules: Security schemes to apply if defined authentication or
                                permission class(es) exist on an endpoint.
         """
-        if url and not url.startswith("/"):
-            url = f"/{url}"
 
-        super().__init__(
-            title=title,
-            url=url,
-            description=description,
-            patterns=patterns,
-            urlconf=urlconf,
-            version=version,
-        )
+        if root_url is None:
+            root_url = "/"
+        else:
+            # 'root_url' should always start with a '/' and never end in a '/'
+            root_url = root_url.removesuffix("/")
+            if not root_url.startswith("/"):
+                root_url = "/" + root_url
 
+        self.title = title
+        self.root_url = root_url
+        self.description = description
+        self.patterns = patterns
+        self.urlconf = urlconf
+        self.version = version
         self.webhooks = webhooks or self.webhooks
-        self.endpoint_inspector_cls.url = self.url or ""
         self.contact = contact or self.contact
         self.license = license or self.license
         self.terms_of_service = terms_of_service or self.terms_of_service
-        self.public = public if public is not None else self.public
-        self.prefix = prefix if prefix is not None else self.prefix
         self.security_schemes = security_schemes or self.security_schemes
         self.security_rules = security_rules or self.security_rules
+        self.endpoints: Optional[List[Tuple[str, HTTPMethod, BasePipelineView]]] = None
 
-    @classmethod
-    def configure(
-        cls,
-        *,
-        webhooks: Optional[Dict[str, SchemaWebhook]] = None,
-        contact: Optional[APIContact] = None,
-        license: Optional[APILicense] = None,
-        terms_of_service: Optional[str] = None,
-        public: Optional[bool] = None,
-        prefix: Optional[str] = None,
-        security_schemes: Optional[Dict[str, APISecurityScheme]] = None,
-        security_rules: Optional[SecurityRules] = None,
-    ) -> Type[PipelineSchemaGenerator]:
-        """Configure API with additional options
-
-        :param webhooks: Webhooks defined in the API.
-        :param contact: API developer contact information.
-        :param license: API license information.
-        :param terms_of_service: API terms of service link.
-        :param public: If False, hide endpoint schema if the user does not have permissions to view it.
-        :param prefix: Version prefix for versioned API.
-        :param security_schemes: Mapping of security scheme name to its definition.
-        :param security_rules: Security schemes to apply if defined authentication or
-                               permission class(es) exist on an endpoint.
-        :return: New subclass with the added options.
-        """
-        return type(  # type: ignore
-            cls.__name__,
-            (cls,),
-            {
-                "webhooks": webhooks or cls.webhooks,
-                "contact": contact or {},
-                "license": license or cls.license,
-                "terms_of_service": terms_of_service or cls.terms_of_service,
-                "public": public if public is not None else cls.public,
-                "prefix": prefix if prefix is not None else cls.prefix,
-                "security_schemes": security_schemes or cls.security_schemes,
-                "security_rules": security_rules or cls.security_rules,
-            },
-        )
-
-    def _initialise_endpoints(self) -> None:
+    def get_endpoints(self, request: Optional[Request]) -> List[Tuple[str, HTTPMethod, BasePipelineView]]:
         if self.endpoints is None:
-            inspector = self.endpoint_inspector_cls(self.patterns, self.urlconf)
-            self.endpoints = inspector.get_api_endpoints(prefix=self.prefix)
+            if self.patterns is None:
+                if self.urlconf is None:
+                    self.urlconf = settings.ROOT_URLCONF
+                if isinstance(self.urlconf, str):
+                    self.urlconf = import_module(self.urlconf)
+
+                self.patterns = self.urlconf.urlpatterns
+
+            self.endpoints = get_api_endpoints(patterns=self.patterns, root=self.root_url, request=request)
+        return self.endpoints
+
+    def get_schema(self, request: Optional[Request], public: bool) -> OpenAPI:
+        schema: OpenAPI = OpenAPI(openapi=self.openapi, info=self.get_info())
+
+        operation_ids: Dict[str, PathAndMethod] = {}
+
+        for path, method, view in self.get_endpoints(None if public else request):
+            self.set_security_schemes(method, view)
+
+            if not self.has_view_permissions(view, method, public):
+                continue  # pragma: no cover
+
+            new_operation = self.get_operation(path, method, view)
+            if new_operation:
+                operation_id = new_operation["operationId"]
+                if operation_id in operation_ids:
+                    warn_method_override(path, method, operation_id, operation_ids)  # pragma: no cover
+
+                operation_ids[operation_id] = PathAndMethod(path=path, method=method)
+                schema.setdefault("paths", {}).setdefault(path, {})
+                schema["paths"][path][method.lower()] = new_operation
+
+            new_components = self.get_components(view)
+            if new_components:
+                schema.setdefault("components", {}).setdefault("schemas", {})
+
+                for name, component in new_components.items():
+                    if component != schema["components"]["schemas"].get(name, component):
+                        warn_component_override(name)  # pragma: no cover
+
+                schema["components"]["schemas"].update(new_components)
+
+        webhooks = self.get_webhook()
+        if webhooks:
+            schema.setdefault("webhooks", {})
+            schema["webhooks"].update(webhooks)
+
+        if self.security_schemes:
+            schema.setdefault("components", {}).setdefault("securitySchemes", {})
+            schema["components"]["securitySchemes"] = self.security_schemes
+
+        schema["paths"] = self.sort_paths(schema["paths"])
+
+        return schema
 
     def get_info(self) -> APIInfo:
         info = APIInfo(
@@ -879,78 +959,49 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
             info["termsOfService"] = self.terms_of_service
         return info
 
-    def get_normalized_path(self, path: str) -> str:
-        if path.startswith("/"):
-            path = path[1:]  # pragma: no cover
-        return urljoin(self.url or "/", path)
+    def set_security_schemes(self, method: HTTPMethod, view: BasePipelineView) -> None:
+        for classes, rules in self.security_rules.items():
+            if not isinstance(classes, tuple):
+                classes = (classes,)
 
-    def get_schema(self, request: Optional[Request] = None, public: bool = False) -> OpenAPI:
-        schema = OpenAPI(
-            openapi=self.openapi,
-            info=self.get_info(),
-        )
+            if any(cls in view.permission_classes or cls in view.authentication_classes for cls in classes):
+                view.schema.security.setdefault(method, {})
+                # View specific rules take higher priority
+                view.schema.security[method] = {**rules, **view.schema.security[method]}
 
-        self._initialise_endpoints()
-        operation_ids: Dict[str, PathAndMethod] = {}
+    def has_view_permissions(self, view: BasePipelineView, method: HTTPMethod, public: bool) -> bool:
+        method_public: Optional[bool] = getattr(view.schema, "public", {}).get(method, None)
 
-        view_endpoints: List[Tuple[str, HTTPMethod, "BasePipelineView"]]
-        _, view_endpoints = self._get_paths_and_endpoints(None if public else request)
+        if method_public is True:
+            return True
 
-        for path, method, view in view_endpoints:
-            local_path = path[len(self.prefix) :]
+        if public and method_public is not False:
+            return True  # pragma: no cover
 
-            if not self.has_view_permissions(local_path, method, view):
-                continue  # pragma: no cover
+        if view.request is None:
+            return True  # pragma: no cover
 
-            new_operation = self.get_operation(local_path, method, view)
-            if new_operation:
-                path = self.get_normalized_path(path)
-                self.check_operation_id(local_path, method, new_operation["operationId"], operation_ids)
-                schema.setdefault("paths", {}).setdefault(path, {})
-                schema["paths"][path][method.lower()] = new_operation
+        try:
+            view.check_permissions(view.request)
+        except (APIException, Http404, PermissionDenied):  # pragma: no cover
+            return False
 
-            new_components = self.get_components(local_path, method, view)
-            if new_components:
-                schema.setdefault("components", {}).setdefault("schemas", {})
-                self.check_components(new_components, schema["components"]["schemas"])
-                schema["components"]["schemas"].update(new_components)
+        return True
 
-        webhooks = self.get_webhook()
-        if webhooks:
-            schema.setdefault("webhooks", {})
-            schema["webhooks"].update(webhooks)
+    def get_operation(self, path: str, method: HTTPMethod, view: BasePipelineView) -> APIOperation:
+        local_path = get_local_path(path, self.root_url)
+        return view.schema.get_operation(local_path, method)
 
-        if self.security_schemes:
-            schema.setdefault("components", {})
-            schema["components"]["securitySchemes"] = self.security_schemes
-
-        sorted_paths = {}
-        for path, operations in schema["paths"].items():
-            tag = list(operations.values())[0]["tags"][0]
-            sorted_paths.setdefault(tag, {})
-            sorted_paths[tag][path] = operations
-
-        schema["paths"] = {
-            path: operations
-            for operations in dict(sorted(sorted_paths.items())).values()
-            for path, operations in dict(sorted(operations.items())).items()
-        }
-
-        return schema
-
-    def get_components(self, path: str, method: HTTPMethod, view: "BasePipelineView") -> Dict[str, APISchema]:
-        return view.schema.get_components(path, method)
-
-    def get_operation(self, path: str, method: HTTPMethod, view: "BasePipelineView") -> APIOperation:
-        return view.schema.get_operation(path, method)
+    def get_components(self, view: BasePipelineView) -> Dict[str, APISchema]:
+        return view.schema.get_components()
 
     def get_webhook(self) -> Dict[str, APIPathItem]:
         webhooks: Dict[str, APIPathItem] = {}
 
         for webhook_name, webhook in self.webhooks.items():
             input_serializer = webhook["request_data"](many=getattr(webhook["request_data"], "many", False))
-            if isinstance(input_serializer, serializers.ListSerializer):  # pragma: no cover
-                input_serializer = getattr(input_serializer, "child", input_serializer)
+            if isinstance(input_serializer, serializers.ListSerializer):
+                input_serializer = getattr(input_serializer, "child", input_serializer)  # pragma: no cover
 
             webhooks[webhook_name] = {  # type: ignore
                 webhook["method"]: APIOperation(
@@ -977,60 +1028,135 @@ class PipelineSchemaGenerator(BaseSchemaGenerator):
 
         return webhooks
 
-    def check_components(self, new_components: Dict[str, APISchema], old_components: Dict[str, APISchema]) -> None:
-        for name, component in new_components.items():
-            if name not in old_components:
-                continue
-            if component == old_components[name]:
-                continue
-            warnings.warn(  # pragma: no cover
-                f"Schema component {name!r} has been overriden with a different value.",
-                stacklevel=2,
-            )
+    def sort_paths(self, paths: APIPaths) -> APIPaths:
+        sorted_paths: APIPaths = {}
+        for path, operations in paths.items():
+            tag = list(operations.values())[0]["tags"][0]
+            sorted_paths.setdefault(tag, APIPathItem())
+            sorted_paths[tag][path] = operations
+        return {
+            path: operations
+            for operations in dict(sorted(sorted_paths.items())).values()
+            for path, operations in dict(sorted(operations.items())).items()
+        }
 
-    def check_operation_id(
-        self,
-        path: str,
-        method: HTTPMethod,
-        operation_id: str,
-        operation_ids: Dict[str, PathAndMethod],
-    ) -> None:
-        if operation_id in operation_ids:
-            warnings.warn(  # pragma: no cover
-                f"""
-                You have a duplicated operationId in your OpenAPI schema: {operation_id}
-                    Route: {operation_ids[operation_id]["path"]}, Method: {operation_ids[operation_id]["method"]}
-                    Route: {path}, Method: {method}
-                An operationId has to be unique across your schema.
-                Your schema may not work in other tools.
-                """,
-                stacklevel=2,
-            )
-        operation_ids[operation_id] = PathAndMethod(path=path, method=method)
 
-    def has_view_permissions(self, path: str, method: HTTPMethod, view: BasePipelineView) -> bool:
-        self.set_security_schemes(method, view)
+class PipelineSchemaView(APIView):
+    _ignore_model_permissions: bool = True
+    schema = None  # exclude from schema
+    schema_generator = PipelineSchemaGenerator()
+    renderer_classes = [OpenAPIRenderer, JSONOpenAPIRenderer]
+    public: bool = True
 
-        method_public = getattr(view.schema, "public", {}).get(method, None)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if BrowsableAPIRenderer in api_settings.DEFAULT_RENDERER_CLASSES:
+            self.renderer_classes += [BrowsableAPIRenderer]
 
-        if method_public is True:
-            return True
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        schema = self.schema_generator.get_schema(request, self.public)
+        return Response(schema)
 
-        if self.public and method_public is not False:
-            return True
+    def handle_exception(self, exc: Exception) -> Response:  # pragma: no cover
+        # Schema renderers do not render exceptions, so re-perform content
+        # negotiation with default renderers.
+        self.renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+        neg = self.perform_content_negotiation(self.request, force=True)
+        self.request.accepted_renderer, self.request.accepted_media_type = neg
+        return super().handle_exception(exc)
 
-        return super().has_view_permissions(path, method, view)
 
-    def set_security_schemes(self, method: HTTPMethod, view: BasePipelineView) -> None:
-        security = getattr(view.schema, "security", None)
-        if security is None:
-            return  # pragma: no cover
+def get_schema_view(
+    *,
+    title: Optional[str] = None,
+    root_url: Optional[str] = None,
+    description: Optional[str] = None,
+    patterns: Optional[List[Union[URLPattern, URLResolver]]] = None,
+    urlconf: Optional[Union[str, ModuleType]] = None,
+    version: Optional[str] = None,
+    webhooks: Optional[Dict[str, SchemaWebhook]] = None,
+    contact: Optional[APIContact] = None,
+    license: Optional[APILicense] = None,
+    terms_of_service: Optional[str] = None,
+    public: Optional[bool] = None,
+    security_schemes: Optional[Dict[str, APISecurityScheme]] = None,
+    security_rules: Optional[SecurityRules] = None,
+    authentication_classes: Optional[List[Type[BaseAuthentication]]] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+) -> AsView[GenericView]:
+    """Return a schema view.
 
-        for classes, rules in self.security_rules.items():
-            if not isinstance(classes, tuple):
-                classes = (classes,)
+    :param title: The name of the API (required).
+    :param root_url: The root URL prefix of the API schema. Useful for defining versioned API.
+    :param description: Longer descriptive text.
+    :param patterns: A list of URLs to inspect when generating the schema.
+                     Defaults to the project's URL conf.
+    :param urlconf: A URL conf module to use when generating the schema.
+                    Defaults to settings.ROOT_URLCONF.
+    :param version: The version of the API. Defaults to 0.1.0.
+    :param webhooks: Webhooks defined in the API.
+    :param contact: API developer contact information.
+    :param license: API license information.
+    :param terms_of_service: API terms of service link.
+    :param public: If False, hide endpoint schema if the user does not have permissions to view it.
+    :param security_schemes: Mapping of security scheme name to its definition.
+    :param security_rules: Security schemes to apply if defined authentication or
+                           permission class(es) exist on an endpoint.
+    :param authentication_classes: Authentication classes for the OpenAPI SchemaView.
+    :param permission_classes: Permission classes for the OpenAPI SchemaView.
+    """
 
-            if any(cls in view.permission_classes or cls in view.authentication_classes for cls in classes):
-                view.schema.security.setdefault(method, {})
-                # View specific rules take higher priority
-                view.schema.security[method] = {**rules, **view.schema.security[method]}
+    generator = PipelineSchemaGenerator(
+        title=title,
+        root_url=root_url,
+        description=description,
+        patterns=patterns,
+        urlconf=urlconf,
+        version=version,
+        webhooks=webhooks,
+        contact=contact,
+        license=license,
+        terms_of_service=terms_of_service,
+        security_schemes=security_schemes,
+        security_rules=security_rules,
+    )
+
+    return PipelineSchemaView.as_view(  # type: ignore
+        schema_generator=generator,
+        public=public,
+        authentication_classes=(
+            authentication_classes
+            if authentication_classes is not None
+            else api_settings.DEFAULT_AUTHENTICATION_CLASSES
+        ),
+        permission_classes=(
+            permission_classes if permission_classes is not None else api_settings.DEFAULT_PERMISSION_CLASSES
+        ),
+    )
+
+
+def warn_method_override(
+    path: str,
+    method: HTTPMethod,
+    operation_id: str,
+    operation_ids: Dict[str, PathAndMethod],
+) -> None:
+    warnings.warn(  # pragma: no cover
+        cleandoc(
+            f"""
+            You have a duplicated operationId in your OpenAPI schema: {operation_id}
+                Route: {operation_ids[operation_id]["path"]!r}, Method: {operation_ids[operation_id]["method"]!r}
+                Route: {path!r}, Method: {method!r}
+            An operationId has to be unique across your schema.
+            Your schema may not work in other tools.
+            """
+        ),
+        stacklevel=2,
+    )
+
+
+def warn_component_override(name: str) -> None:
+    warnings.warn(  # pragma: no cover
+        f"Schema component {name!r} has been overriden with a different value.",
+        stacklevel=2,
+    )
