@@ -126,7 +126,7 @@ when installed with `make hook`
 - All code should be typed when possible.
   - Tests are an exception to this; typing them is optional.
   - Make sure the typing methods used are supported in all python versions
-    the library supports (e.g., use `List[int]` instead of `list[int]` for Python 3.8 support).
+    the library supports (e.g., use `list[int]` instead of `list[int]` for Python 3.8 support).
     CI will yell at you if you don't.
   - Create all custom types in `pipeline_views/typing.py` and import them from there.
     This avoids circular imports.

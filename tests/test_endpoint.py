@@ -1,6 +1,6 @@
 from rest_framework.test import APIClient, APIRequestFactory
 
-from .django.urls import ExampleView
+from tests.django.urls import ExampleView
 
 
 def test_example_endpoint__APIRequestFactory():

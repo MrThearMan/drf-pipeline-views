@@ -11,7 +11,7 @@ from rest_framework.serializers import (
     Serializer,
 )
 
-from .typing import TYPE_CHECKING, ClassVar, Dict, List, Set, Type, Union
+from .typing import TYPE_CHECKING, Any, ClassVar, Union
 
 if TYPE_CHECKING:
     from .views import BasePipelineView
@@ -28,9 +28,9 @@ class PipelineMetadata(SimpleMetadata):
     the serializers for that method.
     """
 
-    recognized_methods: ClassVar[Set[str]] = {"GET", "POST", "PUT", "PATCH", "DELETE"}
-    skip_fields: ClassVar[Set[Type[Field]]] = {ReadOnlyField, HiddenField, SerializerMethodField}
-    used_attrs: ClassVar[List[str]] = ["label", "help_text", "min_length", "max_length", "min_value", "max_value"]
+    recognized_methods: ClassVar[set[str]] = {"GET", "POST", "PUT", "PATCH", "DELETE"}
+    skip_fields: ClassVar[set[type[Field]]] = {ReadOnlyField, HiddenField, SerializerMethodField}
+    used_attrs: ClassVar[list[str]] = ["label", "help_text", "min_length", "max_length", "min_value", "max_value"]
 
     def determine_actions(self, request: Request, view: "BasePipelineView"):
         """Return information about the fields that are accepted for methods in self.recognized_methods."""
@@ -50,7 +50,7 @@ class PipelineMetadata(SimpleMetadata):
 
         return actions
 
-    def get_serializer_info(self, serializer: Serializer) -> Union[Dict, List]:
+    def get_serializer_info(self, serializer: Serializer) -> Union[dict[Any, Any], list[Any]]:
         """Given an instance of a serializer, return a dictionary of metadata about its fields."""
         data_serializer = getattr(serializer, "child", serializer)
 
@@ -65,7 +65,7 @@ class PipelineMetadata(SimpleMetadata):
 
         return input_data
 
-    def get_field_info(self, field: Union[Field, Serializer, ListSerializer]) -> Union[Dict, List]:
+    def get_field_info(self, field: Union[Field, Serializer, ListSerializer]) -> Union[dict[Any, Any], list[Any]]:
         if getattr(field, "child", False):
             if isinstance(field, DictField):
                 return {"<key>": self.get_field_info(field.child)}

@@ -1,15 +1,15 @@
 import asyncio
 
 from asgiref.sync import async_to_sync
+from openapi_schema.schema import APISchema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
+from serializer_inference import serializer_from_callable
 
 from .exceptions import NextLogicBlock
-from .inference import serializer_from_callable
 from .meta import PipelineMetadata
-from .schema import PipelineSchema
 from .typing import (
     Any,
     ClassVar,
@@ -20,8 +20,6 @@ from .typing import (
     PipelineLogic,
     PipelinesDict,
     SerializerType,
-    Set,
-    Tuple,
     ViewContext,
 )
 from .utils import Sentinel, get_view_method, is_pydantic_model, is_serializer_class, run_parallel, translate
@@ -35,14 +33,14 @@ class BasePipelineView(APIView):
     pipelines: ClassVar[PipelinesDict] = {}
     """Dictionary describing the HTTP method pipelines."""
 
-    schema = PipelineSchema()
+    schema = APISchema()
     metadata_class = PipelineMetadata
 
-    ignored_get_params: ClassVar[Set[str]] = {"lang", "format"}
-    ignored_post_params: ClassVar[Set[str]] = {"csrfmiddlewaretoken", "lang", "format"}
-    ignored_put_params: ClassVar[Set[str]] = {"lang", "format"}
-    ignored_patch_params: ClassVar[Set[str]] = {"lang", "format"}
-    ignored_delete_params: ClassVar[Set[str]] = {"lang", "format"}
+    ignored_get_params: ClassVar[set[str]] = {"lang", "format"}
+    ignored_post_params: ClassVar[set[str]] = {"csrfmiddlewaretoken", "lang", "format"}
+    ignored_put_params: ClassVar[set[str]] = {"lang", "format"}
+    ignored_patch_params: ClassVar[set[str]] = {"lang", "format"}
+    ignored_delete_params: ClassVar[set[str]] = {"lang", "format"}
 
     def __new__(cls, *args, **kwargs):
         for key in cls.pipelines:
@@ -102,7 +100,7 @@ class BasePipelineView(APIView):
                         step = tuple(task for task in step if task is not ...)
                         old_kwargs = data
 
-                    results: Tuple[DataDict, ...] = async_to_sync(run_parallel)(step, data)
+                    results: tuple[DataDict, ...] = async_to_sync(run_parallel)(step, data)
                     data = {key: value for result in results for key, value in result.items()}
 
                     if old_kwargs is not None:
@@ -165,7 +163,7 @@ class BasePipelineView(APIView):
         if is_serializer_class(step):
             return step
 
-        if is_pydantic_model(step):
+        if is_pydantic_model(step):  # pragma: no cover
             return serializer_from_callable(step)
 
         if callable(step):
@@ -174,5 +172,5 @@ class BasePipelineView(APIView):
         raise TypeError("Only Serializers and callables are supported in the pipeline.")
 
     def get_serializer_context(self) -> ViewContext:
-        """Return serializer context, mainly for browerable api."""
+        """Return serializer context, mainly for browsable api."""
         return {"request": self.request, "format": self.format_kwarg, "view": self}

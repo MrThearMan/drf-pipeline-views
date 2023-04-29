@@ -9,7 +9,7 @@ from django.urls import path
 from rest_framework import serializers
 
 from pipeline_views.views import BasePipelineView
-from pipeline_views.schema import get_schema_view
+from openapi_schema.views import get_schema_view
 
 
 class InputSerializer(serializers.Serializer):
@@ -134,7 +134,8 @@ You can add additional responses in the initialization of the schema.
 
 ```python hl_lines="5 6 7 8 9 10 21 22 23 24 25 26"
 from rest_framework import serializers
-from pipeline_views.schema import PipelineSchema
+from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
 
 
 class ErrorSerializer(serializers.Serializer):
@@ -212,8 +213,9 @@ components:
 You can also define dynamic responses with the help of MockSerializer.
 
 ```python hl_lines="13 14 15 16 17 18 19 20 21 22 23 24 25 26"
-from pipeline_views.schema import PipelineSchema
-from pipeline_views.serializers import MockSerializer
+from openapi_schema.schema import PipelineSchema
+from pipeline_views.views import BasePipelineView
+from serializer_inference.serializers import MockSerializer
 
 
 class ExampleView(BasePipelineView):
@@ -271,6 +273,9 @@ paths:
 You can deprecate endpoints on a method by method basis.
 
 ```python hl_lines="9"
+from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
 class ExampleView(BasePipelineView):
     """Example View"""
 
@@ -286,7 +291,8 @@ class ExampleView(BasePipelineView):
 You can also use the `pipeline_views.schema.deprecate` on the view.
 
 ```python hl_lines="3"
-from pipeline_views.schema import deprecate
+from pipeline_views.views import BasePipelineView
+from openapi_schema.utils import deprecate
 
 @deprecate(methods=["POST"])
 class ExampleView(BasePipelineView):
@@ -304,6 +310,9 @@ class ExampleView(BasePipelineView):
 Add security schemes to the endpoints.
 
 ```python hl_lines="9 10 11 12 13"
+from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
 class ExampleView(BasePipelineView):
     """Example View"""
 
@@ -326,7 +335,8 @@ The security scheme also needs to be added to the schema view.
 You can do this by adding the following:
 
 ```python hl_lines="11 12 13 14 15 16 17"
-from pipeline_views.schema import get_schema_view
+from django.urls import path
+from openapi_schema.views import get_schema_view
 
 urlpatterns = [
     path("example/", ExampleView.as_view(), name="test_view"),
@@ -369,8 +379,11 @@ tuple of them. If the view already has any of the schemas defined for it,
 the view's configuration will take precedence.
 
 ```python hl_lines="7 28 29 30 31 32"
+from django.urls import path
 from rest_framework.permissions import IsAuthenticated
-from pipeline_views.schema import get_schema_view
+from openapi_schema.views import get_schema_view
+from pipeline_views.views import BasePipelineView
+
 
 class ExampleView(BasePipelineView):
     """Example View"""
@@ -435,6 +448,9 @@ a parameter instead of in the request body. This is just for schema definition,
 the endpoints will actually accept the input from both places.
 
 ```python hl_lines="9 10 11"
+from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
 class ExampleView(BasePipelineView):
     """Example View"""
 
@@ -452,6 +468,9 @@ class ExampleView(BasePipelineView):
 You can also declare a parameter as a header or as cookie parameter.
 
 ```python hl_lines="9 10 11 12 13 14"
+from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
 class ExampleView(BasePipelineView):
     """Example View"""
 
@@ -488,6 +507,9 @@ class TestSerialzer(HeaderAndCookieSerializer):
 External docs for an endpoint can also be added.
 
 ```python hl_lines="9 10 11 12 13 14"
+from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
 class ExampleView(BasePipelineView):
     """Example View"""
 
@@ -512,7 +534,8 @@ Private endpoints are not visible to users that do not have the appropriate
 permissions.
 
 ```python hl_lines="11"
-from pipeline_views.schema import get_schema_view
+from django.urls import path
+from openapi_schema.views import get_schema_view
 
 urlpatterns = [
     path("example/", ExampleView.as_view(), name="test_view"),
@@ -533,6 +556,9 @@ You can also set individual endpoints public/private. This will override
 the API-wide configuration.
 
 ```python hl_lines="9 10 11"
+from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
 class ExampleView(BasePipelineView):
     """Example View"""
 
@@ -554,7 +580,7 @@ by one operation can be used as input for other operations.
 
 ```python hl_lines="12 13 14 15 16 17 18 19 20 21 22 23 24"
 from pipeline_views import BasePipelineView
-from pipeline_views.schema import PipelineSchema
+from openapi_schema.schema import PipelineSchema
 
 class ExampleView(BasePipelineView):
     """Example View"""
@@ -606,7 +632,7 @@ certain events.
 ```python hl_lines="25 26 27 28 29 30 31 32 33 34 35 36"
 from rest_framework import serializers
 from pipeline_views import BasePipelineView
-from pipeline_views.schema import PipelineSchema
+from openapi_schema.schema import PipelineSchema
 
 class InputSerializer(serializers.Serializer):
     """Example Input"""
@@ -692,7 +718,7 @@ You can define them in the PipelineSchemaGenerator.
 ```python hl_lines="24 25 26 27 28 29 30 31 32 33"
 from django.urls import path
 from rest_framework import serializers
-from pipeline_views.schema import get_schema_view
+from openapi_schema.views import get_schema_view
 
 class InputSerializer(serializers.Serializer):
     """Example Input"""

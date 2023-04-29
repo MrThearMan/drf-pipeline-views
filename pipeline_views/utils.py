@@ -1,5 +1,4 @@
 import asyncio
-import re
 from contextlib import contextmanager
 from functools import wraps
 from itertools import chain
@@ -24,12 +23,10 @@ from .typing import (
     Generator,
     GenericView,
     HTTPMethod,
-    List,
     LogicCallable,
     Optional,
     ParamSpec,
     SerializerType,
-    Tuple,
     TypeGuard,
     TypeVar,
     Union,
@@ -41,7 +38,6 @@ if TYPE_CHECKING:
 
 __all__ = [
     "get_language",
-    "get_path_parameters",
     "get_view_method",
     "is_pydantic_model",
     "is_serializer_class",
@@ -53,7 +49,6 @@ __all__ = [
 
 T = TypeVar("T")
 P = ParamSpec("P")
-url_variables_pattern = re.compile("{([^}]+)}")
 
 
 class Sentinel:
@@ -75,7 +70,7 @@ def get_language(request: Request) -> str:
     """Get language based on request Accept-Language header or 'lang' query parameter."""
     lang: Optional[str] = request.query_params.get("lang")
     language_code: Optional[str] = getattr(request, "LANGUAGE_CODE", None)
-    available_languages: List[str] = [key for (key, value) in settings.LANGUAGES]
+    available_languages: list[str] = [key for (key, value) in settings.LANGUAGES]
 
     if lang and lang in available_languages:
         return lang
@@ -116,7 +111,7 @@ def translate(item: Union[Callable[P, T], Request]) -> Union[Generator[Any, Any,
     return context_manager(item)
 
 
-async def run_parallel(step: Tuple[Union[LogicCallable, SerializerType], ...], data: DataDict) -> Tuple[DataDict, ...]:
+async def run_parallel(step: tuple[Union[LogicCallable, SerializerType], ...], data: DataDict) -> tuple[DataDict, ...]:
     return await asyncio.gather(*(task(**data) for task in step))  # noqa
 
 
@@ -139,8 +134,3 @@ def get_view_method(method: HTTPMethod) -> GenericView:
         return self.process_request(data=kwargs)
 
     return inner  # type: ignore
-
-
-def get_path_parameters(path: str) -> Generator[str, Any, None]:
-    for match in url_variables_pattern.finditer(path):
-        yield match.groups()[0]

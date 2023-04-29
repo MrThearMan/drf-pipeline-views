@@ -5,15 +5,9 @@ from django.http import HttpRequest
 from pytest_django.fixtures import SettingsWrapper
 from rest_framework.request import Request
 
-from pipeline_views.typing import TypedDict
 from pipeline_views.views import BasePipelineView
 
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django.settings")
-
-
-class TestType(TypedDict):
-    x: int
 
 
 @pytest.fixture(scope="session", autouse=True)
