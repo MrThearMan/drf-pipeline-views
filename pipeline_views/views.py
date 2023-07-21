@@ -1,7 +1,7 @@
 import asyncio
 
 from asgiref.sync import async_to_sync
-from openapi_schema.schema import APISchema
+from openapi_schema import OpenAPISchema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
@@ -33,7 +33,7 @@ class BasePipelineView(APIView):
     pipelines: ClassVar[PipelinesDict] = {}
     """Dictionary describing the HTTP method pipelines."""
 
-    schema = APISchema()
+    schema = OpenAPISchema()
     metadata_class = PipelineMetadata
 
     ignored_get_params: ClassVar[set[str]] = {"lang", "format"}

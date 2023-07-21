@@ -3,6 +3,7 @@ from contextlib import suppress
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.urls import path
+from openapi_schema.views import get_schema_view
 from rest_framework import serializers
 
 from pipeline_views import BasePipelineView
@@ -46,4 +47,9 @@ class ExampleView(BasePipelineView):
 
 urlpatterns = [
     path("api/example/", ExampleView.as_view(), name="test_view"),
+    path(
+        "openapi/",
+        get_schema_view(title="API", root_url="api", description="API"),
+        name="openapi-schema",
+    ),
 ]
