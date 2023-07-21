@@ -42,7 +42,7 @@ class BasePipelineView(APIView):
     ignored_patch_params: ClassVar[set[str]] = {"lang", "format"}
     ignored_delete_params: ClassVar[set[str]] = {"lang", "format"}
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> "BasePipelineView":  # noqa: ARG003,
         for key in cls.pipelines:
             if not hasattr(cls, key.lower()):
                 setattr(cls, key.lower(), get_view_method(key))
@@ -63,11 +63,12 @@ class BasePipelineView(APIView):
     def get_pipeline_for_current_request_method(self) -> PipelineLogic:
         """Get pipeline for the current HTTP method."""
         try:
-            return self.pipelines[self.request.method]  # type: ignore
+            return self.pipelines[self.request.method]
         except KeyError as missing_method:
-            raise KeyError(f"Pipeline not configured for HTTP method '{self.request.method}'") from missing_method
+            msg = f"Pipeline not configured for HTTP method '{self.request.method}'"
+            raise KeyError(msg) from missing_method
 
-    def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:  # noqa: C901
+    def run_logic(self, logic: PipelineLogic, data: DataDict) -> DataReturn:  # noqa: C901,PLR0912
         """Run pipeline logic recursively."""
         if callable(logic):
             if asyncio.iscoroutinefunction(logic):
@@ -81,9 +82,10 @@ class BasePipelineView(APIView):
                 if isinstance(data, tuple):
                     key, data = data
                     try:
-                        step = step[key]
+                        step = step[key]  # noqa: PLW2901
                     except (KeyError, TypeError) as error:
-                        raise TypeError(f"Next logic step doesn't have a conditional logic path '{key}'.") from error
+                        msg = f"Next logic step doesn't have a conditional logic path '{key}'."
+                        raise TypeError(msg) from error
 
                 # Serializer
                 if is_serializer_class(step):
@@ -97,7 +99,7 @@ class BasePipelineView(APIView):
                 elif isinstance(step, tuple):
                     old_kwargs: Optional[DataDict] = None
                     if ... in step:
-                        step = tuple(task for task in step if task is not ...)
+                        step = tuple(task for task in step if task is not ...)  # noqa: PLW2901
                         old_kwargs = data
 
                     results: tuple[DataDict, ...] = async_to_sync(run_parallel)(step, data)
@@ -112,7 +114,8 @@ class BasePipelineView(APIView):
                     data = self.run_logic(logic=step, data=data if data is not None else {})
 
                 else:
-                    raise TypeError("Only Serializers, Pydantic Models, and callables are supported in the pipeline.")
+                    msg = "Only Serializers, Pydantic Models, and callables are supported in the pipeline."
+                    raise TypeError(msg)
 
         except NextLogicBlock as premature_return:
             return premature_return.output
@@ -143,7 +146,7 @@ class BasePipelineView(APIView):
             kwargs["data"] = [] if kwargs["many"] else {}
         return serializer_class(*args, **kwargs)
 
-    def get_serializer_class(self, output: bool = False) -> SerializerType:
+    def get_serializer_class(self, output: bool = False) -> SerializerType:  # noqa: FBT001,FBT002
         """Get the first step in the current HTTP method's pipeline.
         If it's a Serializer, return it. Otherwise, try to infer a serializer from the
         logic callable's parameters.
@@ -169,7 +172,8 @@ class BasePipelineView(APIView):
         if callable(step):
             return serializer_from_callable(step, output=output)
 
-        raise TypeError("Only Serializers and callables are supported in the pipeline.")
+        msg = "Only Serializers and callables are supported in the pipeline."
+        raise TypeError(msg)
 
     def get_serializer_context(self) -> ViewContext:
         """Return serializer context, mainly for browsable api."""

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.utils.encoding import force_str
 from rest_framework.fields import DictField, Field, SerializerMethodField
 from rest_framework.metadata import SimpleMetadata
@@ -11,7 +13,7 @@ from rest_framework.serializers import (
     Serializer,
 )
 
-from .typing import TYPE_CHECKING, Any, ClassVar, Union
+from .typing import Any, ClassVar, Union
 
 if TYPE_CHECKING:
     from .views import BasePipelineView
@@ -32,7 +34,7 @@ class PipelineMetadata(SimpleMetadata):
     skip_fields: ClassVar[set[type[Field]]] = {ReadOnlyField, HiddenField, SerializerMethodField}
     used_attrs: ClassVar[list[str]] = ["label", "help_text", "min_length", "max_length", "min_value", "max_value"]
 
-    def determine_actions(self, request: Request, view: "BasePipelineView"):
+    def determine_actions(self, request: Request, view: "BasePipelineView") -> dict[str, Any]:
         """Return information about the fields that are accepted for methods in self.recognized_methods."""
         actions = {}
         for method in self.recognized_methods & set(view.allowed_methods):

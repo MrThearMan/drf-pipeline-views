@@ -95,19 +95,53 @@ typing-modules = [
     "pipeline_views.typing",
 ]
 select = [
-    "F",  # pyflakes
-    "E",  # pycodestyle errors
-    "I",  # isort
-    "S",  # flake8-bandit
-    "C",  # flake8-comprehensions
-    "B",  # flake8-bugbear
-    "T",  # flake8-print
-    "W",  # pycodestyle warnings
+    "A",        # flake8-builtins
+    "ANN",      # flake8-annotations
+    "ARG",      # flake8-unused-arguments
+    "ASYNC",    # flake8-async
+    "B",        # flake8-bugbear
+    "BLE",      # flake8-blind-except
+    "C90",      # mccabe
+    "C4",       # flake8-comprehensions
+    "COM",      # flake8-commas
+    "DJ",       # flake8-django
+    "DTZ",      # flake8-datetimez
+    "E",        # pycodestyle errors
+    "EM",       # flake8-errmsg
+    "ERA",      # eradicate
+    "F",        # pyflakes
+    "FA",       # flake8-future-annotations
+    "FBT",      # flake8-boolean-trap
+    "I",        # isort
+    "ICN",      # flake8-import-conventions
+    "INP",      # flake8-no-pep420
+    "INT",      # flake8-gettext
+    "ISC",      # flake8-implicit-str-concat
+    "N",        # pep8-naming
+    "PERF",     # perflint
+    "PGH",      # pygrep-hooks
+    "PIE",      # flake8-pie
+    "PL",       # pylint
+    "PT",       # flake8-pytest-style
+    "PTH",      # flake8-use-pathlib
+    "PYI",      # flake8-pyi
+    "Q",        # flake8-quotes
+    "RUF",      # ruff-specific rules
+    "S",        # flake8-bandit
+    "SIM",      # flake8-simplify
+    "SLF",      # flake8-self
+    "SLOT",     # flake8-slots
+    "T10",      # flake8-debugger
+    "T20",      # flake8-print
+    "TCH",      # flake8-type-checking
+    "TRY",      # tryceratops
+    "W",        # pycodestyle warnings
 ]
 ignore = [
-    "B905",  # `zip()` without an explicit `strict=` parameter
-    "F821",  # Undefined name
-    "F722",  # Syntax error in forward annotation:
+    "B905",     # `zip()` without an explicit `strict=` parameter
+    "ANN101",   # 'self' can be untyped
+    "ANN102",   # 'cls' can be untyped
+    "ANN401",   # 'typing.Any' is allowed
 ]
 
 [tool.ruff.per-file-ignores]

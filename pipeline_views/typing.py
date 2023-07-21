@@ -39,7 +39,6 @@ __all__ = [
     "Optional",
     "ParamSpec",
     "Protocol",
-    "TYPE_CHECKING",
     "TypeAlias",
     "TypedDict",
     "TypeGuard",

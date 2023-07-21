@@ -2,6 +2,7 @@ import asyncio
 from contextlib import contextmanager
 from functools import wraps
 from itertools import chain
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.utils.translation import get_language as current_language
@@ -16,7 +17,6 @@ except ImportError:
     BaseModel = None
 
 from .typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     DataDict,
@@ -59,7 +59,7 @@ def is_serializer_class(obj: Any) -> TypeGuard[BaseSerializer]:
     return isinstance(obj, type) and issubclass(obj, BaseSerializer)
 
 
-def is_pydantic_model(obj: Any):
+def is_pydantic_model(obj: Any) -> bool:
     if BaseModel is None:  # pragma: no cover
         return False
 
@@ -96,10 +96,11 @@ def translate(item: Union[Callable[P, T], Request]) -> Union[Generator[Any, Any,
                     break
 
             if request is None:
-                raise ValueError("No Request-object in function parameters.")
+                msg = "No Request-object in function parameters."
+                raise ValueError(msg)
 
             with override(get_language(request)):
-                return item(*args, **kwargs)  # type: ignore
+                return item(*args, **kwargs)
 
         return decorator
 
@@ -112,7 +113,7 @@ def translate(item: Union[Callable[P, T], Request]) -> Union[Generator[Any, Any,
 
 
 async def run_parallel(step: tuple[Union[LogicCallable, SerializerType], ...], data: DataDict) -> tuple[DataDict, ...]:
-    return await asyncio.gather(*(task(**data) for task in step))  # noqa
+    return await asyncio.gather(*(task(**data) for task in step))
 
 
 def get_view_method(method: HTTPMethod) -> GenericView:
@@ -121,7 +122,7 @@ def get_view_method(method: HTTPMethod) -> GenericView:
     def inner(
         self: "BasePipelineView",
         request: Request,
-        *args: Any,
+        *args: Any,  # noqa: ARG001
         **kwargs: Any,
     ) -> Response:
         kwargs.update(
@@ -129,8 +130,8 @@ def get_view_method(method: HTTPMethod) -> GenericView:
                 key: value
                 for key, value in getattr(request, source, {}).items()
                 if key not in getattr(self, f"ignored_{method.lower()}_params", set())
-            }
+            },
         )
         return self.process_request(data=kwargs)
 
-    return inner  # type: ignore
+    return inner

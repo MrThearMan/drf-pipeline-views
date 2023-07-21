@@ -24,8 +24,8 @@ class RequestFromContextMixin:
                     api_settings.NON_FIELD_ERRORS_KEY: ErrorDetail(
                         string="Must include a Request object in the context of the Serializer.",
                         code="request_missing",
-                    )
-                }
+                    ),
+                },
             )
         return request
 
@@ -53,7 +53,7 @@ class HeaderSerializerMixin(RequestFromContextMixin):
         ret = self.add_headers(ret)
         return ret
 
-    def to_representation(self, instance) -> dict[str, Any]:
+    def to_representation(self, instance: Any) -> dict[str, Any]:
         ret = super().to_representation(instance)
         ret = self.add_headers(ret)
         return ret
@@ -82,7 +82,7 @@ class CookieSerializerMixin(RequestFromContextMixin):
         ret = self.add_cookies(ret)
         return ret
 
-    def to_representation(self, instance) -> dict[str, Any]:
+    def to_representation(self, instance: Any) -> dict[str, Any]:
         ret = super().to_representation(instance)
         ret = self.add_cookies(ret)
         return ret
