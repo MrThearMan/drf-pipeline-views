@@ -12,6 +12,6 @@ on:
 
 jobs:
   docs:
-    uses: MrThearMan/CI/.github/workflows/docs.yml@v0.3.3
+    uses: MrThearMan/CI/.github/workflows/docs.yml@v0.3.4
     with:
       poetry-version: "1.5.1"
