@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,15 +17,15 @@ from typing import (
 )
 
 # New in version 3.10
-try:
+with contextlib.suppress(ImportError):
     from typing import ParamSpec, TypeAlias, TypeGuard
-except ImportError:
-    from typing_extensions import ParamSpec, TypeAlias, TypeGuard
+
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
     from rest_framework.response import Response
     from rest_framework.serializers import Serializer
+    from typing_extensions import ParamSpec, TypeAlias, TypeGuard
 
     from .views import BasePipelineView
 
