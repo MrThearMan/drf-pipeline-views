@@ -40,12 +40,12 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "tests.django.urls"
+ROOT_URLCONF = "tests.project.urls"
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "django" / "templates"],
+        "DIRS": [BASE_DIR / "project" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -58,7 +58,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "tests.django.wsgi.application"
+WSGI_APPLICATION = "tests.project.wsgi.application"
 
 
 # Database
@@ -67,14 +67,14 @@ WSGI_APPLICATION = "tests.django.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "django" / "testdb",
-    }
+        "NAME": BASE_DIR / "project" / "testdb",
+    },
 }
 
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-    }
+    },
 }
 
 

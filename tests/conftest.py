@@ -7,7 +7,7 @@ from rest_framework.request import Request
 
 from pipeline_views.views import BasePipelineView
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.django.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tests.project.settings")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -27,7 +27,7 @@ def drf_request() -> Request:
 
 
 @pytest.fixture()
-def base_api_view(drf_request) -> BasePipelineView:
+def base_api_view(drf_request: Request) -> BasePipelineView:
     view = BasePipelineView()
     view.request = drf_request
     view.format_kwarg = None

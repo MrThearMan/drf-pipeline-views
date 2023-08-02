@@ -1,6 +1,6 @@
 from rest_framework.test import APIClient, APIRequestFactory
 
-from tests.django.urls import ExampleView
+from tests.project.urls import ExampleView
 
 
 def test_example_endpoint__APIRequestFactory():
@@ -60,7 +60,7 @@ def test_openapi_endpoint():
                     ],
                     "type": "object",
                 },
-            }
+            },
         },
         "info": {
             "description": "API",
@@ -91,7 +91,7 @@ def test_openapi_endpoint():
                                     "$ref": "#/components/schemas/Input",
                                 },
                             },
-                        }
+                        },
                     },
                     "responses": {
                         "200": {
@@ -102,7 +102,7 @@ def test_openapi_endpoint():
                                     },
                                 },
                             },
-                            "description": "Example " "Output",
+                            "description": "Example Output",
                         },
                         "401": {
                             "content": {
@@ -110,13 +110,13 @@ def test_openapi_endpoint():
                                     "schema": {
                                         "properties": {
                                             "detail": {
-                                                "default": "error " "message",
+                                                "default": "error message",
                                                 "type": "string",
                                             },
                                         },
                                         "type": "object",
-                                    }
-                                }
+                                    },
+                                },
                             },
                             "description": "Unauthenticated.",
                         },
@@ -124,7 +124,7 @@ def test_openapi_endpoint():
                     "tags": [
                         "example",
                     ],
-                }
-            }
+                },
+            },
         },
     }

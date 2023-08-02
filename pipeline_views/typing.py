@@ -18,9 +18,9 @@ from typing import (
 
 # New in version 3.10
 if sys.version_info < (3, 10):
-    from typing import ParamSpec, TypeAlias, TypeGuard
-else:
     from typing_extensions import ParamSpec, TypeAlias, TypeGuard
+else:
+    from typing import ParamSpec, TypeAlias, TypeGuard
 
 
 if TYPE_CHECKING:

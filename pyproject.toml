@@ -104,7 +104,7 @@ select = [
     "C90",      # mccabe
     "C4",       # flake8-comprehensions
     "COM",      # flake8-commas
-    "DJ",       # flake8-django
+    "DJ",       # flake8-project
     "DTZ",      # flake8-datetimez
     "E",        # pycodestyle errors
     "EM",       # flake8-errmsg
@@ -160,7 +160,7 @@ plugins = [
 ]
 
 [tool.django-stubs]
-django_settings_module = "tests.django.settings"
+django_settings_module = "tests.project.settings"
 
 [tool.coverage.run]
 relative_files = true
@@ -198,7 +198,7 @@ allowlist_externals =
     poetry
 setenv =
     PYTHONPATH = {toxinidir}
-    DJANGO_SETTINGS_MODULE = tests.django.settings
+    DJANGO_SETTINGS_MODULE = tests.project.settings
 deps =
     py39: Django >=3.2,<4.0
 

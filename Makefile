@@ -1,4 +1,4 @@
-export DJANGO_SETTINGS_MODULE = tests.django.settings
+export DJANGO_SETTINGS_MODULE = tests.project.settings
 
 .PHONY: help
 .PHONY: dev
