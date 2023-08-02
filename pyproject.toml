@@ -148,6 +148,7 @@ ignore = [
 "__init__.py" = ["F401"]
 "pipeline_views/openapi/schema.py" = ["C901"]
 "pipeline_views/openapi/utils.py" = ["C901"]
+"pipeline_views/typing.py" = ["TCH"]
 
 [tool.mypy]
 python_version = "3.11"
