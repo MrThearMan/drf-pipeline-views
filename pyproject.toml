@@ -110,7 +110,6 @@ select = [
     "EM",       # flake8-errmsg
     "ERA",      # eradicate
     "F",        # pyflakes
-    "FA",       # flake8-future-annotations
     "FBT",      # flake8-boolean-trap
     "I",        # isort
     "ICN",      # flake8-import-conventions
