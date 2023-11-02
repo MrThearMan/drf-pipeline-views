@@ -25,7 +25,8 @@ __all__ = [
 
 
 class PipelineMetadata(SimpleMetadata):
-    """Metadata class that adds input and output info for
+    """
+    Metadata class that adds input and output info for
     each of the attached views methods based on
     the serializers for that method.
     """

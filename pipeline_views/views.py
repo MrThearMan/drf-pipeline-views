@@ -126,8 +126,7 @@ class BasePipelineView(APIView):
         """Build and validate a serializer"""
         serializer = self.initialize_serializer(serializer_class=serializer_class, data=data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.data
-        return data
+        return serializer.data
 
     def run_model(self, model_class: Any, data: DataDict) -> DataDict:
         """Build and validate a pydantic model"""
@@ -146,8 +145,9 @@ class BasePipelineView(APIView):
             kwargs["data"] = [] if kwargs["many"] else {}
         return serializer_class(*args, **kwargs)
 
-    def get_serializer_class(self, output: bool = False) -> SerializerType:  # noqa: FBT001,FBT002
-        """Get the first step in the current HTTP method's pipeline.
+    def get_serializer_class(self, output: bool = False) -> SerializerType:
+        """
+        Get the first step in the current HTTP method's pipeline.
         If it's a Serializer, return it. Otherwise, try to infer a serializer from the
         logic callable's parameters.
         """

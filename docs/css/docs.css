@@ -142,6 +142,10 @@ div.highlight > span.filename {
     color: #cccccc;
 }
 
+.rst-content .section .docutils {
+    display: inline-table;
+}
+
 .rst-content div[class^=highlight],
 .rst-content pre.literal-block {
     border: 1px solid #626262;
@@ -179,6 +183,9 @@ blockquote > p {
     margin: 0;
 }
 
+.rst-content table.docutils td {
+    white-space: break-spaces;
+}
 
 blockquote code {
     line-height: normal;

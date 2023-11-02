@@ -81,7 +81,8 @@ def get_language(request: Request) -> str:
 
 
 def translate(item: Union[Callable[P, T], Request]) -> Union[Generator[Any, Any, None], Callable[P, T]]:
-    """Override current language with one from language header or 'lang' parameter.
+    """
+    Override current language with one from language header or 'lang' parameter.
     Can be used as a context manager or a decorator. If a function is decorated,
     one of the parameters for the function must be a `rest_framework.Request` object.
     """

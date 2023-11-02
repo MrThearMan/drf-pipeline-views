@@ -50,13 +50,11 @@ class HeaderSerializerMixin(RequestFromContextMixin):
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         ret = super().to_internal_value(data)
-        ret = self.add_headers(ret)
-        return ret
+        return self.add_headers(ret)
 
     def to_representation(self, instance: Any) -> dict[str, Any]:
         ret = super().to_representation(instance)
-        ret = self.add_headers(ret)
-        return ret
+        return self.add_headers(ret)
 
 
 class CookieSerializerMixin(RequestFromContextMixin):
@@ -79,17 +77,16 @@ class CookieSerializerMixin(RequestFromContextMixin):
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
         ret = super().to_internal_value(data)
-        ret = self.add_cookies(ret)
-        return ret
+        return self.add_cookies(ret)
 
     def to_representation(self, instance: Any) -> dict[str, Any]:
         ret = super().to_representation(instance)
-        ret = self.add_cookies(ret)
-        return ret
+        return self.add_cookies(ret)
 
 
 class HeaderAndCookieSerializer(HeaderSerializerMixin, CookieSerializerMixin, serializers.Serializer):
-    """Serializer that adds the specified headers and cookies from request to the serializer data.
+    """
+    Serializer that adds the specified headers and cookies from request to the serializer data.
     Serializer must have the incoming request object in its context dictionary.
     If the specified header or cookie is not found in the request, the value will be None.
     """

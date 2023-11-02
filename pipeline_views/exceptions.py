@@ -6,7 +6,8 @@ __all__ = [
 
 
 class NextLogicBlock(Exception):  # noqa: N818
-    """Used to escape from pipeline logic blocks prematurely.
+    """
+    Used to escape from pipeline logic blocks prematurely.
     Saves the kwargs that are given to it for the next step in the pipeline.
     """
 
