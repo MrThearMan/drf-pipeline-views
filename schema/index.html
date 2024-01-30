@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>OpenAPI Schema - Pipeline Views</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../css/docs.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "OpenAPI Schema";
+        var mkdocs_page_input_path = "schema.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/console.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/json.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Pipeline Views
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../quickstart/">Quickstart</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../inference/">Serializer Inference</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../logic_blocks/">Logic Blocks</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../conditionals/">Conditional Logic Paths</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../async/">Async Logic Callables</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="./">OpenAPI Schema</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#additional-responses">Additional responses</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#dynamic-responses">Dynamic responses</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#deprecation">Deprecation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#security-schemes">Security schemes</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#automatic-security-schemes">Automatic security schemes</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#query-path-header-and-cookie-parameters">Query, path, header, and cookie parameters</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#external-docs">External docs</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#public">Public</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#links">Links</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#callbacks">Callbacks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#webhooks">Webhooks</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../metadata/">Metadata</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../misc/">Miscellaneous</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Pipeline Views</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">OpenAPI Schema</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="openapi-schema">OpenAPI Schema</h1>
+<p>Pipeline views support OpenAPI schema by default.</p>
+<p>Here is an example pipeline.</p>
+<pre class="highlight"><code class="language-python">from django.urls import path
+from rest_framework import serializers
+
+from pipeline_views.views import BasePipelineView
+from openapi_schema.views import get_schema_view
+
+
+class InputSerializer(serializers.Serializer):
+    """Example Input"""
+
+    name = serializers.CharField(help_text="foo")
+    age = serializers.IntegerField(help_text="bar")
+
+
+class OutputSerializer(serializers.Serializer):
+    """Example Output"""
+
+    email = serializers.EmailField(help_text="fizz")
+    age = serializers.IntegerField(help_text="buzz")
+
+
+def example_method(name: str, age: int):
+    return {"email": f"{name.lower()}@email.com", "age": age}
+
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [
+            InputSerializer,
+            example_method,
+            OutputSerializer,
+        ],
+    }
+
+
+urlpatterns = [
+    path("example", ExampleView.as_view(), name="example"),
+    path(
+        "openapi/",
+        get_schema_view(
+            title="Your Project",
+            root_url="api/v1/",
+            description="API for all things",
+            version="1.0.0",
+            contact={"email": "user@example.com"},
+            license={"name": "MIT"},
+            terms_of_service="example.com",
+        ),
+        name="openapi-schema",
+    ),
+]</code></pre>
+<p>This gets converted to the following OpenAPI schema.</p>
+<pre class="highlight"><code class="language-yaml">openapi: 3.0.2
+info:
+  title: Your Project
+  version: 1.0.0
+  description: API for all things
+  contact:
+    email: user@example.com
+  license:
+    name: MIT
+  termsOfService: example.com
+paths:
+  /example/:
+    post:
+      operationId: createInput
+      description: Example Input
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Input'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Input'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Input'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Output'
+          description: Example Output
+      tags:
+      - example
+components:
+  schemas:
+    Input:
+      type: object
+      properties:
+        name:
+          type: string
+          description: foo
+        age:
+          type: integer
+          description: bar
+      required:
+      - name
+      - age
+    Output:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: fizz
+        age:
+          type: integer
+          description: buzz
+      required:
+      - email
+      - age</code></pre>
+<h2 id="additional-responses">Additional responses</h2>
+<p>You can add additional responses in the initialization of the schema.</p>
+<p><pre class="highlight"><code class="language-python">from rest_framework import serializers
+from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
+
+class ErrorSerializer(serializers.Serializer):
+    """This is a custom error"""
+
+    loc = serializers.ListField(child=serializers.CharField())
+    msg = serializers.CharField()
+    type = serializers.CharField()
+
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        responses={
+            "POST": {
+                400: ErrorSerializer,
+                404: "This is the error message"
+            }
+        }
+    )</code></pre>
+<pre class="highlight"><code class="language-yaml"># ...
+paths:
+  /example/:
+    post:
+      # ...
+      responses:
+        # ...
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: This is a custom error
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    default: error message
+          description: This is the error message
+components:
+  schemas:
+    # ...
+    Error:
+      type: object
+      properties:
+        loc:
+          type: array
+          items:
+            type: string
+        msg:
+          type: string
+        type:
+          type: string
+      required:
+      - loc
+      - msg
+      - type</code></pre></p>
+<blockquote>
+<p>In case your pipeline returns a list response, a default 204 response will be added automatically.</p>
+</blockquote>
+<h3 id="dynamic-responses">Dynamic responses</h3>
+<p>You can also define dynamic responses with the help of MockSerializer.</p>
+<p><pre class="highlight"><code class="language-python">from openapi_schema.schema import PipelineSchema
+from pipeline_views.views import BasePipelineView
+from serializer_inference.serializers import MockSerializer
+
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        responses={
+            "POST": {
+                404: MockSerializer.with_example(
+                    description="This is the error message",
+                    response={
+                        "{date}": {
+                            "{time}": [
+                                "'free' or 'not free'",
+                            ],
+                        },
+                    },
+                )
+            }
+        }
+    )</code></pre>
+<pre class="highlight"><code class="language-yaml"># ...
+paths:
+  /example:
+    post:
+      # ...
+      responses:
+        # ...
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  '{date}':
+                    type: object
+                    properties:
+                      '{time}':
+                        type: array
+                        items:
+                          type: string
+                          default: '''free'' or ''not free'''
+          description: This is the error message
+# ...</code></pre></p>
+<h2 id="deprecation">Deprecation</h2>
+<p>You can deprecate endpoints on a method by method basis.</p>
+<pre class="highlight"><code class="language-python">from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        deprecated=["POST"],
+    )</code></pre>
+<p>You can also use the <code>pipeline_views.schema.deprecate</code> on the view.</p>
+<pre class="highlight"><code class="language-python">from pipeline_views.views import BasePipelineView
+from openapi_schema.utils import deprecate
+
+@deprecate(methods=["POST"])
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }</code></pre>
+<blockquote>
+<p>You can deprecate all methods by omitting the <code>methods</code> argument.</p>
+</blockquote>
+<h2 id="security-schemes">Security schemes</h2>
+<p>Add security schemes to the endpoints.</p>
+<pre class="highlight"><code class="language-python">from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        security={
+            "POST": {
+                "my_security": [],
+            },
+        },
+    )</code></pre>
+<blockquote>
+<p>The value for the security scheme defines its <a href="https://swagger.io/docs/specification/authentication/#scopes">scopes</a>.</p>
+</blockquote>
+<p>The security scheme also needs to be added to the schema view.
+You can do this by adding the following:</p>
+<p><pre class="highlight"><code class="language-python">from django.urls import path
+from openapi_schema.views import get_schema_view
+
+urlpatterns = [
+    path("example/", ExampleView.as_view(), name="test_view"),
+    path(
+        "openapi/",
+        get_schema_view(
+            title="Your Project",
+            description="API for all things",
+            version="1.0.0",
+            security_schemes={
+                "my_security": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT",
+                },
+            },
+        ),
+        name="openapi-schema",
+    ),
+]</code></pre>
+<pre class="highlight"><code class="language-yaml"># ...
+components:
+  # ...
+  securitySchemes:
+    my_security:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+# ...</code></pre></p>
+<h3 id="automatic-security-schemes">Automatic security schemes</h3>
+<p>You can also define rules that will automatically add certain security schemes
+to views based on their authentication and permission classes. The key for the
+security rules is either a single authentication and permission class, or a
+tuple of them. If the view already has any of the schemas defined for it,
+the view's configuration will take precedence.</p>
+<p><pre class="highlight"><code class="language-python">from django.urls import path
+from rest_framework.permissions import IsAuthenticated
+from openapi_schema.views import get_schema_view
+from pipeline_views.views import BasePipelineView
+
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    permission_classes = [IsAuthenticated]
+
+    pipelines = {
+        "POST": [...],
+    }
+
+urlpatterns = [
+    path("example/", ExampleView.as_view(), name="test_view"),
+    path(
+        "openapi/",
+        get_schema_view(
+            title="Your Project",
+            description="API for all things",
+            version="1.0.0",
+            security_schemes={
+                "my_security": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT",
+                },
+            },
+            security_rules={
+                IsAuthenticated: {
+                    "my_security": [],
+                },
+            },
+        ),
+        name="openapi-schema",
+    ),
+]</code></pre>
+<pre class="highlight"><code class="language-yaml"># ...
+paths:
+  /example:
+    post:
+      # ...
+      security:
+      - my_security: []
+components:
+  # ...
+  securitySchemes:
+    my_security:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+# ...</code></pre></p>
+<h2 id="query-path-header-and-cookie-parameters">Query, path, header, and cookie parameters</h2>
+<p>For pipelines using the GET method, input serializer fields are interpreted automatically
+as query parameters. If the endpoint has path parameters, those are used in the
+schema instead, but with the documentation from the input serializer.</p>
+<p>For other HTTP methods, you need to explicitly state that if a value is given as
+a parameter instead of in the request body. This is just for schema definition,
+the endpoints will actually accept the input from both places.</p>
+<pre class="highlight"><code class="language-python">from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        query_parameters={
+            "POST": ["name"],
+        },
+    )</code></pre>
+<p>You can also declare a parameter as a header or as cookie parameter.</p>
+<pre class="highlight"><code class="language-python">from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        header_parameters={
+            "POST": ["name"],
+        },
+        cookie_parameters={
+            "POST": ["name"],
+        },
+    )</code></pre>
+<p>However, you'll need to handle getting the parameter from cookies in
+the input serializer separately. You can use <code>HeaderAndCookieSerializer</code>
+for this. This will ass fields to the serializer to accept the defined
+headers and cookies from the incoming request as strings, or None if
+they were not given.</p>
+<pre class="highlight"><code class="language-python">from pipeline_views.serializers import HeaderAndCookieSerializer
+
+class TestSerialzer(HeaderAndCookieSerializer):
+    take_from_headers = ["foo"]
+    take_from_cookies = ["bar"]</code></pre>
+<h2 id="external-docs">External docs</h2>
+<p>External docs for an endpoint can also be added.</p>
+<pre class="highlight"><code class="language-python">from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        external_docs={
+            "POST": {
+                "description": "Look here for more information",
+                "url": "...",
+            },
+        },
+    )</code></pre>
+<h2 id="public">Public</h2>
+<p>Endpoints can be set public/private for the whole API (public by default).
+Private endpoints are not visible to users that do not have the appropriate
+permissions.</p>
+<pre class="highlight"><code class="language-python">from django.urls import path
+from openapi_schema.views import get_schema_view
+
+urlpatterns = [
+    path("example/", ExampleView.as_view(), name="test_view"),
+    path(
+        "openapi/",
+        get_schema_view(
+            title="Your Project",
+            description="API for all things",
+            version="1.0.0",
+            public=False,
+        ),
+        name="openapi-schema",
+    ),
+]</code></pre>
+<p>You can also set individual endpoints public/private. This will override
+the API-wide configuration.</p>
+<pre class="highlight"><code class="language-python">from pipeline_views.views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        public={
+            "POST": False,
+        },
+    )</code></pre>
+<h2 id="links">Links</h2>
+<p>Using <a href="https://swagger.io/docs/specification/links/">links</a>, you can describe how various values returned
+by one operation can be used as input for other operations.</p>
+<p><pre class="highlight"><code class="language-python">from pipeline_views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        links={
+            "POST": {
+                200: {
+                    "LinkTitle": {
+                        "description": "Description",
+                        "operationId": "partialUpdateInput",
+                        "parameters": {
+                            "age": "$request.body#/age",
+                        },
+                    }
+                },
+            },
+        },
+    )</code></pre>
+<pre class="highlight"><code class="language-yaml"># ...
+paths:
+  /example/:
+    post:
+      # ...
+      responses:
+        '200':
+          # ...
+          links:
+            LinkTitle:
+              description: Description
+              operationId: partialUpdateInput
+              parameters:
+                age: $request.body#/age
+# ...</code></pre></p>
+<h2 id="callbacks">Callbacks</h2>
+<p><a href="https://swagger.io/docs/specification/callbacks/">Callbacks</a> are asynchronous, out-of-band requests that your
+service will send to some other service in response to
+certain events.</p>
+<p><pre class="highlight"><code class="language-python">from rest_framework import serializers
+from pipeline_views import BasePipelineView
+from openapi_schema.schema import PipelineSchema
+
+class InputSerializer(serializers.Serializer):
+    """Example Input"""
+
+    name = serializers.CharField()
+    age = serializers.IntegerField()
+
+class OutputSerializer(serializers.Serializer):
+    """Example Output"""
+
+    email = serializers.EmailField()
+    age = serializers.IntegerField()
+
+class ExampleView(BasePipelineView):
+    """Example View"""
+
+    pipelines = {
+        "POST": [...],
+    }
+
+    schema = PipelineSchema(
+        callbacks={
+            "EventName": {
+                "CallbackUrl": {
+                    "POST": {
+                        "request_body": InputSerializer,
+                        "responses": {
+                            200: OutputSerializer,
+                        },
+                    },
+                },
+            },
+        },
+    )  </code></pre>
+<pre class="highlight"><code class="language-yaml"># ...
+paths:
+  /example/:
+    post:
+      # ...
+      callbacks:
+        EventName:
+          CallbackUrl:
+            post:
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        age:
+                          type: integer
+                      required:
+                      - name
+                      - age
+              responses:
+                200:
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+                        properties:
+                          email:
+                            type: string
+                            format: email
+                          age:
+                            type: integer
+                        required:
+                        - email
+                        - age
+# ...</code></pre></p>
+<h2 id="webhooks">Webhooks</h2>
+<p><a href="https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#oasWebhooks:~:text=for%20the%20API.-,webhooks,-Map%5Bstring">Webhooks</a> describe requests initiated other than
+by an API call, for example by an out-of-band registration.
+You can define them in the PipelineSchemaGenerator.</p>
+<p><pre class="highlight"><code class="language-python">from django.urls import path
+from rest_framework import serializers
+from openapi_schema.views import get_schema_view
+
+class InputSerializer(serializers.Serializer):
+    """Example Input"""
+
+    name = serializers.CharField()
+    age = serializers.IntegerField()
+
+class OutputSerializer(serializers.Serializer):
+    """Example Output"""
+
+    email = serializers.EmailField()
+    age = serializers.IntegerField()
+
+urlpatterns = [
+    path(
+        "openapi/",
+        get_schema_view(
+            title="Your Project",
+            description="API for all things",
+            version="1.0.0",
+            webhooks={
+                "ExampleWebhook": {
+                    "method": "POST",
+                    "request_data": InputSerializer,
+                    "responses": {
+                        200: OutputSerializer,
+                        400: "Failure",
+                    },
+                },
+            },
+        ),
+        name="openapi-schema",
+    ),
+]</code></pre>
+<pre class="highlight"><code class="language-yaml"># ...
+webhooks:
+  ExampleWebhook:
+    POST:
+      requestBody:
+        description: Example Input
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                age:
+                  type: integer
+              required:
+              - name
+              - age
+      responses:
+        '200':
+          description: Example Output
+          content:
+            application/json:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                age:
+                  type: integer
+              required:
+              - email
+              - age
+        '400':
+          description: Failure
+# ...</code></pre></p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../async/" class="btn btn-neutral float-left" title="Async Logic Callables"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../metadata/" class="btn btn-neutral float-right" title="Metadata">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../async/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../metadata/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
