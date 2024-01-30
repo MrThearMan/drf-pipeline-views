@@ -10,7 +10,6 @@
 
 [![Python Version][version-badge]][pypi]
 [![Django Version][django-badge]][pypi]
-[![DRF Version][drf-badge]][pypi]
 
 ```shell
 pip install drf-pipeline-views
@@ -60,7 +59,6 @@ class SomeView(BasePipelineView):
 ```
 
 [clean]: https://archive.org/details/pyvideo_2840___The_Clean_Architecture_in_Python
-[drf]: https://www.django-rest-framework.org/
 [pipeline]: https://java-design-patterns.com/patterns/pipeline/
 
 [coverage-badge]: https://coveralls.io/repos/github/MrThearMan/drf-pipeline-views/badge.svg?branch=main
@@ -72,7 +70,6 @@ class SomeView(BasePipelineView):
 [version-badge]: https://img.shields.io/pypi/pyversions/drf-pipeline-views
 [downloads-badge]: https://img.shields.io/pypi/dm/drf-pipeline-views
 [django-badge]: https://img.shields.io/pypi/djversions/drf-pipeline-views
-[drf-badge]: https://img.shields.io/badge/drf%20versions-3.12%20%7C%203.13%20%7C%203.14-blue
 
 [coverage]: https://coveralls.io/github/MrThearMan/drf-pipeline-views?branch=main
 [status]: https://github.com/MrThearMan/drf-pipeline-views/actions/workflows/test.yml

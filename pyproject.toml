@@ -30,9 +30,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Framework :: Django :: 3.2",
-    "Framework :: Django :: 4.0",
-    "Framework :: Django :: 4.1",
     "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
     "Intended Audience :: Developers",
     "Natural Language :: English",
 ]
@@ -50,7 +49,7 @@ exclude = [
 [tool.poetry.dependencies]
 python = ">=3.9,<4"
 Django = ">=3.2"
-djangorestframework = ">=3.12.0"
+djangorestframework = ">=3.13.0"
 drf-serializer-inference = ">=0.0.2"
 drf-openapi-schema = ">=0.0.3"
 asgiref = ">=3.5.0"
@@ -63,7 +62,7 @@ uritemplate = {version = ">=4.1.1", optional = true}
 [tool.poetry.group.test.dependencies]
 pytest = "8.0.0"
 coverage = "7.4.1"
-pytest-django = "4.7.0"
+pytest-django = "4.8.0"
 pre-commit = "3.6.0"
 tox = "4.12.1"
 tox-gh-actions = "3.2.0"
@@ -197,7 +196,7 @@ addopts = "-vv -s --log-cli-level=INFO"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{39, 310, 311, 312}-drf{312, 313, 314}
+envlist = py{39, 310, 311, 312}-django{32, 42, 50}
 isolated_build = true
 
 [gh-actions]
@@ -214,13 +213,14 @@ setenv =
     PYTHONPATH = {toxinidir}
     DJANGO_SETTINGS_MODULE = tests.project.settings
 deps =
-    drf312: Django >=3.2,<4.0
-    drf313: Django >=4.0,<4.1
-    drf314: Django >=4.2,<4.3
+    django32: Django >=3.2,<4.0
+    django42: Django >=4.2,<4.4
 
-    drf312: djangorestframework >=3.12.0,<3.13.0
-    drf313: djangorestframework >=3.13.0,<3.14.0
-    drf314: djangorestframework >=3.14.0,<3.15.0
+    py39-django50: Django >=4.2,<4.4
+    py{310, 311, 312}-django50: Django >=5.0,<5.1
+
+    django32: djangorestframework >=3.13.0,<3.14.0
+    django{42, 50}: djangorestframework >=3.14.0,<3.15.0
 
     py39: typing-extensions
     drf-openapi-schema
