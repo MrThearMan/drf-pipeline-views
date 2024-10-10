@@ -25,13 +25,13 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Framework :: Django :: 3.2",
+    "Programming Language :: Python :: 3.13",
     "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.0",
+    "Framework :: Django :: 5.1",
     "Intended Audience :: Developers",
     "Natural Language :: English",
 ]
@@ -47,7 +47,7 @@ exclude = [
 "Bug Tracker" = "https://github.com/MrThearMan/drf-pipeline-views/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4"
+python = ">=3.10,<4"
 Django = ">=3.2"
 djangorestframework = ">=3.13.0"
 drf-serializer-inference = ">=0.0.2"
@@ -61,9 +61,8 @@ uritemplate = {version = ">=4.1.1", optional = true}
 
 [tool.poetry.group.test.dependencies]
 pytest = "8.3.3"
-coverage = "7.6.1"
+coverage = "7.6.2"
 pytest-django = "4.9.0"
-pre-commit = "4.0.0"
 tox = "4.21.2"
 tox-gh-actions = "3.2.0"
 
@@ -74,6 +73,7 @@ mkdocs-mermaid2-plugin = "1.1.1"
 
 [tool.poetry.group.lint.dependencies]
 mypy = "1.11.2"
+pre-commit = "4.0.1"
 django-stubs = "5.1.0"
 djangorestframework-stubs = "3.15.1"
 
@@ -163,7 +163,7 @@ ignore = [
 "pipeline_views/typing.py" = ["TCH"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 warn_return_any = "True"
 warn_unused_configs = "True"
 plugins = [
@@ -196,15 +196,15 @@ addopts = "-vv -s --log-cli-level=INFO"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py{39, 310, 311, 312}-django{32, 42, 50}
+envlist = py{310, 311, 312, 313}-django{42, 50, 51}
 isolated_build = true
 
 [gh-actions]
 python =
-    3.9: py39
     3.10: py310
     3.11: py311
     3.12: py312
+    3.13: py313
 
 [testenv]
 allowlist_externals =
@@ -213,16 +213,12 @@ setenv =
     PYTHONPATH = {toxinidir}
     DJANGO_SETTINGS_MODULE = tests.project.settings
 deps =
-    django32: Django >=3.2,<4.0
-    django42: Django >=4.2,<4.4
+    django42: Django >=4.2,<4.3
+    django50: Django >=5.0,<5.1
+    django51: Django >=5.1,<5.2
 
-    py39-django50: Django >=4.2,<4.4
-    py{310, 311, 312}-django50: Django >=5.0,<5.1
+    djangorestframework >=3.14.0,<3.15.0
 
-    django32: djangorestframework >=3.13.0,<3.14.0
-    django{42, 50}: djangorestframework >=3.14.0,<3.15.0
-
-    py39: typing-extensions
     drf-openapi-schema
     drf-serializer-inference
     asgiref
@@ -238,5 +234,5 @@ commands =
 """
 
 [build-system]
-requires = ["poetry-core>=1.5.0"]
+requires = ["poetry-core>=1.9.0"]
 build-backend = "poetry.core.masonry.api"
