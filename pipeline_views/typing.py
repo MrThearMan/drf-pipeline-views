@@ -42,9 +42,9 @@ __all__ = [
     "ParamSpec",
     "Protocol",
     "TypeAlias",
-    "TypedDict",
     "TypeGuard",
     "TypeVar",
+    "TypedDict",
     "Union",
 ]
 
