@@ -37,12 +37,12 @@ if TYPE_CHECKING:
 
 
 __all__ = [
+    "Sentinel",
     "get_language",
     "get_view_method",
     "is_pydantic_model",
     "is_serializer_class",
     "run_parallel",
-    "Sentinel",
     "translate",
 ]
 
