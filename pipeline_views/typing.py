@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -10,18 +9,14 @@ from typing import (
     Iterable,
     Literal,
     Optional,
+    ParamSpec,
     Protocol,
+    TypeAlias,
     TypedDict,
+    TypeGuard,
     TypeVar,
     Union,
 )
-
-# New in version 3.10
-if sys.version_info < (3, 10):
-    from typing_extensions import ParamSpec, TypeAlias, TypeGuard
-else:
-    from typing import ParamSpec, TypeAlias, TypeGuard
-
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
