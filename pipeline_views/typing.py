@@ -60,8 +60,7 @@ PipelinesDict: TypeAlias = dict[HTTPMethod, PipelineLogic]
 
 
 class GenericView(Protocol):
-    def __call__(self: BasePipelineView, request: "Request", *args: Any, **kwargs: Any) -> "Response":
-        """..."""
+    def __call__(self: BasePipelineView, request: "Request", *args: Any, **kwargs: Any) -> "Response": ...
 
 
 class ViewContext(TypedDict):
