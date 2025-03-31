@@ -42,7 +42,7 @@ class BasePipelineView(APIView):
     ignored_patch_params: ClassVar[set[str]] = {"lang", "format"}
     ignored_delete_params: ClassVar[set[str]] = {"lang", "format"}
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> "BasePipelineView":  # noqa: ARG003,
+    def __new__(cls, *args: Any, **kwargs: Any) -> "BasePipelineView":
         for key in cls.pipelines:
             if not hasattr(cls, key.lower()):
                 setattr(cls, key.lower(), get_view_method(key))

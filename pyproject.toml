@@ -81,10 +81,10 @@ line-length = 120
 exclude = [
     "tests/*",
 ]
-typing-modules = [
+lint.typing-modules = [
     "pipeline_views.typing",
 ]
-select = [
+lint.select = [
     "A",        # flake8-builtins
     "ANN",      # flake8-annotations
     "ARG",      # flake8-unused-arguments
@@ -125,10 +125,11 @@ select = [
     "TRY",      # tryceratops
     "W",        # pycodestyle warnings
 ]
-ignore = [
+lint.ignore = [
     "A005",     # Allow shawdowing builtin modules
     "B905",     # `zip()` without an explicit `strict=` parameter
     "ANN401",   # Any-typing allowed
+    "ARG004",   # Unused function arguments
     "FBT001",   # Boolean positional argument in function definition
     "FBT002",   # Boolean positional argument in method definition
     #
