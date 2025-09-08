@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Quickstart - Pipeline Views</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../css/docs.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Quickstart";
+        var mkdocs_page_input_path = "quickstart.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/console.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/json.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> Pipeline Views
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Quickstart</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#example">Example</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#a-closer-look">A Closer Look</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../inference/">Serializer Inference</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../logic_blocks/">Logic Blocks</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../conditionals/">Conditional Logic Paths</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../async/">Async Logic Callables</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../schema/">OpenAPI Schema</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../metadata/">Metadata</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../misc/">Miscellaneous</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">Pipeline Views</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Quickstart</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="quickstart">Quickstart</h1>
+<h2 id="example">Example</h2>
+<blockquote>
+<p>This will be a toy example, so the specific implementations details
+are not important here, rather the separation of logic.</p>
+</blockquote>
+<p>We are going to build a pipeline that takes product reviews from users, saves
+them to our database, contacts some outside system for recommendations based on
+the given review, and responds with the user's review and recommendation.</p>
+<p>It's a good idea to first define an InputSerializer, and an OutputSerializer that define
+the input and output of the pipeline respectively. This forces verification of the incoming
+and outcoming data, so that if something changes in the pipeline, or some unexpected values
+are produced, the endpoint will break instead of creating side effects in the application
+using the API. We'll also get better documentation in <a href="https://www.django-rest-framework.org/topics/browsable-api/">The Browsable API</a>
+or any tool based on the OpenAPI specification, like <a href="https://swagger.io/">Swagger.</a></p>
+<blockquote>
+<p>More about automatic documentation for pipeline views <a href="https://mrthearman.github.io/drf-pipeline-views/schema/">here</a>.</p>
+</blockquote>
+<div class="highlight"><span class="filename">serializers.py</span><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializers</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">ReviewInputSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="o">.</span><span class="n">Serializer</span><span class="p">):</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">product_id</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">UUIDField</span><span class="p">()</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">score</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">ChoiceField</span><span class="p">(</span><span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">review</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">user</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">SerializerMethodField</span><span class="p">()</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="c1"># Current request object is always included</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="c1"># in the serializer context</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">User</span><span class="p">:</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">[</span><span class="s2">&quot;request&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">user</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="k">class</span><span class="w"> </span><span class="nc">ReviewOutputSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="o">.</span><span class="n">Serializer</span><span class="p">):</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="k">class</span><span class="w"> </span><span class="nc">RecommendationSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="o">.</span><span class="n">Serializer</span><span class="p">):</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>        <span class="n">product_id</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>        <span class="n">avg_score</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">score</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">ChoiceField</span><span class="p">(</span><span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="n">review</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>    <span class="n">recommendations</span> <span class="o">=</span> <span class="n">RecommendationSerializer</span><span class="p">(</span><span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p>And now the main logic, the business logic</p>
+<div class="highlight"><span class="filename">services.py</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">UUID</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Product</span><span class="p">,</span> <span class="n">Review</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="k">class</span><span class="w"> </span><span class="nc">Recommencation</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">product_id</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">avg_score</span><span class="p">:</span> <span class="nb">float</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">review_product</span><span class="p">(</span><span class="n">product_id</span><span class="p">:</span> <span class="n">UUID</span><span class="p">,</span> <span class="n">score</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">review</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="n">User</span><span class="p">):</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">product_id</span><span class="p">)</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">user_review</span> <span class="o">=</span> <span class="n">Review</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">add_review</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">review</span><span class="p">)</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;product&quot;</span><span class="p">:</span> <span class="n">product</span><span class="p">,</span> <span class="s2">&quot;review&quot;</span><span class="p">:</span> <span class="n">user_review</span><span class="p">}</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_recommendations</span><span class="p">(</span><span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">review</span><span class="p">:</span> <span class="n">Review</span><span class="p">):</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;product&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">),</span> <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">score</span><span class="p">}</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;...&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Recommencation</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="k">return</span> <span class="p">{</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>        <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>        <span class="s2">&quot;review&quot;</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>        <span class="s2">&quot;recommendations&quot;</span><span class="p">:</span> <span class="n">data</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>    <span class="p">}</span>
+</code></pre></div>
+<p>Finally, let's put those together in the pipeline.</p>
+<div class="highlight"><span class="filename">views.py</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pipeline_views</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePipelineView</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.serializers</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReviewInputSerializer</span><span class="p">,</span> <span class="n">ReviewOutputSerializer</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">review_product</span><span class="p">,</span> <span class="n">get_recommendations</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">SomeView</span><span class="p">(</span><span class="n">BasePipelineView</span><span class="p">):</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">pipelines</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="s2">&quot;POST&quot;</span><span class="p">:</span> <span class="p">[</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>            <span class="n">ReviewInputSerializer</span><span class="p">,</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>            <span class="n">add_review_for_product</span><span class="p">,</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>            <span class="n">get_recommendations</span><span class="p">,</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>            <span class="n">ReviewOutputSerializer</span><span class="p">,</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>        <span class="p">],</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="a-closer-look">A Closer Look</h2>
+<p>Notice that the output from the previous function is used as the input of for
+the next function.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">review_product</span><span class="p">(</span><span class="n">product_id</span><span class="p">:</span> <span class="n">UUID</span><span class="p">,</span> <span class="n">score</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">review</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">user</span><span class="p">:</span> <span class="n">User</span><span class="p">):</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">product_id</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">user_review</span> <span class="o">=</span> <span class="n">Review</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">add_review</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">review</span><span class="p">)</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="hll">    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;product&quot;</span><span class="p">:</span> <span class="n">product</span><span class="p">,</span> <span class="s2">&quot;review&quot;</span><span class="p">:</span> <span class="n">user_review</span><span class="p">}</span>
+</span><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="hll">
+</span><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="hll"><span class="k">def</span><span class="w"> </span><span class="nf">get_recommendations</span><span class="p">(</span><span class="n">product</span><span class="p">:</span> <span class="n">Product</span><span class="p">,</span> <span class="n">review</span><span class="p">:</span> <span class="n">Review</span><span class="p">):</span>
+</span><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;product&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">),</span> <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">score</span><span class="p">}</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;...&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Recommencation</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="k">return</span> <span class="p">{</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>        <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>        <span class="s2">&quot;review&quot;</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>        <span class="s2">&quot;recommendations&quot;</span><span class="p">:</span> <span class="n">data</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="p">}</span>
+</code></pre></div>
+<p>Depending on your needs, you might want to reuse a logic fuction in a different context,
+and you might not always give the same input. You can make the functions more generic
+by specifying <code>**kwargs</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="hll"><span class="k">def</span><span class="w"> </span><span class="nf">review_product</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="hll">    <span class="n">product_id</span><span class="p">:</span> <span class="n">UUID</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;product_id&quot;</span><span class="p">]</span>
+</span><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="hll">    <span class="n">score</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;score&quot;</span><span class="p">]</span>
+</span><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="hll">    <span class="n">review</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;review&quot;</span><span class="p">]</span>
+</span><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="hll">    <span class="n">user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">]</span>
+</span><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">product</span> <span class="o">=</span> <span class="n">Product</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">product_id</span><span class="p">)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">user_review</span> <span class="o">=</span> <span class="n">Review</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">add_review</span><span class="p">(</span><span class="n">product</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">review</span><span class="p">)</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;product&quot;</span><span class="p">:</span> <span class="n">product</span><span class="p">,</span> <span class="s2">&quot;review&quot;</span><span class="p">:</span> <span class="n">user_review</span><span class="p">}</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="hll"><span class="k">def</span><span class="w"> </span><span class="nf">get_recommendations</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="hll">    <span class="n">product</span><span class="p">:</span> <span class="n">Product</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;product&quot;</span><span class="p">]</span>
+</span><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="hll">    <span class="n">review</span><span class="p">:</span> <span class="n">Review</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;review&quot;</span><span class="p">]</span>
+</span><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;product&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">product</span><span class="o">.</span><span class="n">id</span><span class="p">),</span> <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">score</span><span class="p">}</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;...&quot;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>    <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Recommencation</span><span class="p">]</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>    <span class="k">return</span> <span class="p">{</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>        <span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>        <span class="s2">&quot;review&quot;</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>        <span class="s2">&quot;recommendations&quot;</span><span class="p">:</span> <span class="n">data</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>    <span class="p">}</span>
+</code></pre></div>
+<p>You can even make functions that are only used to verify input,
+but do not modify the output at all (or only add data to it).</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">validate_data</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="c1"># Validation goes here.</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="c1"># Might raise an exception,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="c1"># which interrupts the pipeline.</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="k">return</span> <span class="n">kwargs</span>
+</code></pre></div>
+<p>Another point no note is that the functions are easily testable.
+<code>review_product</code> can be tested without mocking the GET request
+to the outside system, <code>get_recommendations</code> can be tested
+without making database queries. Some functions, like validators,
+have no side effects, which makes them easy and fast to unit test.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../inference/" class="btn btn-neutral float-right" title="Serializer Inference">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../inference/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
