@@ -62,7 +62,7 @@ pytest = "8.4.2"
 coverage = "7.10.6"
 pytest-django = "4.11.1"
 nox = "2025.5.1"
-pydantic = "2.11.7"
+pydantic = "2.11.9"
 uritemplate = "4.2.0"
 
 [tool.poetry.group.docs.dependencies]
