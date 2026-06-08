@@ -49,7 +49,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-Django = ">=5.2.14"
+Django = ">=5.2.15"
 djangorestframework = ">=3.13.0"
 drf-serializer-inference = ">=0.0.2"
 drf-openapi-schema = ">=0.0.3"
