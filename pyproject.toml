@@ -49,7 +49,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-Django = ">=5.2.15"
+Django = ">=5.2.16"
 djangorestframework = ">=3.13.0"
 drf-serializer-inference = ">=0.0.2"
 drf-openapi-schema = ">=0.0.3"
@@ -61,9 +61,9 @@ uritemplate = { version = ">=4.1.1", optional = true }
 
 [tool.poetry.group.test.dependencies]
 pytest = "9.1.1"
-coverage = "7.15.0"
+coverage = "7.15.1"
 pytest-django = "4.12.0"
-nox = "2026.4.10"
+nox = "2026.7.11"
 pydantic = "2.13.4"
 uritemplate = "4.2.0"
 
