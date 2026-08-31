@@ -25,7 +25,6 @@ from .services import async_step1, async_step2_1, async_step2_2, async_step3
 
 
 class SomeView(BasePipelineView):
-
     pipelines = {
         "GET": [
             async_step1,
@@ -54,15 +53,10 @@ from .services import async_step1, async_step2_1, async_step2_2, async_step3
 
 
 class SomeView(BasePipelineView):
-
     pipelines = {
         "GET": [
             async_step1,
-            (
-                async_step2_1,
-                async_step2_2,
-                ...
-            ),
+            (async_step2_1, async_step2_2, ...),
             async_step3,
         ],
     }

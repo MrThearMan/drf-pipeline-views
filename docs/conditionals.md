@@ -12,7 +12,6 @@ def step1(data):
 
 
 class SomeView(BasePipelineView):
-
     pipelines = {
         "GET": [
             step1,
@@ -20,7 +19,7 @@ class SomeView(BasePipelineView):
                 "foo": step2_1,
                 "bar": step2_2,
             },
-            ...
+            ...,
         ],
     }
 ```
@@ -41,7 +40,6 @@ def step1(data):
 
 
 class SomeView(BasePipelineView):
-
     pipelines = {
         "GET": [
             step1,
@@ -49,7 +47,7 @@ class SomeView(BasePipelineView):
                 block1_step1,  # run if condition is truthy
                 block1_step2,  # run if condition is falsy
             ],
-            ...
+            ...,
         ],
     }
 ```

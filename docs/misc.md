@@ -14,9 +14,7 @@ from pipeline_views.utils import get_view_method
 
 
 class BasicView(BasePipelineView):
-    pipelines = {
-        "GET": ...
-    }
+    pipelines = {"GET": ...}
 
     def get(self, request, *args, **kwargs):
         # Add language to every get request for this endpoint
@@ -60,10 +58,7 @@ class BasicView(BasePipelineView):
     # Extend the ignored values
     ignored_post_params = BasePipelineView.ignored_post_params | {...}
 
-    pipelines = {
-        "GET": ...,
-        "POST": ...
-    }
+    pipelines = {"GET": ..., "POST": ...}
 ```
 
 By default, the ignored keys include: "format" (used by DRF Rendered classes)

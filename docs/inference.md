@@ -6,7 +6,6 @@ A pipeline can also be constructed without Serializers.
 
 ```python
 class SomeView(BasePipelineView):
-
     pipelines = {
         "GET": [
             step1,
@@ -25,9 +24,10 @@ based on the type hints to the first function `step1`.
 from rest_framework.fields import CharField, IntegerField
 from pipeline_views import MockSerializer
 
+
 # Callable
-def logic_callable(name: str, age: int):
-    ...
+def logic_callable(name: str, age: int): ...
+
 
 # Inferred Serializer
 class LogicCallableSerializer(MockSerializer):

@@ -4,7 +4,6 @@ Pipeline logic, as well as serializers, can be grouped into blocks:
 
 ```python hl_lines="5 6 7 8"
 class SomeView(BasePipelineView):
-
     pipelines = {
         "GET": [
             [
@@ -33,21 +32,23 @@ will output the given output, e.g., a list.
 ```python hl_lines="4 5 12 13"
 from pipeline_views import NextLogicBlock
 
+
 def block1_step1(step1_input1, step1_input2):
     if condition:
         raise NextLogicBlock(step3_input1=..., step3_input2=...)
     ...
 
-def block1_step2(step2_input1, step2_input2):
-    ...
+
+def block1_step2(step2_input1, step2_input2): ...
+
 
 def block2_step1(step3_input1, step3_input2):
     if condition:
         raise NextLogicBlock.with_output(output=...)
     ...
 
-def block2_step2():
-    ...
+
+def block2_step2(): ...
 ```
 
 ---
@@ -57,7 +58,6 @@ parent logic block.
 
 ```python
 class SomeView(BasePipelineView):
-
     pipelines = {
         "GET": [
             [
@@ -66,9 +66,7 @@ class SomeView(BasePipelineView):
                     block2_step1,
                     [
                         block3_step1,
-                        [
-                            ...
-                        ],
+                        [...],
                     ],
                 ],
             ],
