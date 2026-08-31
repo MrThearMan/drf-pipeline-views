@@ -22,6 +22,7 @@ or any tool based on the OpenAPI specification, like [Swagger.][swagger]
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+
 class ReviewInputSerializer(serializers.Serializer):
     product_id = serializers.UUIDField()
     score = serializers.ChoiceField(choices=[1, 2, 3, 4, 5])
@@ -33,8 +34,8 @@ class ReviewInputSerializer(serializers.Serializer):
     def get_user(self, obj) -> User:
         return self.context["request"].user
 
-class ReviewOutputSerializer(serializers.Serializer):
 
+class ReviewOutputSerializer(serializers.Serializer):
     class RecommendationSerializer(serializers.Serializer):
         product_id = serializers.CharField()
         avg_score = serializers.FloatField()
@@ -53,24 +54,23 @@ import requests
 from django.contrib.auth.models import User
 from .models import Product, Review
 
+
 class Recommencation(TypedDict):
     product_id: str
     avg_score: float
+
 
 def review_product(product_id: UUID, score: int, review: str, user: User):
     product = Product.objects.get(product_id)
     user_review = Review.objects.add_review(product, user, score, review)
     return {"product": product, "review": user_review}
 
+
 def get_recommendations(product: Product, review: Review):
     payload = {"product": str(product.id), "score": review.score}
     response = requests.get("...", params=payload)
     data: list[Recommencation] = response.json()
-    return {
-        "score": review.score,
-        "review": review.content,
-        "recommendations": data
-    }
+    return {"score": review.score, "review": review.content, "recommendations": data}
 ```
 
 Finally, let's put those together in the pipeline.
@@ -80,8 +80,8 @@ from pipeline_views import BasePipelineView
 from .serializers import ReviewInputSerializer, ReviewOutputSerializer
 from .services import review_product, get_recommendations
 
-class SomeView(BasePipelineView):
 
+class SomeView(BasePipelineView):
     pipelines = {
         "POST": [
             ReviewInputSerializer,
@@ -105,15 +105,12 @@ def review_product(product_id: UUID, score: int, review: str, user: User):
     user_review = Review.objects.add_review(product, user, score, review)
     return {"product": product, "review": user_review}
 
+
 def get_recommendations(product: Product, review: Review):
     payload = {"product": str(product.id), "score": review.score}
     response = requests.get("...", params=payload)
     data: list[Recommencation] = response.json()
-    return {
-        "score": review.score,
-        "review": review.content,
-        "recommendations": data
-    }
+    return {"score": review.score, "review": review.content, "recommendations": data}
 ```
 
 Depending on your needs, you might want to reuse a logic fuction in a different context,
@@ -130,17 +127,14 @@ def review_product(**kwargs):
     user_review = Review.objects.add_review(product, user, score, review)
     return {"product": product, "review": user_review}
 
+
 def get_recommendations(**kwargs):
     product: Product = kwargs["product"]
     review: Review = kwargs["review"]
     payload = {"product": str(product.id), "score": review.score}
     response = requests.get("...", params=payload)
     data: list[Recommencation] = response.json()
-    return {
-        "score": review.score,
-        "review": review.content,
-        "recommendations": data
-    }
+    return {"score": review.score, "review": review.content, "recommendations": data}
 ```
 
 You can even make functions that are only used to verify input,
@@ -152,7 +146,6 @@ def validate_data(**kwargs):
     # Might raise an exception,
     # which interrupts the pipeline.
     return kwargs
-
 ```
 
 Another point no note is that the functions are easily testable.

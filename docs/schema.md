@@ -153,14 +153,7 @@ class ExampleView(BasePipelineView):
         "POST": [...],
     }
 
-    schema = PipelineSchema(
-        responses={
-            "POST": {
-                400: ErrorSerializer,
-                404: "This is the error message"
-            }
-        }
-    )
+    schema = PipelineSchema(responses={"POST": {400: ErrorSerializer, 404: "This is the error message"}})
 ```
 ```yaml title="openapi" hl_lines="8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41"
 # ...
@@ -276,6 +269,7 @@ You can deprecate endpoints on a method by method basis.
 from pipeline_views.views import BasePipelineView
 from openapi_schema.schema import PipelineSchema
 
+
 class ExampleView(BasePipelineView):
     """Example View"""
 
@@ -293,6 +287,7 @@ You can also use the `pipeline_views.schema.deprecate` on the view.
 ```python hl_lines="3"
 from pipeline_views.views import BasePipelineView
 from openapi_schema.utils import deprecate
+
 
 @deprecate(methods=["POST"])
 class ExampleView(BasePipelineView):
@@ -312,6 +307,7 @@ Add security schemes to the endpoints.
 ```python hl_lines="9 10 11 12 13"
 from pipeline_views.views import BasePipelineView
 from openapi_schema.schema import PipelineSchema
+
 
 class ExampleView(BasePipelineView):
     """Example View"""
@@ -394,6 +390,7 @@ class ExampleView(BasePipelineView):
         "POST": [...],
     }
 
+
 urlpatterns = [
     path("example/", ExampleView.as_view(), name="test_view"),
     path(
@@ -451,6 +448,7 @@ the endpoints will actually accept the input from both places.
 from pipeline_views.views import BasePipelineView
 from openapi_schema.schema import PipelineSchema
 
+
 class ExampleView(BasePipelineView):
     """Example View"""
 
@@ -470,6 +468,7 @@ You can also declare a parameter as a header or as cookie parameter.
 ```python hl_lines="9 10 11 12 13 14"
 from pipeline_views.views import BasePipelineView
 from openapi_schema.schema import PipelineSchema
+
 
 class ExampleView(BasePipelineView):
     """Example View"""
@@ -497,6 +496,7 @@ they were not given.
 ```python
 from pipeline_views.serializers import HeaderAndCookieSerializer
 
+
 class TestSerialzer(HeaderAndCookieSerializer):
     take_from_headers = ["foo"]
     take_from_cookies = ["bar"]
@@ -509,6 +509,7 @@ External docs for an endpoint can also be added.
 ```python hl_lines="9 10 11 12 13 14"
 from pipeline_views.views import BasePipelineView
 from openapi_schema.schema import PipelineSchema
+
 
 class ExampleView(BasePipelineView):
     """Example View"""
@@ -559,6 +560,7 @@ the API-wide configuration.
 from pipeline_views.views import BasePipelineView
 from openapi_schema.schema import PipelineSchema
 
+
 class ExampleView(BasePipelineView):
     """Example View"""
 
@@ -581,6 +583,7 @@ by one operation can be used as input for other operations.
 ```python hl_lines="12 13 14 15 16 17 18 19 20 21 22 23 24"
 from pipeline_views import BasePipelineView
 from openapi_schema.schema import PipelineSchema
+
 
 class ExampleView(BasePipelineView):
     """Example View"""
@@ -634,17 +637,20 @@ from rest_framework import serializers
 from pipeline_views import BasePipelineView
 from openapi_schema.schema import PipelineSchema
 
+
 class InputSerializer(serializers.Serializer):
     """Example Input"""
 
     name = serializers.CharField()
     age = serializers.IntegerField()
 
+
 class OutputSerializer(serializers.Serializer):
     """Example Output"""
 
     email = serializers.EmailField()
     age = serializers.IntegerField()
+
 
 class ExampleView(BasePipelineView):
     """Example View"""
@@ -666,7 +672,7 @@ class ExampleView(BasePipelineView):
                 },
             },
         },
-    )  
+    )
 ```
 ```yaml
 # ...
@@ -720,17 +726,20 @@ from django.urls import path
 from rest_framework import serializers
 from openapi_schema.views import get_schema_view
 
+
 class InputSerializer(serializers.Serializer):
     """Example Input"""
 
     name = serializers.CharField()
     age = serializers.IntegerField()
 
+
 class OutputSerializer(serializers.Serializer):
     """Example Output"""
 
     email = serializers.EmailField()
     age = serializers.IntegerField()
+
 
 urlpatterns = [
     path(

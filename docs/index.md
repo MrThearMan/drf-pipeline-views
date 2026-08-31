@@ -45,7 +45,6 @@ from .my_services import io_func, logging_func, integration_func
 
 
 class SomeView(BasePipelineView):
-
     pipelines = {
         "GET": [
             InputSerializer,
